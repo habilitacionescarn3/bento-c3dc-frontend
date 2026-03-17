@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cohort Analyzer Multi Widget Visualizer - Technical Documentation</title>
+  <style>
+    :root {
+      --primary: #1a365d;
+      --secondary: #2c5282;
+      --accent: #679AAA;
+      --success: #38a169;
+      --warning: #d69e2e;
+      --danger: #e53e3e;
+      --light-bg: #f7fafc;
+      --border: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      line-height: 1.6;
+      color: #2d3748;
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      background: #fff;
+    }
+
+    h1, h2, h3, h4 {
+      color: var(--primary);
+      margin-top: 2em;
+      margin-bottom: 0.5em;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      border-bottom: 4px solid var(--accent);
+      padding-bottom: 0.3em;
+      margin-top: 0;
+    }
+
+    h2 {
+      font-size: 1.8em;
+      border-bottom: 2px solid var(--border);
+      padding-bottom: 0.3em;
+    }
+
+    h3 {
+      font-size: 1.4em;
+      color: var(--secondary);
+    }
+
+    h4 {
+      font-size: 1.1em;
+      color: #4a5568;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1em 0;
+      font-size: 0.9em;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 10px 12px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+
+    tr:nth-child(even) {
+      background: var(--light-bg);
+    }
+
+    tr:hover {
+      background: #edf2f7;
+    }
+
+    code {
+      background: #edf2f7;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 0.9em;
+    }
+
+    pre {
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 0.85em;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      color: inherit;
+    }
+
+    .highlight-box {
+      padding: 16px 20px;
+      border-radius: 8px;
+      margin: 1em 0;
+    }
+
+    .highlight-box.recommendation {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+    }
+
+    .highlight-box.warning {
+      background: #fffaf0;
+      border-left: 4px solid #dd6b20;
+    }
+
+    .highlight-box.success {
+      background: #f0fff4;
+      border-left: 4px solid var(--success);
+    }
+
+    .score {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.9em;
+    }
+
+    .score.high { background: #c6f6d5; color: #22543d; }
+    .score.medium { background: #fefcbf; color: #744210; }
+    .score.low { background: #fed7d7; color: #742a2a; }
+
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 0.8em;
+      font-weight: 500;
+      margin-right: 4px;
+    }
+
+    .tag.yes { background: #c6f6d5; color: #22543d; }
+    .tag.no { background: #fed7d7; color: #742a2a; }
+    .tag.partial { background: #fefcbf; color: #744210; }
+
+    .toc {
+      background: var(--light-bg);
+      padding: 20px 30px;
+      border-radius: 8px;
+      margin: 2em 0;
+    }
+
+    .toc h3 {
+      margin-top: 0;
+      color: var(--primary);
+    }
+
+    .toc ul {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .toc li {
+      padding: 4px 0;
+    }
+
+    .toc a {
+      color: var(--secondary);
+      text-decoration: none;
+    }
+
+    .toc a:hover {
+      text-decoration: underline;
+    }
+
+    .diagram {
+      background: #f7fafc;
+      border: 1px solid var(--border);
+      padding: 16px;
+      border-radius: 8px;
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 0.8em;
+      overflow-x: auto;
+      white-space: pre;
+    }
+
+    .meta {
+      color: #718096;
+      font-size: 0.9em;
+      margin-bottom: 2em;
+    }
+
+    .comparison-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 1em 0;
+    }
+
+    .comparison-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+    }
+
+    .comparison-card h4 {
+      margin-top: 0;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--accent);
+    }
+
+    .comparison-card.option-a {
+      border-top: 4px solid #3182ce;
+    }
+
+    .comparison-card.option-b {
+      border-top: 4px solid #38a169;
+    }
+
+    @media print {
+      body {
+        padding: 20px;
+        font-size: 11pt;
+      }
+
+      h1, h2, h3 {
+        page-break-after: avoid;
+      }
+
+      table, pre, .diagram {
+        page-break-inside: avoid;
+      }
+
+      .toc {
+        page-break-after: always;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .comparison-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<h1>Cohort Analyzer Multi Widget Visualizer</h1>
+
+<div class="meta">
+  <strong>Project:</strong> C3DC Bento Frontend &nbsp;|&nbsp;
+  <strong>Version:</strong> 1.9.0 &nbsp;|&nbsp;
+  <strong>Date:</strong> March 2026 &nbsp;|&nbsp;
+  <strong>Status:</strong> POC Complete - Ready for Phase 1
+</div>
+
+<div class="toc">
+  <h3>Table of Contents</h3>
+  <ul>
+    <li><a href="#overview">1. Project Overview</a></li>
+    <li><a href="#poc-results">2. POC Results & Challenges</a></li>
+    <li><a href="#tech-stack">3. Current Technology Stack</a></li>
+    <li><a href="#library-evaluation">4. Grid Library Evaluation</a></li>
+    <li><a href="#vision">5. Vision & Requirements</a></li>
+    <li><a href="#current-architecture">6. Current CohortAnalyzer Architecture</a></li>
+    <li><a href="#proposed-architecture">7. Proposed Architecture</a></li>
+    <li><a href="#cbioportal">8. Reference Implementation: cBioPortal</a></li>
+    <li><a href="#comparison">9. Approach Comparison: Hybrid vs Bespoke</a></li>
+    <li><a href="#recommendation">10. Final Recommendation</a></li>
+    <li><a href="#expanded-scope">11. Expanded Scope - Tab Navigation</a></li>
+    <li><a href="#implementation">12. Implementation Plan</a></li>
+  </ul>
+</div>
+
+<!-- SECTION 1: Overview -->
+<h2 id="overview">1. Project Overview</h2>
+
+<p>A planned overhaul of the Cohort Analyzer page to transform it into a <strong>customizable, grid-based dashboard</strong> where visualization cards (Venn diagrams, histograms, KM plots, tables) can be moved, resized, and organized into user-defined "tabs" or views.</p>
+
+<div class="highlight-box recommendation">
+  <strong>Key Features:</strong>
+  <ul>
+    <li>Draggable and resizable visualization cards</li>
+    <li>Grid-based layout with snap points</li>
+    <li>User-configurable tabs/views</li>
+    <li>Layout persistence (localStorage)</li>
+    <li>Responsive design</li>
+  </ul>
+</div>
+
+<!-- SECTION 2: POC Results & Challenges -->
+<h2 id="poc-results">2. POC Results & Challenges</h2>
+
+<div class="highlight-box success">
+  <h3 style="margin-top: 0; color: #22543d;">✅ POC SUCCESSFUL</h3>
+  <p><strong>Completed:</strong> March 17, 2026 &nbsp;|&nbsp; <strong>Route:</strong> <code>/grid-poc</code></p>
+  <p>The react-grid-layout library has been successfully integrated with C3DC's tech stack. All validation criteria passed.</p>
+</div>
+
+<h3>POC Validation Results</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Test</th>
+      <th>Expected Result</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Install</td><td>npm install with overrides succeeds</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Build</td><td>npm start runs without errors</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Route</td><td>/grid-poc loads the POC page</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Drag</td><td>Cards drag smoothly by header only</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Phantom box</td><td>Blue placeholder appears during drag</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Resize</td><td>Cards resize from corner handle</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Grid snap</td><td>Cards snap to grid units</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Compaction</td><td>Cards compact vertically (no gaps)</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Persistence</td><td>Refresh page, layout is preserved</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Reset</td><td>"Reset Layout" button restores default</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Responsive</td><td>Resize browser, grid adjusts</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Add Card</td><td>Ghostly plus opens card type menu</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Remove Card</td><td>× button removes card from grid</td><td style="color: #22543d;">✅ PASS</td></tr>
+    <tr><td>Card Persistence</td><td>Added/removed cards persist on refresh</td><td style="color: #22543d;">✅ PASS</td></tr>
+  </tbody>
+</table>
+
+<h3>Challenges Encountered & Solutions</h3>
+
+<h4>Challenge 1: ESM Export Error (react-grid-layout v2.2.2)</h4>
+<div class="highlight-box warning">
+  <strong>Error:</strong> <code>Can't reexport the named export 'DEFAULT_BREAKPOINTS' from non EcmaScript module</code>
+</div>
+<p><strong>Cause:</strong> Webpack 4.28.3 has limited ES modules support. react-grid-layout v2.x uses ESM syntax incompatible with Webpack 4.</p>
+<p><strong>Solution:</strong> Downgrade to <code>react-grid-layout@0.16.6</code> (same version used by cBioPortal).</p>
+
+<h4>Challenge 2: Optional Chaining Syntax Error</h4>
+<div class="highlight-box warning">
+  <strong>Error:</strong> <code>Module parse failed: Unexpected token (270:24)</code><br>
+  <code>return this.props?.nodeRef?.current ?? _reactDom.default.findDOMNode(this);</code>
+</div>
+<p><strong>Cause:</strong> Webpack 4 cannot parse ES2020 optional chaining (<code>?.</code>) or nullish coalescing (<code>??</code>) operators.</p>
+<p><strong>Affected packages:</strong> react-grid-layout v1.x/v2.x, react-draggable v4.x, react-resizable v2.x/v3.x</p>
+<p><strong>Solution:</strong> Pin to older versions without modern syntax.</p>
+
+<h4>Challenge 3: Transitive Dependency Issue</h4>
+<div class="highlight-box warning">
+  <strong>Error persisted after pinning versions:</strong><br>
+  <code>./node_modules/react-resizable/node_modules/react-draggable/build/cjs/Draggable.js</code>
+</div>
+<p><strong>Cause:</strong> react-resizable created a nested <code>node_modules/react-draggable</code> folder with a newer incompatible version.</p>
+<p><strong>Solution:</strong> Add npm <code>overrides</code> to force global version resolution.</p>
+
+<h3>Final Working Configuration</h3>
+
+<pre><code>// package.json
+{
+  "overrides": {
+    "react-draggable": "3.3.2"
+  },
+  "dependencies": {
+    "react-draggable": "3.3.2",
+    "react-grid-layout": "0.16.6",
+    "react-resizable": "1.11.1"
+  }
+}</code></pre>
+
+<pre><code># Installation command (clean slate required)
+rm -rf node_modules package-lock.json
+npm install --legacy-peer-deps</code></pre>
+
+<h3>Webpack 4 Compatible Version Matrix</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Package</th>
+      <th>Compatible Version</th>
+      <th>Incompatible Versions</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>react-grid-layout</td><td><strong>0.16.6</strong></td><td>1.x, 2.x</td></tr>
+    <tr><td>react-draggable</td><td><strong>3.3.2</strong></td><td>4.x</td></tr>
+    <tr><td>react-resizable</td><td><strong>1.11.1</strong></td><td>2.x, 3.x</td></tr>
+  </tbody>
+</table>
+
+<h4>Challenge 4: Infinite Loop on Layout Change</h4>
+<div class="highlight-box warning">
+  <strong>Error:</strong><br>
+  <code>Maximum update depth exceeded. This can happen when a component repeatedly calls setState inside componentWillUpdate or componentDidUpdate.</code>
+</div>
+<p><strong>Cause:</strong> The <code>onLayoutChange</code> callback fires on every render because <code>fullLayout</code> is recreated as a new array each render, and <code>handleLayoutChange</code> calls <code>setLayout()</code> unconditionally.</p>
+<p><strong>Solution:</strong> Compare layouts before updating state - only call <code>setLayout()</code> when the layout has actually changed.</p>
+
+<h3>POC Files Created</h3>
+
+<pre><code>src/pages/gridPoc/
+├── index.js              # Export file
+├── GridPocView.js        # Page wrapper component
+├── GridPocDashboard.js   # react-grid-layout with dynamic card management
+├── DemoCard.js           # Draggable card with remove button
+├── AddCardPlaceholder.js # Ghostly plus button for adding cards
+└── gridPocConfig.js      # Layout and cards configuration
+
+src/components/Layout/LayoutView.js  # Added route: /grid-poc</code></pre>
+
+<h3>Add Card Feature</h3>
+
+<p>The POC includes a dynamic "Add Card" feature demonstrating how users can add visualization cards to the grid:</p>
+
+<ul>
+  <li><strong>Ghostly plus button</strong> - Dashed border with transparent background, appears at end of grid</li>
+  <li><strong>Card type selection menu</strong> - Modal with 6 card types (Venn, KM Plot, Risk Table, 3 Histograms)</li>
+  <li><strong>Already-added detection</strong> - Cards already on board are disabled in the menu</li>
+  <li><strong>Remove cards</strong> - × button in card header removes cards from the grid</li>
+  <li><strong>Persistence</strong> - Both cards and layout positions saved to localStorage</li>
+</ul>
+
+<!-- SECTION 3: Tech Stack -->
+<h2 id="tech-stack">3. Current Technology Stack</h2>
+
+<table>
+  <thead>
+    <tr>
+      <th>Technology</th>
+      <th>Version</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>React</td><td>^17.0.2</td><td>UI Framework (JavaScript only)</td></tr>
+    <tr><td>Redux</td><td>^4.1.0</td><td>Global state management</td></tr>
+    <tr><td>Material-UI Core</td><td>^4.10.0</td><td>Primary UI component library</td></tr>
+    <tr><td>Styled Components</td><td>^4.4.1</td><td>CSS-in-JS styling</td></tr>
+    <tr><td>Chart.js</td><td>^3.1.0</td><td>Canvas-based charts</td></tr>
+    <tr><td>chartjs-chart-venn</td><td>^3.0.1</td><td>Venn diagram extension</td></tr>
+    <tr><td>Recharts</td><td>~1.8.6</td><td>SVG bar charts</td></tr>
+    <tr><td>@bento-core/kmplot</td><td>^0.1.3</td><td>Kaplan-Meier survival plots</td></tr>
+    <tr><td>@bento-core/paginated-table</td><td>^1.0.0-c3dc.42</td><td>Data tables</td></tr>
+    <tr><td>Apollo Client</td><td>^3.6.9</td><td>GraphQL</td></tr>
+    <tr><td>Webpack</td><td>4.28.3</td><td>Bundler</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Install flag:</strong> <code>--legacy-peer-deps</code> (bypasses strict peer dependency checks)</p>
+
+<!-- SECTION 4: Library Evaluation -->
+<h2 id="library-evaluation">4. Grid Library Evaluation</h2>
+
+<h3>Recommended: react-grid-layout</h3>
+
+<div class="highlight-box recommendation">
+  <strong>✓ Same library used by cBioPortal</strong><br>
+  cBioPortal's Study View dashboard uses <code>react-grid-layout</code> (v0.16.6) for their draggable/resizable chart tiles. This validates our library choice and provides a proven reference implementation in the biomedical domain.
+</div>
+
+<pre><code>npm install react-grid-layout --legacy-peer-deps</code></pre>
+
+<table>
+  <thead>
+    <tr>
+      <th>Criteria</th>
+      <th>react-grid-layout</th>
+      <th>gridstack.js</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>React Integration</td><td><span class="tag yes">Native</span></td><td><span class="tag partial">DOM manipulation</span></td></tr>
+    <tr><td>Weekly Downloads</td><td>~1.8M</td><td>~346K</td></tr>
+    <tr><td>GitHub Stars</td><td>22,102</td><td>8,733</td></tr>
+    <tr><td>React 17 Support</td><td><span class="tag yes">Yes</span></td><td><span class="tag yes">Yes</span></td></tr>
+    <tr><td>Drag & Drop</td><td><span class="tag yes">Built-in</span></td><td><span class="tag yes">Built-in</span></td></tr>
+    <tr><td>Resize</td><td><span class="tag yes">Built-in</span></td><td><span class="tag yes">Built-in</span></td></tr>
+    <tr><td>Grid Snap</td><td><span class="tag yes">Yes</span></td><td><span class="tag yes">Yes</span></td></tr>
+    <tr><td>Save/Load Layouts</td><td><span class="tag yes">JSON native</span></td><td><span class="tag yes">grid.save()</span></td></tr>
+    <tr><td>Responsive Breakpoints</td><td><span class="tag yes">Built-in</span></td><td><span class="tag yes">Yes</span></td></tr>
+    <tr><td>Nested Grids</td><td><span class="tag partial">Limited</span></td><td><span class="tag yes">Any depth</span></td></tr>
+    <tr><td>Bundle Size</td><td>~1.13 MB</td><td>~1.89 MB</td></tr>
+  </tbody>
+</table>
+
+<h3>Libraries NOT Recommended</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Library</th>
+      <th>Status</th>
+      <th>Reason</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Gridster.js</td><td><span class="tag no">Abandoned</span></td><td>Last update 2015, requires jQuery</td></tr>
+    <tr><td>Packery</td><td><span class="tag partial">Limited</span></td><td>No resize support, Masonry-style layout</td></tr>
+    <tr><td>dnd-kit</td><td><span class="tag partial">Drag-only</span></td><td>No built-in resize</td></tr>
+  </tbody>
+</table>
+
+<!-- SECTION 5: Vision -->
+<h2 id="vision">5. Vision & Requirements</h2>
+
+<h3>Grid Unit Concept</h3>
+
+<ul>
+  <li><strong>Minimum unit size:</strong> 100px</li>
+  <li><strong>Dynamic calculation:</strong> <code>units = Math.floor(containerWidth / 100)</code></li>
+  <li><strong>Unit width:</strong> <code>containerWidth / units</code></li>
+</ul>
+
+<p><strong>Example:</strong></p>
+<ul>
+  <li>700px container → 7 units × 100px each</li>
+  <li>650px container → 6 units × ~108px each</li>
+</ul>
+
+<h3>Card Sizing</h3>
+<ul>
+  <li>Cards defined in grid units: <code>w: 7, h: 5</code> = 7 units wide, 5 units tall</li>
+  <li>Minimum constraints: <code>minW</code>, <code>minH</code> prevent cards from being too small</li>
+  <li>Cards snap to grid intersections when dragged/resized</li>
+</ul>
+
+<h3>Two-Tab Navigation (Core Feature)</h3>
+<ul>
+  <li><strong>Primary/Graphic View</strong> - Draggable/resizable tile grid with charts (Venn, KM plot, histograms, risk table)</li>
+  <li><strong>Table View</strong> - Full-width participant data table (not draggable, fixed layout)</li>
+  <li>Default tab on load: Primary/Graphic View</li>
+  <li>State preserved when switching between tabs</li>
+  <li>Tab bar positioned at top of Cohort Analyzer (below header)</li>
+</ul>
+
+<!-- SECTION 6: Current Architecture -->
+<h2 id="current-architecture">6. Current CohortAnalyzer Architecture</h2>
+
+<h3>Directory Structure</h3>
+
+<pre><code>src/pages/CohortAnalyzer/
+├── CohortAnalyzer.js              # Main component
+├── CohortAnalyzerController.js    # Provider wrapper
+├── CohortAnalyzerContext.js       # React Context state
+├── cohortAnalyzerStyling.js       # MUI makeStyles
+├── CohortSelector/                # Left sidebar (268px fixed)
+├── vennDiagram/                   # Chart.js Venn diagram
+│   ├── VennDiagramContainer.js
+│   ├── ChartVenn.js
+│   └── ChartVennConfig.js
+├── HistogramPanel/                # Recharts bar charts
+│   ├── Histogram.js
+│   ├── HistogramPanel.styled.js
+│   └── useHistogramData.js
+├── CohortAnalyzerTableSection/    # @bento-core table
+└── CohortAnalyzerUtil/            # Data transforms</code></pre>
+
+<h3>Current Layout (Flexbox)</h3>
+
+<div class="diagram">┌─────────────────────────────────────────────────────────┐
+│ Container (flex-row)                                    │
+├──────────┬──────────────────────────────────────────────┤
+│ Cohort   │ Right Content (flex: 1)                      │
+│ Selector │ ┌──────────────────────────────────────────┐ │
+│ (268px)  │ │ Header: "Cohort Analyzer"                │ │
+│          │ ├──────────────────────────────────────────┤ │
+│          │ │ ┌─────────────┬────────────────────────┐ │ │
+│          │ │ │ Venn + Hdr  │ Histograms (50%)       │ │ │
+│          │ │ │ (50%)       │ - KM Plot              │ │ │
+│          │ │ │             │ - Sex at Birth         │ │ │
+│          │ │ │             │ - Race                 │ │ │
+│          │ │ │             │ - Treatment Type       │ │ │
+│          │ │ └─────────────┴────────────────────────┘ │ │
+│          │ ├──────────────────────────────────────────┤ │
+│          │ │ Table Section (full width)              │ │
+│          │ └──────────────────────────────────────────┘ │
+└──────────┴──────────────────────────────────────────────┘</div>
+
+<h3>Visualization Components</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Component</th>
+      <th>Library</th>
+      <th>Type</th>
+      <th>Export</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Venn Diagram</td><td>chartjs-chart-venn</td><td>Canvas</td><td>PNG</td></tr>
+    <tr><td>Bar Charts</td><td>Recharts</td><td>SVG</td><td>PNG</td></tr>
+    <tr><td>KM Plot</td><td>@bento-core/kmplot</td><td>SVG</td><td>PNG</td></tr>
+    <tr><td>Risk Table</td><td>@bento-core/risk-table</td><td>HTML</td><td>PNG</td></tr>
+    <tr><td>Data Table</td><td>@bento-core/paginated-table</td><td>HTML</td><td>CSV/JSON</td></tr>
+  </tbody>
+</table>
+
+<!-- SECTION 7: Proposed Architecture -->
+<h2 id="proposed-architecture">7. Proposed Architecture</h2>
+
+<h3>New Grid Layout Structure</h3>
+
+<p><strong>Primary/Graphic View Tab:</strong></p>
+
+<div class="diagram">┌─────────────────────────────────────────────────────────┐
+│ Tab Bar: [Primary/Graphic ▼] [Table View]               │
+├──────────┬──────────────────────────────────────────────┤
+│ Cohort   │ GridLayout Container                         │
+│ Selector │ ┌─────────┬─────────┬─────────┬─────────┐   │
+│ (fixed)  │ │ Venn    │ KM Plot           │ Risk    │   │
+│          │ │ Diagram │                   │ Table   │   │
+│          │ │ (4×3)   │ (4×3)             │ (3×2)   │   │
+│          │ ├─────────┼─────────┴─────────┼─────────┤   │
+│          │ │ Sex at  │ Race    │ Treat   │ Treat   │   │
+│          │ │ Birth   │         │ Type    │ Outcome │   │
+│          │ │ (3×3)   │ (3×3)   │ (3×3)   │ (3×3)   │   │
+│          │ └─────────┴─────────┴─────────┴─────────┘   │
+└──────────┴──────────────────────────────────────────────┘</div>
+
+<p><strong>Table View Tab:</strong></p>
+
+<div class="diagram">┌─────────────────────────────────────────────────────────┐
+│ Tab Bar: [Primary/Graphic] [Table View ▼]               │
+├──────────┬──────────────────────────────────────────────┤
+│ Cohort   │ Full-Width Table Container                   │
+│ Selector │ ┌──────────────────────────────────────────┐ │
+│ (fixed)  │ │ Participant / Diagnosis / Treatment      │ │
+│          │ │ Tabbed Data Table (full width)           │ │
+│          │ │                                          │ │
+│          │ │ [Participants] [Diagnoses] [Treatments]  │ │
+│          │ │ ┌────────────────────────────────────┐   │ │
+│          │ │ │ Paginated Table Content            │   │ │
+│          │ │ │ ...                                │   │ │
+│          │ │ └────────────────────────────────────┘   │ │
+│          │ └──────────────────────────────────────────┘ │
+└──────────┴──────────────────────────────────────────────┘</div>
+
+<h3>Card Types (Widgets) - Primary/Graphic View Only</h3>
+
+<ol>
+  <li><strong>VennDiagramCard</strong> - Interactive cohort intersection visualization</li>
+  <li><strong>HistogramCard</strong> - Configurable bar chart (Sex/Race/Treatment/etc.)</li>
+  <li><strong>KMPlotCard</strong> - Kaplan-Meier survival analysis (separate from risk table)</li>
+  <li><strong>RiskTableCard</strong> - Survival risk intervals (separate from KM plot)</li>
+</ol>
+
+<h3>Table View Content</h3>
+
+<ul>
+  <li><strong>DataTable</strong> - Full-width paginated participant/diagnosis/treatment table</li>
+  <li>Not a draggable/resizable card - fixed layout in Table View tab</li>
+</ul>
+
+<h3>Layout Data Structure</h3>
+
+<pre><code>// Primary/Graphic View layout (no participant table)
+const primaryLayout = [
+  { i: 'venn', x: 0, y: 0, w: 4, h: 3, minW: 2, minH: 2 },
+  { i: 'kmplot', x: 4, y: 0, w: 4, h: 3, minW: 3, minH: 2 },
+  { i: 'risk-table', x: 8, y: 0, w: 3, h: 2, minW: 2, minH: 1 },
+  { i: 'histogram-sex', x: 0, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
+  { i: 'histogram-race', x: 3, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
+  { i: 'histogram-treatment-type', x: 6, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
+  { i: 'histogram-treatment-outcome', x: 9, y: 3, w: 3, h: 3, minW: 2, minH: 2 },
+];
+
+// Tab state structure
+const tabState = {
+  activeTab: 'primary', // 'primary' | 'table'
+  primaryView: {
+    layout: primaryLayout,
+    visibleCards: ['venn', 'kmplot', 'risk-table', ...],
+  },
+  tableView: {
+    // Table view doesn't use grid layout - fixed structure
+    activeTableTab: 'participants', // 'participants' | 'diagnoses' | 'treatments'
+  },
+};</code></pre>
+
+<h3>Tab Switching Logic</h3>
+
+<pre><code>// CohortAnalyzerContext - Tab management
+const [activeTab, setActiveTab] = useState('primary'); // 'primary' | 'table'
+
+// Switch between tabs (preserves state)
+const handleTabChange = (event, newTab) => {
+  setActiveTab(newTab);
+};
+
+// Save Primary view layout changes to localStorage
+const handleLayoutChange = (newLayout) => {
+  setLayout(newLayout);
+  localStorage.setItem('cohort-primary-layout', JSON.stringify(newLayout));
+};
+
+// Load saved layout on mount
+useEffect(() => {
+  const saved = localStorage.getItem('cohort-primary-layout');
+  if (saved) setLayout(JSON.parse(saved));
+}, []);</code></pre>
+
+<!-- SECTION 8: cBioPortal -->
+<h2 id="cbioportal">8. Reference Implementation: cBioPortal</h2>
+
+<p>cBioPortal is an open-source platform for cancer genomics that uses a similar grid-based dashboard.</p>
+
+<h3>Technology Stack Comparison</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Technology</th>
+      <th>cBioPortal</th>
+      <th>C3DC</th>
+      <th>Compatible?</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>React</td><td>^16.4</td><td>^17.0.2</td><td><span class="tag yes">C3DC newer</span></td></tr>
+    <tr><td>react-grid-layout</td><td>0.16.6</td><td>(to install)</td><td><span class="tag yes">Same library</span></td></tr>
+    <tr><td>State Management</td><td>MobX 6.0.0</td><td>Redux 4.1.0</td><td><span class="tag partial">Different</span></td></tr>
+    <tr><td>UI Library</td><td>React Bootstrap</td><td>Material-UI</td><td><span class="tag partial">Different</span></td></tr>
+    <tr><td>Language</td><td>TypeScript 4.9.5</td><td>JavaScript</td><td><span class="tag partial">Different</span></td></tr>
+  </tbody>
+</table>
+
+<h3>cBioPortal Key Files</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Purpose</th>
+      <th>Lines</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>SummaryTab.tsx</td><td>ReactGridLayout wrapper</td><td>~1200</td></tr>
+    <tr><td>StudyViewPageStore.ts</td><td>MobX state (layout, charts)</td><td>~7600</td></tr>
+    <tr><td>StudyViewConfig.ts</td><td>Grid configuration</td><td>~300</td></tr>
+    <tr><td>ChartContainer.tsx</td><td>Chart wrapper component</td><td>~1700</td></tr>
+  </tbody>
+</table>
+
+<h3>Plug-and-Play Assessment</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Criteria</th>
+      <th>Assessment</th>
+      <th>Score</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Direct copy-paste</td><td>Not possible</td><td><span class="score low">1/5</span></td></tr>
+    <tr><td>Pattern reuse</td><td>High value</td><td><span class="score high">4/5</span></td></tr>
+    <tr><td>Config structure</td><td>Directly applicable</td><td><span class="score high">5/5</span></td></tr>
+    <tr><td>State management</td><td>Needs rewrite (MobX → Context)</td><td><span class="score low">2/5</span></td></tr>
+    <tr><td>UI components</td><td>Different library</td><td><span class="score low">1/5</span></td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box warning">
+  <strong>Overall Plug-and-Play Score: 2.3/5</strong><br>
+  Patterns and concepts are valuable, but code requires significant adaptation due to different state management (MobX vs Redux), UI library (Bootstrap vs MUI), and language (TypeScript vs JavaScript).
+</div>
+
+<!-- SECTION 9: Comparison -->
+<h2 id="comparison">9. Approach Comparison: Hybrid vs Bespoke</h2>
+
+<p>Both approaches use <code>react-grid-layout</code> as the foundation. The question is whether to follow cBioPortal's patterns or design C3DC's own architecture.</p>
+
+<div class="comparison-grid">
+  <div class="comparison-card option-a">
+    <h4>Option A: Hybrid (cBioPortal-inspired)</h4>
+    <p><strong>What it means:</strong> Adopt cBioPortal's architectural patterns translated into C3DC's stack.</p>
+
+    <p><strong>Advantages:</strong></p>
+    <ul>
+      <li>Proven architecture (years in production)</li>
+      <li>Reference implementation when stuck</li>
+      <li>Edge cases already solved</li>
+      <li>Faster initial development</li>
+    </ul>
+
+    <p><strong>Disadvantages:</strong></p>
+    <ul>
+      <li>Inherited complexity (18 chart types vs 5 needed)</li>
+      <li>Translation overhead (MobX → Context)</li>
+      <li>May not fit C3DC's tab-based UX</li>
+      <li>Harder to diverge later</li>
+    </ul>
+  </div>
+
+  <div class="comparison-card option-b">
+    <h4>Option B: Bespoke (C3DC's Own)</h4>
+    <p><strong>What it means:</strong> Design C3DC's grid architecture from first principles.</p>
+
+    <p><strong>Advantages:</strong></p>
+    <ul>
+      <li>Tailored to C3DC's 5 chart types</li>
+      <li>Simpler, cleaner codebase</li>
+      <li>Matches tab-based UX vision</li>
+      <li>Easier to maintain</li>
+      <li>Material-UI native</li>
+    </ul>
+
+    <p><strong>Disadvantages:</strong></p>
+    <ul>
+      <li>More design decisions required</li>
+      <li>May hit unforeseen edge cases</li>
+      <li>Longer initial planning</li>
+      <li>No reference code</li>
+    </ul>
+  </div>
+</div>
+
+<h3>Side-by-Side Comparison</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Aspect</th>
+      <th>Hybrid (cBioPortal)</th>
+      <th>Bespoke (C3DC)</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>Estimated effort</td><td>~10 pts</td><td>~12-14 pts</td></tr>
+    <tr><td>Architecture fit</td><td>70% (needs translation)</td><td>100% (designed for C3DC)</td></tr>
+    <tr><td>Code complexity</td><td>Medium (inherited patterns)</td><td>Low-Medium (purpose-built)</td></tr>
+    <tr><td>Chart config</td><td>18-type config trimmed to 5</td><td>5-type config from scratch</td></tr>
+    <tr><td>Tab system</td><td>Must be adapted (doesn't exist)</td><td>Native design</td></tr>
+    <tr><td>Maintenance</td><td>May carry legacy decisions</td><td>Fully understood by team</td></tr>
+  </tbody>
+</table>
+
+<h3>Key Architectural Difference</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>cBioPortal (Hybrid)</th>
+      <th>C3DC Bespoke</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><strong>Priority-based auto-layout</strong> - Charts auto-arrange by importance</td>
+      <td><strong>User-controlled positioning</strong> - Users place cards where they want</td>
+    </tr>
+    <tr>
+      <td>Session-based (recalculates on load)</td>
+      <td>Tab-based (saves/loads exact positions)</td>
+    </tr>
+    <tr>
+      <td>Charts compete for position</td>
+      <td>Cards stay where user puts them</td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- SECTION 10: Recommendation -->
+<h2 id="recommendation">10. Final Recommendation</h2>
+
+<div class="highlight-box success">
+  <h3 style="margin-top: 0; color: #22543d;">Recommended: Bespoke (C3DC's Own Design)</h3>
+  <p><strong>Estimated effort:</strong> ~12-14 story points</p>
+</div>
+
+<h4>Rationale:</h4>
+
+<ol>
+  <li><strong>Different UX paradigm</strong> - cBioPortal uses auto-layout; C3DC wants user-controlled tabs. Following their patterns would require significant modification anyway.</li>
+
+  <li><strong>Simpler requirements</strong> - 5 chart types vs 18. Building purpose-fit architecture avoids carrying unused complexity.</li>
+
+  <li><strong>Existing patterns</strong> - C3DC already has CohortAnalyzerContext. A bespoke solution can extend it naturally.</li>
+
+  <li><strong>Tabs feature is unique</strong> - cBioPortal doesn't have saved tabs/views. This core C3DC requirement means designing something new regardless.</li>
+
+  <li><strong>100px unit spec</strong> - Your grid unit concept is different from cBioPortal's 195×170px fixed units.</li>
+</ol>
+
+<h4>When to Reconsider Hybrid:</h4>
+<ul>
+  <li>If scope reduces significantly</li>
+  <li>If you discover complex edge cases during bespoke development</li>
+  <li>If cBioPortal adds a tabs feature you could leverage</li>
+</ul>
+
+<h3>Complexity/Cost Trade-off Analysis</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>Approach</th>
+      <th>Complexity</th>
+      <th>Story Points</th>
+      <th>Technical Debt Risk</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Hybrid</td>
+      <td>Medium-High</td>
+      <td>~10 pts</td>
+      <td>Higher (inherited patterns)</td>
+    </tr>
+    <tr style="background: #f0fff4;">
+      <td><strong>Bespoke (Recommended)</strong></td>
+      <td>Medium</td>
+      <td>~12-14 pts</td>
+      <td>Lower (purpose-built)</td>
+    </tr>
+  </tbody>
+</table>
+
+<p><strong>Why the extra ~2-4 pts for bespoke is worthwhile:</strong></p>
+<ul>
+  <li>Architecture tailored to C3DC requirements</li>
+  <li>Simpler, more maintainable code</li>
+  <li>Native tabs feature (not bolted on)</li>
+  <li>No inherited complexity from cBioPortal's 18-chart system</li>
+  <li>Lower long-term maintenance cost</li>
+</ul>
+
+<!-- SECTION 11: Expanded Scope -->
+<h2 id="expanded-scope">11. Expanded Scope - Tab Navigation System</h2>
+
+<p>Two additional tickets have been added that expand the scope and further clarify the tab system requirements.</p>
+
+<h3>New Ticket: Table View Tab</h3>
+<p><strong>Description:</strong> Create a new tab labeled "Table View" alongside the Primary/Graphic view. This tab will host the participant-level table, which is currently displayed at the bottom of the Cohort Analyzer page.</p>
+
+<p><strong>Acceptance Criteria:</strong></p>
+<ul>
+  <li>"Table View" tab is visible next to Primary view</li>
+  <li>Tab navigation works correctly</li>
+  <li>Default landing remains Primary view</li>
+  <li>Table View loads without impacting performance</li>
+</ul>
+
+<h3>New Ticket: Tab-Based Navigation System</h3>
+<p><strong>Description:</strong> Create a tab-based navigation system at the top of the Cohort Analyzer that allows users to switch between different views.</p>
+
+<p><strong>Scope:</strong></p>
+<ul>
+  <li>Add a tab bar at the top of the Cohort Analyzer based on the design</li>
+  <li>Support switching between at least two tabs: Primary/Graphic view and Table View</li>
+  <li>Render each tab as a separate panel/view</li>
+  <li>Ensure only the active tab's content is visible</li>
+  <li>Preserve state when switching tabs</li>
+  <li>Maintain consistent styling with existing UI</li>
+</ul>
+
+<h3>Why This Reinforces Bespoke Approach</h3>
+<table>
+  <thead>
+    <tr>
+      <th>Factor</th>
+      <th>Impact on Decision</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Tab system is core requirement</strong></td><td>cBioPortal doesn't have tab-based navigation</td></tr>
+    <tr><td><strong>State preservation across tabs</strong></td><td>Requires custom Context/Redux design</td></tr>
+    <tr><td><strong>Two-panel structure</strong></td><td>Simpler than cBioPortal's single-view approach</td></tr>
+    <tr><td><strong>Performance requirement</strong></td><td>Requires C3DC-specific lazy loading strategy</td></tr>
+  </tbody>
+</table>
+
+<div class="highlight-box success">
+  <h3 style="margin-top: 0; color: #22543d;">Final Decision: Bespoke Implementation Confirmed</h3>
+  <p>The expanded scope <strong>strengthens the case for bespoke</strong> because:</p>
+  <ul style="margin-bottom: 0;">
+    <li>Tab-based navigation is a <strong>core C3DC requirement</strong> not present in cBioPortal</li>
+    <li>State preservation across tabs requires <strong>custom architecture</strong></li>
+    <li>Two-panel structure is <strong>simpler</strong> than cBioPortal's approach</li>
+    <li>Performance requirements need <strong>C3DC-specific lazy loading</strong></li>
+    <li>MUI Tabs integration fits <strong>existing C3DC patterns</strong></li>
+  </ul>
+</div>
+
+<!-- SECTION 12: Implementation -->
+<h2 id="implementation">12. Implementation Plan</h2>
+
+<h3>Phase 1: Grid Infrastructure</h3>
+<ol>
+  <li>Install react-grid-layout</li>
+  <li>Create <code>GridDashboard</code> wrapper component</li>
+  <li>Implement dynamic column calculation based on container width</li>
+  <li>Add CSS imports for grid styles</li>
+</ol>
+
+<h3>Phase 2: Card Components</h3>
+<ol>
+  <li>Create <code>DashboardCard</code> wrapper with drag handle, resize handle</li>
+  <li>Extract existing visualizations into standalone card components</li>
+  <li>Ensure each card is self-contained with its own state/data fetching</li>
+</ol>
+
+<h3>Phase 3: Layout Persistence</h3>
+<ol>
+  <li>Add layout state to CohortAnalyzerContext</li>
+  <li>Implement save/load to localStorage</li>
+  <li>Create tab management UI</li>
+</ol>
+
+<h3>Phase 4: Tab System</h3>
+<ol>
+  <li>Tab bar component with Primary/Table view tabs</li>
+  <li>Add activeTab and tabStates to CohortAnalyzerContext</li>
+  <li>Implement tab switching with state preservation</li>
+  <li>Add lazy loading for Table View content</li>
+</ol>
+
+<h3>Phase 5: Polish</h3>
+<ol>
+  <li>Card configuration modals</li>
+  <li>Add/remove cards dynamically</li>
+  <li>Reset to default layout option</li>
+  <li>Responsive breakpoint layouts</li>
+</ol>
+
+<h3>Files to Modify</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Changes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>CohortAnalyzer.js</td><td>Replace flexbox layout with GridLayout</td></tr>
+    <tr><td>CohortAnalyzerContext.js</td><td>Add layout state, tab management</td></tr>
+    <tr><td>cohortAnalyzerStyling.js</td><td>Grid container styles, card styles</td></tr>
+    <tr><td>VennDiagramContainer.js</td><td>Wrap as standalone card</td></tr>
+    <tr><td>Histogram.js</td><td>Split into individual histogram cards</td></tr>
+    <tr><td>CohortAnalyzerTableSection.js</td><td>Wrap as card component</td></tr>
+  </tbody>
+</table>
+
+<h3>New Files to Create</h3>
+
+<table>
+  <thead>
+    <tr>
+      <th>File</th>
+      <th>Purpose</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td>GridDashboard.js</td><td>Main grid container with react-grid-layout</td></tr>
+    <tr><td>DashboardCard.js</td><td>Reusable card wrapper (header, drag handle)</td></tr>
+    <tr><td>TabBar.js</td><td>Tab navigation and management</td></tr>
+    <tr><td>useGridLayout.js</td><td>Custom hook for layout state/persistence</td></tr>
+    <tr><td>gridLayoutConfig.js</td><td>Default layouts, breakpoints, card configs</td></tr>
+  </tbody>
+</table>
+
+<hr style="margin: 3em 0;">
+
+<h2>Open Questions for Discussion</h2>
+
+<ol>
+  <li><strong>Should CohortSelector remain fixed or become a collapsible panel?</strong></li>
+  <li><strong>How many default tabs should exist?</strong></li>
+  <li><strong>Should users be able to add/remove card types dynamically?</strong></li>
+  <li><strong>Should layout be saved per-user (requires backend) or per-browser (localStorage)?</strong></li>
+  <li><strong>What happens to cards when cohort selection changes?</strong></li>
+</ol>
+
+<hr style="margin: 3em 0;">
+
+<h2>References</h2>
+
+<ul>
+  <li><a href="https://github.com/react-grid-layout/react-grid-layout">react-grid-layout GitHub</a></li>
+  <li><a href="https://www.npmjs.com/package/react-grid-layout">react-grid-layout npm</a></li>
+  <li><a href="https://gridstackjs.com/">Gridstack.js</a></li>
+  <li><a href="https://www.antstack.com/blog/building-customizable-dashboard-widgets-using-react-grid-layout/">Building Dashboard Widgets - AntStack</a></li>
+  <li><a href="https://www.ilert.com/blog/building-interactive-dashboards-why-react-grid-layout-was-our-best-choice">Why React-Grid-Layout - ilert</a></li>
+  <li><a href="https://npmtrends.com/gridstack-vs-gridster-vs-react-grid-layout">npm trends comparison</a></li>
+  <li><a href="https://github.com/cBioPortal/cbioportal-frontend">cBioPortal Frontend</a> - Reference implementation</li>
+</ul>
+
+<hr>
+
+<p style="text-align: center; color: #718096; font-size: 0.9em; margin-top: 3em;">
+  C3DC Bento Frontend | Cohort Analyzer Multi Widget Visualizer | Technical Documentation<br>
+  Generated: March 2026
+</p>
+
+</body>
+</html>

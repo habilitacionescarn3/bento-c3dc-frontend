@@ -21,6 +21,7 @@ import CohortManager from "../../pages/CohortManager/CohortManagerController";
 import ReleaseNoteController from "../../pages/releaseNote/releaseNoteController";
 import  CohortAnalyzerController  from "../../pages/CohortAnalyzer/CohortAnalyzerController";
 import DataModelNavigator from '../../pages/dmn';
+import GridPocView from '../../pages/gridPoc';
 // import NewsDetail from '../../pages/news/newsDetailView';
 
 const Layout = () => {
@@ -47,6 +48,7 @@ const Layout = () => {
           <Route path="/release_notes_pdf" element={<PdfReader />} />
           <Route path="/cohort_Manager" element={<CohortManager />} />
           <Route path="/cohortAnalyzer" element={<CohortAnalyzerController />} />
+          <Route path="/grid-poc" element={<GridPocView />} />
           <Route path="*" element={<Error />} />
         </Routes>
         <Footer />
