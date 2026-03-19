@@ -55,9 +55,13 @@ export const ChartTitle = styled.h2`
   font-size: 19px;
   font-weight: 400;
   color: #000000;
-  margin-bottom: 20px;
+  margin: 0;
   text-align: left;
   margin-left: 3px;
+  flex: 1;
+  min-width: 0;
+  line-height: 1.3;
+  align-self: center;
   &.empty {
     opacity: 0.3;
   }
@@ -67,9 +71,11 @@ export const ChartActionButtons = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 200px;
+  flex-shrink: 0;
   justify-content: flex-end;
-  margin: 10px;
+  margin: 0;
+  padding-left: 14px;
+  margin-left: 14px;
 `;
 
 export const CenterContainer = styled.div`
@@ -98,8 +104,9 @@ export const ChartWrapper = styled.div`
   border: 1px solid #b8c7cc;
   background: #ffffff;
   display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  align-items: stretch;
   border-radius: 10px;
   box-shadow: 0 8px 18px rgba(29, 61, 73, 0.16);
   transition: transform 120ms ease, box-shadow 120ms ease;
@@ -153,13 +160,17 @@ export const SurvivalBesideVennCard = styled.div`
 `;
 
 export const HeaderSection = styled.div`
-display: flex;
-justify-content: space-between;
-height: 50px;
-margin: 0;
-width: 100%;
-margin-left: 5px;
-padding-left: 15px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 50px;
+  margin: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px 12px 8px 15px;
+  margin-left: 0;
+  border-bottom: 1px solid #e5e5e5;
 `;
 
 export const RadioGroup = styled.div`
@@ -298,11 +309,14 @@ export const SurvivalAnalysisWrapper = styled.div`
 
 export const SurvivalAnalysisHeader = styled.div`
   display: flex;
+  flex-direction: row;
   justify-content: space-between;
+  align-items: center;
   margin-bottom: 10px;
   width: 100%;
-  padding: 3px;
-  padding-left: 12px;
+  box-sizing: border-box;
+  padding: 8px 12px 8px 12px;
+  border-bottom: 1px solid #e5e5e5;
 `;
 
 export const SurvivalAnalysisContainer = styled.div`
