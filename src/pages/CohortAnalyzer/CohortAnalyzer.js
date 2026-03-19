@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { CohortStateContext } from "../../components/CohortSelectorState/CohortStateContext";
 import { configColumn } from "../inventory/tabs/tableConfig/Column";
@@ -33,6 +33,8 @@ import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortD
 import { exportToCCDIHub } from "../../components/CohortModal/utils";
 
 export const CohortAnalyzer = () => {
+    const [activeView, setActiveView] = useState("chart");
+    const [survivalBesideVennEl, setSurvivalBesideVennEl] = useState(null);
     //context
     const cohortAnalyzerContext = useCohortAnalyzer();
     // Cohort selection and list management
@@ -455,48 +457,88 @@ export const CohortAnalyzer = () => {
                             {alert.message}
                         </Alert>
                     )}
-                    <div className={classes.rightSideAnalyzerHeader} style={{ justifyContent: 'flex-start', alignItems: 'center' }}>
-                        <h1> Cohort Analyzer</h1>
+                    <div className={classes.rightSideAnalyzerHeader} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h1>Cohort Analyzer</h1>
+                        <button className={classes.readmeButton}>README</button>
                     </div>
 
                     <div className={classes.rightSideContentContainer}>
-                    <div className={classes.rightSideAnalyzerOuterContainer}>
-                        <div className={classes.rightSideAnalyzerInnerContainer}>
-                            <div className={classes.rightSideAnalyzerHeader2}>
-                                <p>After selecting cohorts using the Cohort Selector panel (on the left), the Cohort Analyzer Venn diagram will be updated. Click on a Venn diagram segment to view the relevant results. By default, the Venn diagram will use <b>Participant ID</b> to match across cohorts, but other data categories can be selected.
-
-                                    <ToolTip backgroundColor={'white'} zIndex={3000} title={"The Venn diagram is a stylized representation of selected cohorts. Numbers in parentheses show unique records for the radio button selection, while numbers inside the diagram indicate unique values. The count next to your cohort in the sidebar reflects total participants."} arrow placement="top">
-                                        <img alt={"question mark icon"} src={questionIcon} width={10} style={{ fontSize: 10, position: 'relative', top: -5, left: -3 }} />
-                                    </ToolTip>
-                                </p>
-                            </div>
-                            <VennDiagramContainer
-                                state={state}
-                                containerRef={containerRef}
-                                canvasRef={canvasRef}
-                                classes={classes}
-                            />
+                        <div className={classes.summaryTabs}>
+                            <button
+                                className={`${classes.summaryTab} ${activeView === "chart" ? classes.summaryTabActive : ""}`}
+                                onClick={() => setActiveView("chart")}
+                            >
+                                Chart Summary View
+                            </button>
+                            <button
+                                className={`${classes.summaryTab} ${activeView === "table" ? classes.summaryTabActive : ""}`}
+                                onClick={() => setActiveView("table")}
+                            >
+                                Table View
+                            </button>
                         </div>
+                        <div className={classes.chartTopControlRow}>
+                            <div className={classes.categoryPills}>
+                                {["Reset View", "SEX AT BIRTH", "RACE", "SURVIVAL ANALYSIS AND RISK", "TREATMENT OUTCOME", "TREATMENT TYPE"].map((label) => (
+                                    <button key={label} className={classes.categoryPillButton}>{label}</button>
+                                ))}
+                            </div>
+                            <div className={classes.chartActionButtons}>
+                                <button className={classes.addChartButton}>
+                                    ADD CHART <span>+</span>
+                                </button>
+                                <button className={classes.downloadAllButton}>DOWNLOAD ALL</button>
+                            </div>
+                        </div>
+                        {activeView === "chart" && (
+                            <div className={classes.chartSummaryMain}>
+                                <div className={classes.vennSurvivalRow}>
+                                    <div className={classes.vennColumn}>
+                                        <div className={classes.rightSideAnalyzerInnerContainer}>
+                                            <div className={classes.rightSideAnalyzerHeader2}>
+                                                <p>After selecting cohorts using the Cohort Selector panel (on the left), the Cohort Analyzer Venn diagram will be updated. Click on a Venn diagram segment to view the relevant results. By default, the Venn diagram will use <b>Participant ID</b> to match across cohorts, but other data categories can be selected.
 
-                        <Histogram
-                            c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                            c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                            c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                            c1Name={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].cohortName : ''}
-                            c2Name={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].cohortName : ''}
-                            c3Name={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].cohortName : ''}
-                        />
-                    </div>
-                     <CohortAnalyzerTableSection
-                        classes={classes}
-                        selectedCohortSection={selectedCohortSection}
-                        questionIcon={questionIcon}
-                        handleClick={handleClick} 
-                        handleBuildInExplore={handleBuildInExplore}
-                        handleExportToCCDIHub={handleExportToCCDIHub}
-                        initTblState={initTblState}
-                        themeConfig={cohortAnalyzerThemeConfig}
-                    />
+                                                    <ToolTip backgroundColor={'white'} zIndex={3000} title={"The Venn diagram is a stylized representation of selected cohorts. Numbers in parentheses show unique records for the radio button selection, while numbers inside the diagram indicate unique values. The count next to your cohort in the sidebar reflects total participants."} arrow placement="top">
+                                                        <img alt={"question mark icon"} src={questionIcon} width={10} style={{ fontSize: 10, position: 'relative', top: -5, left: -3 }} />
+                                                    </ToolTip>
+                                                </p>
+                                            </div>
+                                            <VennDiagramContainer
+                                                state={state}
+                                                containerRef={containerRef}
+                                                canvasRef={canvasRef}
+                                                classes={classes}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div
+                                        className={classes.survivalBesideVennColumn}
+                                        ref={setSurvivalBesideVennEl}
+                                    />
+                                </div>
+                                <Histogram
+                                    survivalBesideVennTarget={survivalBesideVennEl}
+                                    c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
+                                    c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
+                                    c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
+                                    c1Name={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].cohortName : ''}
+                                    c2Name={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].cohortName : ''}
+                                    c3Name={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].cohortName : ''}
+                                />
+                            </div>
+                        )}
+                        {activeView === "table" && (
+                            <CohortAnalyzerTableSection
+                                classes={classes}
+                                selectedCohortSection={selectedCohortSection}
+                                questionIcon={questionIcon}
+                                handleClick={handleClick}
+                                handleBuildInExplore={handleBuildInExplore}
+                                handleExportToCCDIHub={handleExportToCCDIHub}
+                                initTblState={initTblState}
+                                themeConfig={cohortAnalyzerThemeConfig}
+                            />
+                        )}
                     </div>
                 </div>
             </div>

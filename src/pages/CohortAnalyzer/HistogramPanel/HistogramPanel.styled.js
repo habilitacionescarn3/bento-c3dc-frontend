@@ -13,20 +13,21 @@ export const kmplotColors = {
 };
 
 export const HistogramContainer = styled.div`
-  background: white;
-  border: 1px solid #679AAA;
-  border-radius: 8px;
-  padding: 20px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
   margin: 0;
-  min-width: 50%;
-  max-width: 50%;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   margin-left: 0px;
-  min-height: 682px;
+  min-height: 0;
   height: auto;
+  margin-top: 20px;
   @media (max-width: 1900px) {
     max-width: 100%;
-    max-height: 100%;
-    margin: 45px 0 0;
+    margin: 24px 0 0;
   }
 
 `;
@@ -34,16 +35,18 @@ export const HistogramContainer = styled.div`
 
 export const DatasetSelectionTitle = styled.div`
   font-family: Poppins; 
-  font-size: 19px;
+  font-size: 16px;
   color: ${props => props.disabled ? '#999999' : '#000000'};
   opacity: ${props => props.disabled ? 0.8 : 1};
+  margin-bottom: 8px;
 `;
 
 export const CheckBoxSection = styled.div`
-  margin-bottom: 15px;
+  margin-bottom: 14px;
   display: flex;
   flex-direction: row;
   gap: 8px;
+  flex-wrap: wrap;
 `;
 
 
@@ -71,36 +74,82 @@ export const ChartActionButtons = styled.div`
 
 export const CenterContainer = styled.div`
 display: flex;
-flex-direction: column;
-justify-content: center;
+flex-direction: row;
+flex-wrap: wrap;
+justify-content: flex-start;
 width: 100%;
-align-items: center;
+align-items: stretch;
 align-content: center;
+gap: 14px;
   @media (min-width: 1900px) {
   justify-content: flex-start;
-  align-items: flex-start;
+  align-items: stretch;
     }
 `;
 
 export const ChartWrapper = styled.div`
   position: relative;
-  width: 66%;
+  width: calc((100% - 28px) / 3);
+  min-width: 320px;
   min-height: 261px;
   max-height: auto;
-  margin-bottom: 10px;
+  margin-bottom: 0;
   padding: 0px;
-  border: 1px solid #D4D4D4;
+  border: 1px solid #b8c7cc;
+  background: #ffffff;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(29, 61, 73, 0.16);
+  transition: transform 120ms ease, box-shadow 120ms ease;
   &:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(29, 61, 73, 0.2);
   }
-    @media (min-width: 1560px) {
-    min-width: 100%;
+  @media (max-width: 1500px) {
+    width: calc((100% - 14px) / 2);
+  }
+  @media (max-width: 980px) {
     width: 100%;
-    }
+    min-width: 0;
+  }
+`;
+
+/** Full-row card (e.g. survival / KM plot). Do not use :first-child on ChartWrapper — it stretches the first histogram when survival is off. */
+export const FullWidthChartWrapper = styled(ChartWrapper)`
+  width: 100%;
+  flex: 0 0 100%;
+  min-width: 0;
+  @media (max-width: 1500px) {
+    width: 100%;
+    flex: 0 0 100%;
+  }
+  @media (max-width: 980px) {
+    width: 100%;
+    flex: 0 0 100%;
+  }
+`;
+
+/** Survival card when mounted beside the Venn (narrow column; not a full flex-row span). */
+export const SurvivalBesideVennCard = styled.div`
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  min-height: 200px;
+  padding: 0;
+  border: 1px solid #b8c7cc;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 8px 18px rgba(29, 61, 73, 0.16);
+  display: flex;
+  flex-direction: column;
+  flex-wrap: wrap;
+  transition: transform 120ms ease, box-shadow 120ms ease;
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 20px rgba(29, 61, 73, 0.2);
+  }
 `;
 
 export const HeaderSection = styled.div`
@@ -116,19 +165,19 @@ padding-left: 15px;
 export const RadioGroup = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 15px;
-  gap: 5px;
-  justify-content: flex-end;
-  flex-direction: column;
-  width: 110px;
-  height: 75%;
+  margin: 0 0 10px 12px;
+  gap: 16px;
+  justify-content: flex-start;
+  flex-direction: row;
+  width: auto;
+  max-width: 100%;
 `;
 
 export const RadioLabel = styled.label`
   display: flex;
   align-items: center;
   font-family: Poppins;
-  font-size: 14px;
+  font-size: 13px;
   color: #666;
   cursor: pointer;
 `;
@@ -277,6 +326,17 @@ export const RiskTableWrapper = styled.div`
   min-width: 0;
 `;
 
+/** Narrow column next to Venn — reduce padding so KM + risk table fit. */
+export const KmChartWrapperBesideVenn = styled(KmChartWrapper)`
+  padding-left: 8px;
+  margin-top: 0;
+`;
+
+export const RiskTableWrapperBesideVenn = styled(RiskTableWrapper)`
+  padding-right: 8px;
+  margin-top: 8px;
+`;
+
 export const SurvivalAnalysisModalContainer = styled.div`
   width: 100%;
   height: 100%;
@@ -382,6 +442,9 @@ export const ModalRadioGroup = styled(RadioGroup)`
   height: 100px;
   width: 180px;
   margin-top: 20px;
+  display: flex;
+  flex-direction: row;
+  background-color: red;
 `;
 
 export const ModalNoDataContainer = styled.div`
