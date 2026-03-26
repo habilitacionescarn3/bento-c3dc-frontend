@@ -1,14 +1,11 @@
 import React, { useMemo, useRef, useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import DownloadIcon from "../../../assets/icons/Download_Histogram_icon.svg";
 import DownloadIconBorderless from "../../../assets/icons/download-icon-borderless.svg";
 import ExpandIcon from "../../../assets/icons/Expand_Histogram_icon.svg";
 import { useHistogramData } from './useHistogramData';
 import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
 import questionIcon from "../../../assets/icons/Question_icon_2.svg";
-import CustomChartTooltip from './CustomChartTooltip';
-import CustomXAxisTick from './CustomXAxisTick';
 import { KaplanMeierChart } from '@bento-core/kmplot';
 import useKmplot from './useKmplot';
 import useRiskTable from './useRiskTable';
@@ -21,7 +18,11 @@ import {
   CenterContainer, DatasetSelectionTitle, DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem
   , SurvivalAnalysisHeader, SurvivalAnalysisContainer, KmChartWrapper, KmChartWrapperBesideVenn,
   barColors, RiskTableWrapper, RiskTableWrapperBesideVenn, CheckBoxSection,
+  ChartTypeDropdownRoot, ChartTypeDropdownPanel, ChartTypeOption, ChartTypeTriggerButton,
+  ChartResizeHandle,
 } from './HistogramPanel.styled';
+import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
+import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
 import ExpandedChartModal from './HistogramPopup';
 import PlaceHolder2 from '../../../assets/histogram/Placeholder2.svg';
 import TreatmentTypePlaceHolder from '../../../assets/histogram/TreatmentTypePlaceHolder.svg';
@@ -29,6 +30,16 @@ import RiskTable from '@bento-core/risk-table';
 
 import * as htmlToImage from 'html-to-image';
 import { NoDataCard } from '../NoDataCard';
+
+const HISTOGRAM_CHART_PLOT_HEIGHT = 240;
+const HISTOGRAM_CARD_MIN_WIDTH = 280;
+const HISTOGRAM_CARD_MAX_WIDTH = 2000;
+const HISTOGRAM_PLOT_MIN_HEIGHT = 120;
+const HISTOGRAM_PLOT_MAX_HEIGHT = 800;
+const SURVIVAL_CARD_MIN_WIDTH = 320;
+const SURVIVAL_CARD_MAX_WIDTH = 2000;
+const SURVIVAL_CARD_MIN_HEIGHT = 300;
+const SURVIVAL_CARD_MAX_HEIGHT = 980;
 
 const useStyles = makeStyles({
   cohortNameEllipsis: {
@@ -49,8 +60,9 @@ const useStyles = makeStyles({
   },
   chartPlotArea: {
     width: '100%',
-    minHeight: 220,
+    minHeight: HISTOGRAM_CHART_PLOT_HEIGHT,
     flex: 1,
+    height: HISTOGRAM_CHART_PLOT_HEIGHT,
   },
 });
 
@@ -109,7 +121,29 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
   const riskTableRefExpanded = useRef(null);
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  
+  const [chartVisualByDataset, setChartVisualByDataset] = useState({});
+  const [chartTypeMenuDataset, setChartTypeMenuDataset] = useState(null);
+  const chartTypeMenuRef = useRef(null);
+  /** Per-dataset card size after user resize: { width, plotHeight } */
+  const [histogramCardSizes, setHistogramCardSizes] = useState({});
+  const [survivalCardSize, setSurvivalCardSize] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        chartTypeMenuDataset
+        && chartTypeMenuRef.current
+        && !chartTypeMenuRef.current.contains(event.target)
+      ) {
+        setChartTypeMenuDataset(null);
+      }
+    };
+    if (chartTypeMenuDataset) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [chartTypeMenuDataset]);
+
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -391,9 +425,88 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
     return dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
   };
 
+  const handleHistogramCardResizeStart = (e, dataset) => {
+    if (allInputsEmpty) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const card = e.currentTarget.parentElement;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const current = histogramCardSizes[dataset];
+    const startWidth = current && current.width != null ? current.width : rect.width;
+    const startPlot = current && current.plotHeight != null ? current.plotHeight : HISTOGRAM_CHART_PLOT_HEIGHT;
+    const maxW = typeof window !== 'undefined'
+      ? Math.min(HISTOGRAM_CARD_MAX_WIDTH, window.innerWidth - 24)
+      : HISTOGRAM_CARD_MAX_WIDTH;
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    document.body.style.userSelect = 'none';
+
+    const onMove = (moveEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      const w = Math.round(Math.min(maxW, Math.max(HISTOGRAM_CARD_MIN_WIDTH, startWidth + dx)));
+      const ph = Math.round(
+        Math.min(HISTOGRAM_PLOT_MAX_HEIGHT, Math.max(HISTOGRAM_PLOT_MIN_HEIGHT, startPlot + dy)),
+      );
+      setHistogramCardSizes((prev) => ({
+        ...prev,
+        [dataset]: { width: w, plotHeight: ph },
+      }));
+    };
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
+  const handleSurvivalCardResizeStart = (e) => {
+    if (allInputsEmpty) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const card = e.currentTarget.parentElement;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const startWidth = survivalCardSize && survivalCardSize.width != null ? survivalCardSize.width : rect.width;
+    const startHeight = survivalCardSize && survivalCardSize.height != null ? survivalCardSize.height : rect.height;
+    const maxW = typeof window !== 'undefined'
+      ? Math.min(SURVIVAL_CARD_MAX_WIDTH, window.innerWidth - 24)
+      : SURVIVAL_CARD_MAX_WIDTH;
+    const startX = e.clientX;
+    const startY = e.clientY;
+
+    document.body.style.userSelect = 'none';
+
+    const onMove = (moveEvent) => {
+      const dx = moveEvent.clientX - startX;
+      const dy = moveEvent.clientY - startY;
+      const w = Math.round(Math.min(maxW, Math.max(SURVIVAL_CARD_MIN_WIDTH, startWidth + dx)));
+      const h = Math.round(Math.min(SURVIVAL_CARD_MAX_HEIGHT, Math.max(SURVIVAL_CARD_MIN_HEIGHT, startHeight + dy)));
+      setSurvivalCardSize({ width: w, height: h });
+    };
+
+    const onUp = () => {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
   const renderSurvivalAnalysisBody = (besideVenn = false) => {
     const KmWrap = besideVenn ? KmChartWrapperBesideVenn : KmChartWrapper;
     const RiskWrap = besideVenn ? RiskTableWrapperBesideVenn : RiskTableWrapper;
+    const kmHeight = survivalCardSize && survivalCardSize.height != null
+      ? Math.max(160, Math.min(480, Math.round((survivalCardSize.height - 140) * 0.65)))
+      : 230;
     return (
     <>
       <SurvivalAnalysisHeader>
@@ -462,7 +575,7 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
             data={filteredKmPlotData}
             title=""
             width={"100%"}
-            height={230}
+            height={kmHeight}
             loading={kmLoading}
             error={kmError}
             colors={cohortColors}
@@ -487,7 +600,24 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
   const survivalBesideVennPortal = selectedDatasets.includes('survivalAnalysis')
     && survivalBesideVennTarget != null
     ? createPortal(
-      <SurvivalBesideVennCard>{renderSurvivalAnalysisBody(true)}</SurvivalBesideVennCard>,
+      <SurvivalBesideVennCard
+        style={survivalCardSize && survivalCardSize.width != null
+          ? {
+            width: survivalCardSize.width,
+            height: survivalCardSize.height,
+            maxWidth: 'none',
+            alignSelf: 'flex-start',
+          }
+          : undefined}
+      >
+        {renderSurvivalAnalysisBody(true)}
+        <ChartResizeHandle
+          aria-label="Resize survival analysis card"
+          title="Drag to resize card"
+          onMouseDown={handleSurvivalCardResizeStart}
+          style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
+        />
+      </SurvivalBesideVennCard>,
       survivalBesideVennTarget,
     )
     : null;
@@ -495,8 +625,24 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
   const survivalInlineLegacy = selectedDatasets.includes('survivalAnalysis')
     && survivalBesideVennTarget === undefined
     ? (
-      <FullWidthChartWrapper>
+      <FullWidthChartWrapper
+        style={survivalCardSize && survivalCardSize.width != null
+          ? {
+            width: survivalCardSize.width,
+            height: survivalCardSize.height,
+            flex: '0 0 auto',
+            maxWidth: 'none',
+            alignSelf: 'flex-start',
+          }
+          : undefined}
+      >
         {renderSurvivalAnalysisBody(false)}
+        <ChartResizeHandle
+          aria-label="Resize survival analysis card"
+          title="Drag to resize card"
+          onMouseDown={handleSurvivalCardResizeStart}
+          style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
+        />
       </FullWidthChartWrapper>
     )
     : null;
@@ -541,8 +687,21 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
                 valueC += entry.valueC || 0;
               });
             }
+            const cardSize = histogramCardSizes[dataset];
+            const plotH = cardSize && cardSize.plotHeight != null ? cardSize.plotHeight : HISTOGRAM_CHART_PLOT_HEIGHT;
+            const chartWrapperStyle = cardSize && cardSize.width != null
+              ? {
+                width: cardSize.width,
+                flexShrink: 0,
+                alignSelf: 'flex-start',
+                maxWidth: 'none',
+              }
+              : undefined;
+            const estimatedChartW = cardSize && cardSize.width != null
+              ? Math.max(280, cardSize.width - 48)
+              : 400;
             return (
-              <ChartWrapper id={`chart-${dataset}`} ref={(el) => chartRef.current[dataset] = el}>
+              <ChartWrapper id={`chart-${dataset}`} ref={(el) => chartRef.current[dataset] = el} style={chartWrapperStyle}>
                 <HeaderSection>
                   <ChartTitle className={`${Array.isArray(data[dataset]) && data[dataset].length > 0 ? '' : 'empty'}`} >
                     {titles[dataset]}
@@ -565,23 +724,45 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
                   </ChartTitle>
 
                   <ChartActionButtons>
-                  <span>
-                  <svg width="26" height="26" viewBox="0 0 26 26" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_11685_48000)">
-<rect x="15.5" y="4.5" width="6" height="14" rx="1" fill="white"/>
-<rect x="10.5" y="8.5" width="6" height="10" rx="1" fill="white"/>
-<rect x="4.5" y="11.5" width="6" height="7" rx="1" fill="white"/>
-<path d="M5.96364 19H20.0364C21.1196 19 22 18.1228 22 17.0435V5.95652C22 4.87717 21.1196 4 20.0364 4H17.0909C16.0076 4 15.1273 4.87717 15.1273 5.95652V7.26087H11.5273C10.444 7.26087 9.56364 8.13804 9.56364 9.21739V11.1739H5.96364C4.88036 11.1739 4 12.0511 4 13.1304V17.0435C4 18.1228 4.88036 19 5.96364 19ZM16.4364 5.95652C16.4364 5.59783 16.7309 5.30435 17.0909 5.30435H20.0364C20.3964 5.30435 20.6909 5.59783 20.6909 5.95652V17.0435C20.6909 17.4022 20.3964 17.6957 20.0364 17.6957H16.4364V5.95652ZM10.8727 9.21739C10.8727 8.8587 11.1673 8.56522 11.5273 8.56522H15.1273V17.6957H10.8727V9.21739ZM5.30909 13.1304C5.30909 12.7717 5.60364 12.4783 5.96364 12.4783H9.56364V17.6957H5.96364C5.60364 17.6957 5.30909 17.4022 5.30909 17.0435V13.1304Z" fill="#5C5C5C"/>
-<path d="M3.65574 22H22.3443C22.7049 22 23 21.775 23 21.5C23 21.225 22.7049 21 22.3443 21H13H3.65574C3.29508 21 3 21.225 3 21.5C3 21.775 3.29508 22 3.65574 22Z" fill="#5C5C5C"/>
-</g>
-<defs>
-<clipPath id="clip0_11685_48000">
-<rect width="20" height="20" fill="white" transform="translate(3 3)"/>
-</clipPath>
-</defs>
-</svg>
-
-                  </span>
+                    <ChartTypeDropdownRoot
+                      ref={chartTypeMenuDataset === dataset ? chartTypeMenuRef : undefined}
+                    >
+                      <ChartTypeTriggerButton
+                        type="button"
+                        disabled={allInputsEmpty}
+                        aria-haspopup="listbox"
+                        aria-expanded={chartTypeMenuDataset === dataset}
+                        aria-label="Chart type"
+                        onClick={() => {
+                          if (allInputsEmpty) return;
+                          setChartTypeMenuDataset((prev) => (prev === dataset ? null : dataset));
+                        }}
+                      >
+                        <ChartTypeIcon
+                          type={chartVisualByDataset[dataset] || DEFAULT_CHART_TYPE}
+                          size={22}
+                        />
+                      </ChartTypeTriggerButton>
+                      {chartTypeMenuDataset === dataset && !allInputsEmpty && (
+                        <ChartTypeDropdownPanel role="listbox" aria-label="Choose chart type">
+                          {CHART_TYPE_OPTIONS.map(({ type, label }) => (
+                            <ChartTypeOption
+                              key={type}
+                              type="button"
+                              $active={(chartVisualByDataset[dataset] || DEFAULT_CHART_TYPE) === type}
+                              aria-label={label}
+                              aria-selected={(chartVisualByDataset[dataset] || DEFAULT_CHART_TYPE) === type}
+                              onClick={() => {
+                                setChartVisualByDataset((prev) => ({ ...prev, [dataset]: type }));
+                                setChartTypeMenuDataset(null);
+                              }}
+                            >
+                              <ChartTypeIcon type={type} size={20} />
+                            </ChartTypeOption>
+                          ))}
+                        </ChartTypeDropdownPanel>
+                      )}
+                    </ChartTypeDropdownRoot>
                     <span
                       style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
                       onClick={() => {
@@ -637,96 +818,49 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
                           </RadioLabel>
                         </RadioGroup>
                       </fieldset>
-                      <div className={classes.chartPlotArea}>
-                      <ResponsiveContainer width="100%" height={240}>
-                        <BarChart
-                          data={filteredData[dataset]}
-                          margin={{ 
-                            top: 20, 
-                            right: 30, 
-                            left: 10, 
-                            bottom: requiresCompactSpacing(dataset) ? 12 : 0 
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={true} vertical={false} />
-                          <XAxis
-                            dataKey="name"
-                            interval={0}
-                            angle={0}
-                            textAnchor="middle"
-                            height={50}
-                            tick={(props) => {
-                           
-                              const dataLength = (filteredData[dataset] && filteredData[dataset].length) || 1;
-                              const estimatedChartWidth = 400; // Approximate width of chart area
-                              const availableWidth = (estimatedChartWidth / dataLength) * 0.9; // 90% to leave padding
-                              
-                            
-                              let xFontSize = 10;
-                              let xLineHeight = 11;
-                              let xLetterSpacing = 0;
-                              
-                              if (requiresCompactSpacing(dataset)) {
-                                xFontSize = 10;
-                                xLineHeight = 10;
-                              }
-                              
-                              return <CustomXAxisTick {...props} width={availableWidth} fontSize={xFontSize} lineHeight={xLineHeight} letterSpacing={xLetterSpacing} />;
-                            }}
-                          />
-                          <YAxis
-                            domain={[0, 'dataMax']}
-                            tickFormatter={(value) => {
-                              const num = Number(value);
-                              const formatted = num % 1 === 0 ? num : num.toFixed(1);
-                              return viewType[dataset] === 'percentage' ? `${formatted}%` : formatted;
-                            }} 
-                            tick={{ 
-                              fontSize: 11, 
-                              fill: '#666666', 
-                              fontFamily: 'Nunito', 
-                              fontWeight: 500,
-                              lineHeight: 11,
-                              letterSpacing: 0
-                            }}
-                          />
-                          <Tooltip content={<CustomChartTooltip viewType={viewType[dataset]} cellHoverRef={cellHover} />} />
-                          {valueA > 0 && (
-                            <Bar dataKey="valueA" maxBarSize={60} stroke="#000" strokeWidth={0.6}>
-                              {filteredData[dataset].map((entry, entryIndex) => (
-                                <Cell key={`cell-${dataset}-${entryIndex}`} fill={entry.colorA} onMouseEnter={() => handleMouseEnter("valueA")} onMouseLeave={handleMouseLeave} />
-                              ))}
-                            </Bar>
-                          )}
-                          {valueB > 0 && (
-                            <Bar dataKey="valueB" maxBarSize={60} stroke="#000" strokeWidth={0.6} >
-                              {filteredData[dataset].map((entry, entryIndex) => (
-                                <Cell key={`cell-${dataset}-${entryIndex}`} fill={entry.colorB} onMouseEnter={() => handleMouseEnter("valueB")} onMouseLeave={handleMouseLeave} />
-                              ))}
-                            </Bar>
-                          )}
-                          {valueC > 0 && (
-                            <Bar dataKey="valueC" maxBarSize={60} stroke="#000" strokeWidth={0.6}>
-                              {filteredData[dataset].map((entry, entryIndex) => (
-                                <Cell key={`cell-${dataset}-${entryIndex}`} fill={entry.colorC} onMouseEnter={() => handleMouseEnter("valueC")} onMouseLeave={handleMouseLeave} />
-                              ))}
-                            </Bar>)}
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <div
+                        className={classes.chartPlotArea}
+                        style={{ minHeight: plotH, height: plotH }}
+                      >
+                        <HistogramDatasetChart
+                          rows={filteredData[dataset]}
+                          viewType={viewType[dataset]}
+                          chartType={chartVisualByDataset[dataset] || DEFAULT_CHART_TYPE}
+                          valueA={valueA}
+                          valueB={valueB}
+                          valueC={valueC}
+                          compact={requiresCompactSpacing(dataset)}
+                          height={plotH}
+                          width="100%"
+                          estimatedChartWidth={estimatedChartW}
+                          cellHover={cellHover}
+                          handleMouseEnter={handleMouseEnter}
+                          handleMouseLeave={handleMouseLeave}
+                          xAxisHeight={50}
+                          c1Name={c1Name || 'Cohort A'}
+                          c2Name={c2Name || 'Cohort B'}
+                          c3Name={c3Name || 'Cohort C'}
+                        />
                       </div>
                     </>
                   ) : (
                     allInputsEmpty ? (
-                      <div style={{ width: '100%', height: '200px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                      <div style={{ width: '100%', height: plotH, minHeight: plotH, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                         <img src={nullImages[dataset]} alt="No data" style={{ maxWidth: '100%', maxHeight: '100%' }} />
                       </div>) : (
-                      <div style={{ width: '100%', height: '200px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
+                      <div style={{ width: '100%', height: plotH, minHeight: plotH, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
                         <NoDataCard />
                       </div>
                     )
                   )}
 
                 </div>
+                <ChartResizeHandle
+                  aria-label={`Resize ${titles[dataset] || 'chart'} card`}
+                  title="Drag to resize chart"
+                  onMouseDown={(ev) => handleHistogramCardResizeStart(ev, dataset)}
+                  style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
+                />
               </ChartWrapper>
 
             );
@@ -753,6 +887,11 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '', survival
           c1={c1}
           c2={c2}
           c3={c3}
+          c1Name={c1Name}
+          c2Name={c2Name}
+          c3Name={c3Name}
+          chartVisualByDataset={chartVisualByDataset}
+          setChartVisualByDataset={setChartVisualByDataset}
         />
       )}
 

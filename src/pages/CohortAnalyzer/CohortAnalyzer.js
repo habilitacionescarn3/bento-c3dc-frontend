@@ -5,7 +5,6 @@ import { configColumn } from "../inventory/tabs/tableConfig/Column";
 import { themeConfig } from "../studies/tableConfig/Theme";
 import { onCreateNewCohort, onDeleteAllCohort, onDeleteSingleCohort } from "../../components/CohortSelectorState/store/action";
 import { tableConfig, analyzer_tables } from "../../bento/cohortAnalyzerPageData";
-import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
 import Stats from '../../components/Stats/GlobalStatsController';
 import ConfirmationModal from "../../components/CohortModal/components/shared/ConfirmationModal";
 import NavigateAwayModal from './navigateAwayModal';
@@ -496,12 +495,7 @@ export const CohortAnalyzer = () => {
                                     <div className={classes.vennColumn}>
                                         <div className={classes.rightSideAnalyzerInnerContainer}>
                                             <div className={classes.rightSideAnalyzerHeader2}>
-                                                <p>After selecting cohorts using the Cohort Selector panel (on the left), the Cohort Analyzer Venn diagram will be updated. Click on a Venn diagram segment to view the relevant results. By default, the Venn diagram will use <b>Participant ID</b> to match across cohorts, but other data categories can be selected.
-
-                                                    <ToolTip backgroundColor={'white'} zIndex={3000} title={"The Venn diagram is a stylized representation of selected cohorts. Numbers in parentheses show unique records for the radio button selection, while numbers inside the diagram indicate unique values. The count next to your cohort in the sidebar reflects total participants."} arrow placement="top">
-                                                        <img alt={"question mark icon"} src={questionIcon} width={10} style={{ fontSize: 10, position: 'relative', top: -5, left: -3 }} />
-                                                    </ToolTip>
-                                                </p>
+                                              
                                             </div>
                                             <VennDiagramContainer
                                                 state={state}

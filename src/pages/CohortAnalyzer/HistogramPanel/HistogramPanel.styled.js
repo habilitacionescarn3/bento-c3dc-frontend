@@ -123,6 +123,30 @@ export const ChartWrapper = styled.div`
   }
 `;
 
+/** Bottom-right grip: black triangle + larger hit target for diagonal resize */
+export const ChartResizeHandle = styled.div`
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 20px;
+  height: 20px;
+  cursor: nwse-resize;
+  z-index: 6;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  box-sizing: border-box;
+  padding: 0 3px 3px 0;
+  &::after {
+    content: '';
+    display: block;
+    width: 0;
+    height: 0;
+    border-left: 12px solid transparent;
+    border-bottom: 12px solid #000000;
+  }
+`;
+
 /** Full-row card (e.g. survival / KM plot). Do not use :first-child on ChartWrapper — it stretches the first histogram when survival is off. */
 export const FullWidthChartWrapper = styled(ChartWrapper)`
   width: 100%;
@@ -258,6 +282,74 @@ export const Tab = styled.button`
   color: ${props => props.active ? '#3A7587' : '#666'};
   border-bottom: ${props => props.active ? '2px solid #3A7587' : 'none'};
  
+`;
+
+/** Chart type selector (pie / vertical bar / horizontal bar / line) */
+export const ChartTypeDropdownRoot = styled.div`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+`;
+
+export const ChartTypeDropdownPanel = styled.div`
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 1100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  background: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  min-width: 41px;
+`;
+
+export const ChartTypeOption = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: ${(p) => (p.$active ? '#e8e8e8' : 'transparent')};
+  cursor: pointer;
+  &:hover {
+    background: ${(p) => (p.$active ? '#e0e0e0' : '#f5f5f5')};
+  }
+  &:focus-visible {
+    outline: 2px solid #3a7587;
+    outline-offset: 1px;
+  }
+`;
+
+export const ChartTypeTriggerButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  cursor: pointer;
+  &:hover {
+    background: #f5f5f5;
+  }
+  &:focus-visible {
+    outline: 2px solid #3a7587;
+    outline-offset: 1px;
+  }
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
 `;
 
 export const DownloadDropdown = styled.div`

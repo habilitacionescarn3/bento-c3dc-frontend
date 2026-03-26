@@ -23,18 +23,23 @@ import {
   ModalRadioFieldset,
   ModalRadioGroup,
   ModalNoDataContainer,
+  ChartTypeDropdownRoot,
+  ChartTypeDropdownPanel,
+  ChartTypeOption,
+  ChartTypeTriggerButton,
 } from './HistogramPanel.styled';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import DownloadIcon from "../../../assets/icons/Download_Histogram_icon.svg";
 import DownloadIconBorderless from "../../../assets/icons/download-icon-borderless.svg";
-import CustomChartTooltip from './CustomChartTooltip';
-import CustomXAxisTick from './CustomXAxisTick';
+import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
+import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
 import { KaplanMeierChart } from '@bento-core/kmplot';
 import RiskTable from '@bento-core/risk-table';
 import { DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem, } from './HistogramPanel.styled';
 import * as htmlToImage from 'html-to-image';
 import { NoDataCard } from "../NoDataCard";
 import { kmplotColors } from './HistogramPanel.styled';
+
+const MODAL_DATASET_CHART_HEIGHT = 420;
 
 const ExpandedChartModal = ({
   activeTab,
@@ -54,11 +59,18 @@ const ExpandedChartModal = ({
   timeIntervals,
   c1,
   c2,
-  c3
+  c3,
+  c1Name = '',
+  c2Name = '',
+  c3Name = '',
+  chartVisualByDataset = {},
+  setChartVisualByDataset = () => {},
 }) => {
   const [showDownloadDropdown, setShowDownloadDropdown] = React.useState(false);
+  const [showChartTypeMenu, setShowChartTypeMenu] = React.useState(false);
   const [chartHeight, setChartHeight] = React.useState(350);
   const dropdownRef = useRef(null);
+  const chartTypeMenuRef = useRef(null);
   const survivalAnalysisContainerRef = useRef(null);
   
   // Filter KM plot data to only include selected cohorts - must be at top level
@@ -92,6 +104,18 @@ const ExpandedChartModal = ({
     if (c3 && c3.length > 0) colors.push(kmplotColors.colorC);
     return colors;
   }, [c1, c2, c3]);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (chartTypeMenuRef.current && !chartTypeMenuRef.current.contains(event.target)) {
+        setShowChartTypeMenu(false);
+      }
+    };
+    if (showChartTypeMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showChartTypeMenu]);
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -109,6 +133,13 @@ const ExpandedChartModal = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showDownloadDropdown]);
+
+  useEffect(() => {
+    setShowChartTypeMenu(false);
+  }, [activeTab]);
+
+  const requiresCompactSpacingModal = (dataset) =>
+    dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
 
   // Download functions for survival analysis
   const downloadKaplanMeierChart = (kmChartRef) => {
@@ -361,9 +392,44 @@ const ExpandedChartModal = ({
               </DownloadDropdown>
               </DownloadButtonWrapper>
             ) : (
-              <DownloadButton onClick={() => downloadChart(activeTab,true)}>
-                <DownloadIconImage src={DownloadIcon} alt={"download"} />
-              </DownloadButton>
+              <>
+                <ChartTypeDropdownRoot ref={chartTypeMenuRef}>
+                  <ChartTypeTriggerButton
+                    type="button"
+                    aria-haspopup="listbox"
+                    aria-expanded={showChartTypeMenu}
+                    aria-label="Chart type"
+                    onClick={() => setShowChartTypeMenu((o) => !o)}
+                  >
+                    <ChartTypeIcon
+                      type={chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE}
+                      size={22}
+                    />
+                  </ChartTypeTriggerButton>
+                  {showChartTypeMenu && (
+                    <ChartTypeDropdownPanel role="listbox" aria-label="Choose chart type">
+                      {CHART_TYPE_OPTIONS.map(({ type, label }) => (
+                        <ChartTypeOption
+                          key={type}
+                          type="button"
+                          $active={(chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE) === type}
+                          aria-label={label}
+                          aria-selected={(chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE) === type}
+                          onClick={() => {
+                            setChartVisualByDataset((prev) => ({ ...prev, [activeTab]: type }));
+                            setShowChartTypeMenu(false);
+                          }}
+                        >
+                          <ChartTypeIcon type={type} size={20} />
+                        </ChartTypeOption>
+                      ))}
+                    </ChartTypeDropdownPanel>
+                  )}
+                </ChartTypeDropdownRoot>
+                <DownloadButton onClick={() => downloadChart(activeTab, true)}>
+                  <DownloadIconImage src={DownloadIcon} alt={"download"} />
+                </DownloadButton>
+              </>
             )}
             <CloseButton onClick={() => setExpandedChart(null)}>×</CloseButton>
           </ModalActionButtons>
@@ -425,57 +491,34 @@ const ExpandedChartModal = ({
               </ModalRadioGroup>
                </ModalRadioFieldset>
              {Array.isArray(data[activeTab]) && data[activeTab].length > 0 ? (
-  <ResponsiveContainer id={`expanded-chart-${activeTab}`} width="100%"  height="100%">
-    <BarChart
-      data={data[activeTab]}
-      margin={{ top: 20, right: 30, left: 10, bottom: 35 }}
-    >
-      <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={true} vertical={false} />
-      <XAxis
-        dataKey="name"
-        tick={(props) => {
-          // Calculate available width per tick based on chart width and data points
-          // Modal has more space, so we use a larger estimated width
-          const dataLength = (data[activeTab] && data[activeTab].length) || 1;
-          const estimatedChartWidth = 800; // Larger width for expanded modal
-          const availableWidth = (estimatedChartWidth / dataLength) * 0.9; // 90% to leave padding
-          // Expanded view: both X and Y axis 11/11/0
-          return <CustomXAxisTick {...props} width={availableWidth} fontSize={11} lineHeight={13} letterSpacing={0} />;
-        }}
-        interval={0}
-        angle={0}
-        textAnchor="middle"
-        height={80}
-      />
-      <YAxis
-        domain={[0, 'dataMax']}
-        tickFormatter={(value) => {
-    const num = Number(value);
-    const formatted = num % 1 === 0 ? num : num.toFixed(1);
-    return viewType[activeTab] === 'percentage' ? `${formatted}%` : formatted;
-  }}
-        tick={{ 
-          fontSize: 11, 
-          fill: '#666666', 
-          fontFamily: 'Nunito', 
-          fontWeight: 500,
-          lineHeight: 13,
-          letterSpacing: 0
-        }}
-      />
-      <Tooltip content={(props) => ( <CustomChartTooltip {...props} viewType={viewType[activeTab]} cellHoverRef={cellHover} /> )} />
-       {valueA>0 &&
-      <Bar dataKey="valueA" name="Dataset 1" fill={"#FAE69C"}  maxBarSize={60}  stroke="#000"  onMouseEnter={() => handleMouseEnter("valueA")} onMouseLeave={handleMouseLeave} strokeWidth={0.6} barSize={valueC > 0 ? undefined : 40} />
-
-      }
-      {valueB>0 &&
-      <Bar dataKey="valueB" name="Dataset 2" fill={"#A4E9CB"}  maxBarSize={60}  stroke="#000"  onMouseEnter={() => handleMouseEnter("valueB")} onMouseLeave={handleMouseLeave} strokeWidth={0.6} barSize={valueC > 0 ? undefined : 40} />
-      }
-      {valueC>0 &&
-      <Bar dataKey="valueC" name="Dataset 3" fill={"#A3CCE8"}  maxBarSize={60}  stroke="#000"  onMouseEnter={() => handleMouseEnter("valueC")} onMouseLeave={handleMouseLeave} strokeWidth={0.6} barSize={40} />
-      }
-    </BarChart>
-  </ResponsiveContainer>
+              <div
+                id={`expanded-chart-${activeTab}`}
+                style={{
+                  width: '100%',
+                  height: MODAL_DATASET_CHART_HEIGHT,
+                  minHeight: MODAL_DATASET_CHART_HEIGHT,
+                }}
+              >
+                <HistogramDatasetChart
+                  rows={data[activeTab]}
+                  viewType={viewType[activeTab]}
+                  chartType={chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE}
+                  valueA={valueA}
+                  valueB={valueB}
+                  valueC={valueC}
+                  compact={requiresCompactSpacingModal(activeTab)}
+                  height={MODAL_DATASET_CHART_HEIGHT}
+                  width="100%"
+                  estimatedChartWidth={800}
+                  cellHover={cellHover}
+                  handleMouseEnter={handleMouseEnter}
+                  handleMouseLeave={handleMouseLeave}
+                  xAxisHeight={80}
+                  c1Name={c1Name || 'Cohort A'}
+                  c2Name={c2Name || 'Cohort B'}
+                  c3Name={c3Name || 'Cohort C'}
+                />
+              </div>
 ) : (
   <ModalNoDataContainer>
    <NoDataCard /> 

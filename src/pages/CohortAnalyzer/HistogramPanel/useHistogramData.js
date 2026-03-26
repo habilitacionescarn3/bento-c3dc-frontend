@@ -19,7 +19,11 @@ export const useHistogramData = ({c1=[],c2=[],c3=[]}) => {
 
   const [expandedChart, setExpandedChart] = useState(null);
   const [activeTab, setActiveTab] = useState("sexAtBirth");
-  const [selectedDatasets, setSelectedDatasets] = useState(["sexAtBirth","race"]);
+  const [selectedDatasets, setSelectedDatasets] = useState([
+    "sexAtBirth",
+    "race",
+    "survivalAnalysis",
+  ]);
   const chartRef = useRef({});
   const [fetchedData, setFetchedData] = useState({});
 
@@ -191,7 +195,7 @@ const fetchChartData = async () => {
   useEffect(() => {
     const allInputsEmpty = [c1, c2, c3].every(arr => arr.length === 0);
     if (allInputsEmpty) {
-      setSelectedDatasets(["sexAtBirth", "race"]);
+      setSelectedDatasets(["sexAtBirth", "race", "survivalAnalysis"]);
     }
   }, [c1, c2, c3]);
 

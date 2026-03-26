@@ -20,7 +20,19 @@ function reduceOpacity(rgbaColor, reductionPercentage) {
   return `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
 }
 
-const ChartVenn = ({ intersection, cohortData, setSelectedChart, setSelectedCohortSections,selectedCohortSection,selectedCohort,setGeneralInfo,containerRef,canvasRef }) => {
+const ChartVenn = ({
+  intersection,
+  cohortData,
+  setSelectedChart,
+  setSelectedCohortSections,
+  selectedCohortSection,
+  selectedCohort,
+  setGeneralInfo,
+  containerRef,
+  canvasRef,
+  slotWidth,
+  slotHeight,
+}) => {
   const chartRef = useRef(null);
 
   const [baseSets, setBaseSets] = useState([]);
@@ -175,9 +187,16 @@ useEffect(() => {
   }
   
   if (canvasRef.current && containerRef.current && data && config && config.type) {
-    const maxWidth =  cohortData.length === 2 ? 750 : 800;
-    const maxHeight = cohortData.length === 2 ? 200 : 390;
-    
+    const defaultW = cohortData.length === 2 ? 750 : 800;
+    const defaultH = cohortData.length === 2 ? 200 : 390;
+
+    let maxWidth = defaultW;
+    let maxHeight = defaultH;
+    if (slotWidth != null && slotHeight != null) {
+      maxWidth = Math.max(280, Math.round(slotWidth - 32));
+      maxHeight = Math.max(100, Math.round(slotHeight - 56));
+    }
+
     canvasRef.current.width = maxWidth;
     canvasRef.current.height = maxHeight;
     canvasRef.current.style.width = `${maxWidth}px`;
@@ -189,7 +208,7 @@ useEffect(() => {
   return () => {
     if (chartRef.current) chartRef.current.destroy();
   };
-}, [selectedCohortSection, data, selectedCohort , cohortData]);
+}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight]);
 
   useEffect(() => {
     let updatedStat = {};

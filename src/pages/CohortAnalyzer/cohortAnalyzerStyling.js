@@ -14,9 +14,9 @@ export const useStyle = makeStyles((theme) => ({
         boxShadow: '0 8px 18px rgba(29, 61, 73, 0.16)',
         flex: 1,
         display: 'flex',
-        minHeight: 310,
+        minHeight: 350,
         maxHeight: 620,
-        minWidth: 450,
+        minWidth: 500,
         flexDirection: 'column',
         overflow: 'hidden',
         marginLeft: 6,
@@ -451,18 +451,22 @@ export const useStyle = makeStyles((theme) => ({
         alignItems: 'flex-start',
         gap: 26,
         width: '100%',
-        [theme.breakpoints.down('lg')]: {
+        /* Keep Venn and survival side-by-side until smaller viewports (was lg / 1280px) */
+        [theme.breakpoints.down('md')]: {
             flexDirection: 'column',
             gap: 20,
         },
     },
     vennColumn: {
-        flex: 1,
+        flex: '1 1 50%',
         minWidth: 0,
     },
     survivalBesideVennColumn: {
-        flex: 1,
-        minWidth: 0,
+        flex: '1 1 50%',
+        minWidth: 280,
+        minHeight: 220,
+        display: 'flex',
+        flexDirection: 'column',
         alignSelf: 'stretch',
     },
     rightSideAnalyzerInnerContainer: {
