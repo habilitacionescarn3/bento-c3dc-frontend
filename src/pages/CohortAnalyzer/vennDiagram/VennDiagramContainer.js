@@ -1,4 +1,6 @@
-import React, { useMemo, useState, useRef } from 'react';
+import React, { useMemo, useState, useRef, useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
+import { setPanelSize } from '../store/cohortAnalyzerLayoutActions';
 import CohortAnalyzerHeader from '../components/CohortAnalyzerHeader';
 import ChartVenn from './ChartVenn';
 import placeHolder from '../../../assets/vennDigram/placeHolder.png';
@@ -17,7 +19,11 @@ const VennDiagramContainer = ({
     state,
     containerRef,
     canvasRef,
+    headerPrefix,
+    besideCardDrag,
 }) => {
+    const dispatch = useDispatch();
+    const vennSizeFromStore = useSelector((state) => state.cohortAnalyzerLayout.sizes.venn);
 
     const {
         refreshTableContent,
@@ -43,9 +49,15 @@ const VennDiagramContainer = ({
         return [];
     }, [cohortData, selectedCohorts, state]);
 
-    const [vennContainerSize, setVennContainerSize] = useState(null);
+    const [vennContainerSize, setVennContainerSize] = useState(vennSizeFromStore);
     const vennContainerSizeRef = useRef(null);
     vennContainerSizeRef.current = vennContainerSize;
+
+    useEffect(() => {
+        if (vennSizeFromStore != null) {
+            setVennContainerSize(vennSizeFromStore);
+        }
+    }, [vennSizeFromStore]);
 
     const chartSlot = useMemo(() => {
         if (!vennContainerSize) {
@@ -74,11 +86,15 @@ const VennDiagramContainer = ({
 
         document.body.style.userSelect = 'none';
 
+        let lastW;
+        let lastH;
         const onMove = (moveEvent) => {
             const dx = moveEvent.clientX - startX;
             const dy = moveEvent.clientY - startY;
             const w = Math.round(Math.min(maxW, Math.max(VENN_OUTER_MIN_W, startW + dx)));
             const h = Math.round(Math.min(VENN_OUTER_MAX_H, Math.max(VENN_OUTER_MIN_H, startH + dy)));
+            lastW = w;
+            lastH = h;
             setVennContainerSize({ width: w, height: h });
         };
 
@@ -86,6 +102,9 @@ const VennDiagramContainer = ({
             document.removeEventListener('mousemove', onMove);
             document.removeEventListener('mouseup', onUp);
             document.body.style.userSelect = '';
+            if (lastW != null && lastH != null) {
+                dispatch(setPanelSize({ panel: 'venn', size: { width: lastW, height: lastH } }));
+            }
         };
 
         document.addEventListener('mousemove', onMove);
@@ -137,8 +156,18 @@ const VennDiagramContainer = ({
         }),
     };
 
+    const dragId = besideCardDrag && besideCardDrag.id != null ? besideCardDrag.id : undefined;
+    const dragEnabled = Boolean(besideCardDrag && besideCardDrag.draggable);
+
     return (
-        <div className={classes.chartContainer} style={containerStyle}>
+        <div
+            id={dragId}
+            className={classes.chartContainer}
+            style={containerStyle}
+            draggable={dragEnabled}
+            onDragStart={dragEnabled && besideCardDrag.onDragStart ? besideCardDrag.onDragStart : undefined}
+            onDragEnd={dragEnabled && besideCardDrag.onDragEnd ? besideCardDrag.onDragEnd : undefined}
+        >
             <CohortAnalyzerHeader
                 selectedCohorts={selectedCohorts}
                 nodeIndex={nodeIndex}
@@ -146,6 +175,7 @@ const VennDiagramContainer = ({
                 setRowData={setRowData}
                 handleDownload={handleDownload}
                 classes={classes}
+                headerPrefix={headerPrefix}
             />
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0, width: '100%' }}>
             {refreshTableContent && selectedCohorts.length > 0 &&

@@ -356,6 +356,33 @@ module.exports = function(webpackEnv) {
                 compact: isEnvProduction,
               },
             },
+            // Transpile react-grid-layout and its deps (optional chaining / nullish coalescing)
+            {
+              test: /\.(js|mjs|jsx)$/,
+              include: [
+                path.join(paths.appNodeModules, 'react-grid-layout'),
+                path.join(paths.appNodeModules, 'react-resizable'),
+                path.join(paths.appNodeModules, 'react-draggable'),
+              ],
+              loader: require.resolve('babel-loader'),
+              options: {
+                babelrc: false,
+                configFile: false,
+                presets: [
+                  [
+                    require.resolve('babel-preset-react-app/dependencies'),
+                    { helpers: true },
+                  ],
+                ],
+                plugins: [
+                  require.resolve('@babel/plugin-proposal-optional-chaining'),
+                  require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
+                ],
+                cacheDirectory: true,
+                cacheCompression: isEnvProduction,
+                compact: isEnvProduction,
+              },
+            },
             // Process any JS outside of the app with Babel.
             // Unlike the application JS, we only compile the standard ES features.
             {
@@ -371,6 +398,10 @@ module.exports = function(webpackEnv) {
                     require.resolve('babel-preset-react-app/dependencies'),
                     { helpers: true },
                   ],
+                ],
+                plugins: [
+                  require.resolve('@babel/plugin-proposal-optional-chaining'),
+                  require.resolve('@babel/plugin-proposal-nullish-coalescing-operator'),
                 ],
                 cacheDirectory: true,
                 cacheCompression: isEnvProduction,

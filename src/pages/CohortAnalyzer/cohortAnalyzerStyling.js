@@ -4,8 +4,11 @@ export const useStyle = makeStyles((theme) => ({
     container: {
         width: '100%',
         height: '100%',
+        minWidth: 0,
+        minHeight: 0,
         display: 'flex',
-        flexDirection: 'row'
+        flexDirection: 'row',
+        flex: 1,
     },
     chartContainer: {
         backgroundColor: 'white',
@@ -398,7 +401,11 @@ export const useStyle = makeStyles((theme) => ({
         boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)'
     },
     rightSideAnalyzer: {
+        width: '100%',
         maxWidth: "100%",
+        flex: 1,
+        minWidth: 0,
+        minHeight: 600,
         borderRadius: '35px',
         border: '4px solid #4E8191',
         paddingBottom: 30,
@@ -426,7 +433,27 @@ export const useStyle = makeStyles((theme) => ({
    rightSideContentContainer: {
     padding: '14px 30px 0 30px',
     width: '100%',
-   } ,
+    minWidth: 0,
+    flex: 1,
+    minHeight: 0,
+    display: 'flex',
+    flexDirection: 'column',
+   },
+    gridLayoutContainer: {
+        flex: 1,
+        minWidth: 0,
+        minHeight: 600,
+        width: '100%',
+        height: '100%',
+    },
+    gridItemWrapper: {
+        overflow: 'auto',
+        minHeight: 0,
+        background: 'rgba(255, 255, 255, 0.95)',
+        border: '1px solid #679AAA',
+        borderRadius: 10,
+        padding: 8,
+    },
     rightSideAnalyzerOuterContainer: {
         display: 'flex',
         marginBottom: 45,

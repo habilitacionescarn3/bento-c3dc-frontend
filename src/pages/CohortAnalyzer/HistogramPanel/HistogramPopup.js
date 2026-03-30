@@ -63,8 +63,8 @@ const ExpandedChartModal = ({
   c1Name = '',
   c2Name = '',
   c3Name = '',
-  chartVisualByDataset = {},
-  setChartVisualByDataset = () => {},
+  chartVisualByPanelId = {},
+  onSetChartVisual = () => {},
 }) => {
   const [showDownloadDropdown, setShowDownloadDropdown] = React.useState(false);
   const [showChartTypeMenu, setShowChartTypeMenu] = React.useState(false);
@@ -402,7 +402,7 @@ const ExpandedChartModal = ({
                     onClick={() => setShowChartTypeMenu((o) => !o)}
                   >
                     <ChartTypeIcon
-                      type={chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE}
+                      type={chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE}
                       size={22}
                     />
                   </ChartTypeTriggerButton>
@@ -412,11 +412,11 @@ const ExpandedChartModal = ({
                         <ChartTypeOption
                           key={type}
                           type="button"
-                          $active={(chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE) === type}
+                          $active={(chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE) === type}
                           aria-label={label}
-                          aria-selected={(chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE) === type}
+                          aria-selected={(chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE) === type}
                           onClick={() => {
-                            setChartVisualByDataset((prev) => ({ ...prev, [activeTab]: type }));
+                            onSetChartVisual(activeTab, type);
                             setShowChartTypeMenu(false);
                           }}
                         >
@@ -502,7 +502,7 @@ const ExpandedChartModal = ({
                 <HistogramDatasetChart
                   rows={data[activeTab]}
                   viewType={viewType[activeTab]}
-                  chartType={chartVisualByDataset[activeTab] || DEFAULT_CHART_TYPE}
+                  chartType={chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE}
                   valueA={valueA}
                   valueB={valueB}
                   valueC={valueC}

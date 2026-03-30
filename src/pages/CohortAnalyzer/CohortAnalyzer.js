@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { CohortStateContext } from "../../components/CohortSelectorState/CohortStateContext";
 import { configColumn } from "../inventory/tabs/tableConfig/Column";
 import { themeConfig } from "../studies/tableConfig/Theme";
@@ -11,6 +12,7 @@ import NavigateAwayModal from './navigateAwayModal';
 import { CohortModalContext } from "../../components/CohortModal/CohortModalContext";
 import CohortModal from "../../components/CohortModal/CohortModal";
 import Alert from '@material-ui/lab/Alert';
+import DragIndicatorIcon from '@material-ui/icons/DragIndicator';
 import { useGlobal } from "../../components/Global/GlobalProvider";
 import questionIcon from "../../assets/icons/Question_icon_2.svg";
 import { useStyle } from "./cohortAnalyzerStyling";
@@ -30,10 +32,28 @@ import Histogram from "./HistogramPanel/Histogram";
 import { getJoinedCohortData } from "./CohortAnalyzerUtil/CohortDataTransform";
 import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortData";
 import { exportToCCDIHub } from "../../components/CohortModal/utils";
+import {
+    setTopRowPanelOrder,
+    setBesideStripPanelId,
+    setStripOrder,
+} from './store/cohortAnalyzerLayoutActions';
+import {
+    encodePanelDragPayload,
+    parseDragDataTransfer,
+    CA_PANEL_DRAG_MIME,
+} from './store/panelDnD';
 
 export const CohortAnalyzer = () => {
+    const dispatch = useDispatch();
+    const topRowOrder = useSelector((s) => s.cohortAnalyzerLayout.topRowOrder);
+    const survivalBesideFromSelection = useSelector(
+        (s) => s.cohortAnalyzerLayout.uiFlags.survivalBesideFromSelection,
+    );
+    const stripOrder = useSelector((s) => s.cohortAnalyzerLayout.stripOrder);
+
     const [activeView, setActiveView] = useState("chart");
     const [survivalBesideVennEl, setSurvivalBesideVennEl] = useState(null);
+    const [survivalBesideColumnActive, setSurvivalBesideColumnActive] = useState(false);
     //context
     const cohortAnalyzerContext = useCohortAnalyzer();
     // Cohort selection and list management
@@ -77,12 +97,13 @@ export const CohortAnalyzer = () => {
         showNavigateAwayModal,
         setShowNavigateAwayModal,
         setAlert,
+        alert,
     } = cohortAnalyzerContext;
 
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
     const classes = useStyle();
-    const { state, dispatch } = useContext(CohortStateContext);
+    const { state, dispatch: cohortDispatch } = useContext(CohortStateContext);
     const { setShowCohortModal, showCohortModal, setCurrentCohortChanges, setWarningMessage, warningMessage } = useContext(CohortModalContext);
     const { Notification } = useGlobal();
     const navigate = useNavigate();
@@ -299,7 +320,7 @@ export const CohortAnalyzer = () => {
         if (selectedCohortSection.length > 0 && rowData.length > 0) {
 
             setCurrentCohortChanges(null);
-            dispatch(onCreateNewCohort(
+            cohortDispatch(onCreateNewCohort(
                 "",
                 "",
                 rowData,
@@ -324,7 +345,7 @@ export const CohortAnalyzer = () => {
         // Delete existing example cohorts from state
         exampleCohortKeys.forEach(cohortId => {
             if (state[cohortId]) {
-                dispatch(onDeleteSingleCohort(cohortId));
+                cohortDispatch(onDeleteSingleCohort(cohortId));
             }
         });
 
@@ -355,7 +376,7 @@ export const CohortAnalyzer = () => {
 
         // Create each example cohort
         exampleCohorts.forEach(cohort => {
-            dispatch(onCreateNewCohort(
+            cohortDispatch(onCreateNewCohort(
                 cohort.cohortId,
                 cohort.cohortDescription,
                 cohort.participants,
@@ -407,6 +428,101 @@ export const CohortAnalyzer = () => {
         tableMsg: getTableMessage(cohortList, selectedCohortSection, tableConfig)
     });
 
+    const survivalBesideReorderEnabled = survivalBesideColumnActive;
+
+    const handleBesidePanelDragStart = (e, panelId) => {
+        const payload = encodePanelDragPayload({ kind: panelId, dataset: null });
+        e.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
+        e.dataTransfer.setData('text/plain', panelId);
+        e.dataTransfer.effectAllowed = 'move';
+        if (typeof document === 'undefined') return;
+        const domId = panelId === 'venn' ? 'cohort-analyzer-venn-card' : 'cohort-analyzer-survival-beside-card';
+        const el = document.getElementById(domId);
+        if (el) {
+            e.dataTransfer.setDragImage(el, 32, 20);
+        }
+    };
+
+    const promoteHistogramToBesideSlot = (dataset) => {
+        if (!dataset || dataset === 'survivalAnalysis') return;
+        const order = [...stripOrder];
+        if (order.length > 0) {
+            const idx = order.indexOf(dataset);
+            if (idx >= 0) {
+                order.splice(idx, 1);
+                order.unshift(dataset);
+                dispatch(setStripOrder(order));
+            }
+        }
+        dispatch(setBesideStripPanelId(dataset));
+    };
+
+    const handleBesidePanelDrop = (targetPanelId) => (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const parsed = parseDragDataTransfer(e.dataTransfer);
+        if (!parsed) return;
+
+        if (parsed.kind === 'histogram' && parsed.dataset) {
+            if (!survivalBesideFromSelection) {
+                promoteHistogramToBesideSlot(parsed.dataset);
+            }
+            return;
+        }
+
+        const from = parsed.kind === 'venn' || parsed.kind === 'survival' ? parsed.kind : null;
+        if (from && (from === 'venn' || from === 'survival') && from !== targetPanelId) {
+            const order = [...topRowOrder];
+            const i = order.indexOf(from);
+            const j = order.indexOf(targetPanelId);
+            if (i < 0 || j < 0) return;
+            const tmp = order[i];
+            order[i] = order[j];
+            order[j] = tmp;
+            dispatch(setTopRowPanelOrder(order));
+        }
+    };
+
+    const handleBesidePanelDragOver = (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    };
+
+    const vennHeaderGrab = (
+        <span
+            aria-hidden={!survivalBesideReorderEnabled}
+            title={survivalBesideReorderEnabled ? 'Drag to swap position with survival chart' : undefined}
+            style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                alignSelf: 'center',
+                marginRight: 8,
+                cursor: survivalBesideReorderEnabled ? 'grab' : 'default',
+                opacity: survivalBesideReorderEnabled ? 1 : 0.55,
+            }}
+        >
+            <DragIndicatorIcon style={{ color: 'rgba(255,255,255,0.92)' }} fontSize="small" />
+        </span>
+    );
+
+    const vennBesideDrag = survivalBesideReorderEnabled
+        ? {
+            id: 'cohort-analyzer-venn-card',
+            draggable: true,
+            onDragStart: (e) => handleBesidePanelDragStart(e, 'venn'),
+            onDragEnd: () => {},
+        }
+        : undefined;
+
+    const survivalBesideDrag = survivalBesideReorderEnabled
+        ? {
+            id: 'cohort-analyzer-survival-beside-card',
+            draggable: true,
+            onDragStart: (e) => handleBesidePanelDragStart(e, 'survival'),
+            onDragEnd: () => {},
+        }
+        : undefined;
+
     return (
         <>
             <NavigateAwayModal
@@ -422,7 +538,7 @@ export const CohortAnalyzer = () => {
                     handleDelete(deleteInfo.cohortId,
                         setCohortList,
                         setSelectedCohorts,
-                        dispatch,
+                        cohortDispatch,
                         onDeleteSingleCohort,
                         onDeleteAllCohort,
                         setGeneralInfo,
@@ -492,26 +608,68 @@ export const CohortAnalyzer = () => {
                         {activeView === "chart" && (
                             <div className={classes.chartSummaryMain}>
                                 <div className={classes.vennSurvivalRow}>
-                                    <div className={classes.vennColumn}>
-                                        <div className={classes.rightSideAnalyzerInnerContainer}>
-                                            <div className={classes.rightSideAnalyzerHeader2}>
-                                              
+                                    {!survivalBesideReorderEnabled ? (
+                                        <>
+                                            <div
+                                                className={classes.vennColumn}
+                                                onDragOver={handleBesidePanelDragOver}
+                                                onDrop={handleBesidePanelDrop('venn')}
+                                            >
+                                                <div className={classes.rightSideAnalyzerInnerContainer}>
+                                                    <div className={classes.rightSideAnalyzerHeader2} />
+                                                    <VennDiagramContainer
+                                                        state={state}
+                                                        containerRef={containerRef}
+                                                        canvasRef={canvasRef}
+                                                        classes={classes}
+                                                        headerPrefix={vennHeaderGrab}
+                                                    />
+                                                </div>
                                             </div>
-                                            <VennDiagramContainer
-                                                state={state}
-                                                containerRef={containerRef}
-                                                canvasRef={canvasRef}
-                                                classes={classes}
+                                            <div
+                                                className={classes.survivalBesideVennColumn}
+                                                ref={setSurvivalBesideVennEl}
+                                                onDragOver={handleBesidePanelDragOver}
+                                                onDrop={handleBesidePanelDrop('survival')}
                                             />
-                                        </div>
-                                    </div>
-                                    <div
-                                        className={classes.survivalBesideVennColumn}
-                                        ref={setSurvivalBesideVennEl}
-                                    />
+                                        </>
+                                    ) : (
+                                        topRowOrder.map((panel) => (
+                                            panel === 'venn' ? (
+                                                <div
+                                                    key="venn"
+                                                    className={classes.vennColumn}
+                                                    onDragOver={handleBesidePanelDragOver}
+                                                    onDrop={handleBesidePanelDrop('venn')}
+                                                >
+                                                    <div className={classes.rightSideAnalyzerInnerContainer}>
+                                                        <div className={classes.rightSideAnalyzerHeader2} />
+                                                        <VennDiagramContainer
+                                                            state={state}
+                                                            containerRef={containerRef}
+                                                            canvasRef={canvasRef}
+                                                            classes={classes}
+                                                            headerPrefix={vennHeaderGrab}
+                                                            besideCardDrag={vennBesideDrag}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                <div
+                                                    key="survival"
+                                                    className={classes.survivalBesideVennColumn}
+                                                    ref={setSurvivalBesideVennEl}
+                                                    onDragOver={handleBesidePanelDragOver}
+                                                    onDrop={handleBesidePanelDrop('survival')}
+                                                />
+                                            )
+                                        ))
+                                    )}
                                 </div>
                                 <Histogram
                                     survivalBesideVennTarget={survivalBesideVennEl}
+                                    onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
+                                    besideCardDrag={survivalBesideDrag}
                                     c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
                                     c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
                                     c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
