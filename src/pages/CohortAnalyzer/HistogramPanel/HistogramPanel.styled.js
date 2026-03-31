@@ -1,4 +1,8 @@
 import styled from 'styled-components';
+import {
+  CA_SURVIVAL_CARD_MIN_WIDTH,
+  CA_SURVIVAL_CARD_MIN_HEIGHT,
+} from '../store/cohortAnalyzerLayoutConstants';
 
 export const barColors = {
   colorA: '#FAE69C',
@@ -165,17 +169,19 @@ export const FullWidthChartWrapper = styled(ChartWrapper)`
 /** Survival card when mounted beside the Venn (narrow column; not a full flex-row span). */
 export const SurvivalBesideVennCard = styled.div`
   position: relative;
-  width: 100%;
-  min-width: 0;
-  min-height: 200px;
+  width: auto;
+  max-width: 100%;
+  min-width: ${CA_SURVIVAL_CARD_MIN_WIDTH}px;
+  min-height: ${CA_SURVIVAL_CARD_MIN_HEIGHT}px;
+  box-sizing: border-box;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
   padding: 0;
   border: 1px solid #b8c7cc;
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 8px 18px rgba(29, 61, 73, 0.16);
-  display: flex;
-  flex-direction: column;
-  flex-wrap: wrap;
   transition: transform 120ms ease, box-shadow 120ms ease;
   &:hover {
     transform: translateY(-1px);
@@ -413,23 +419,38 @@ export const SurvivalAnalysisHeader = styled.div`
 
 export const SurvivalAnalysisContainer = styled.div`
   width: 100%;
+  max-width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  box-sizing: border-box;
 `;
 
 export const KmChartWrapper = styled.div`
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  flex-shrink: 0;
   padding-left: 100px;
   margin-top: -20px;
+  overflow: hidden;
+  box-sizing: border-box;
 `;
 
 export const RiskTableWrapper = styled.div`
   width: 100%;
+  max-width: 100%;
   padding-right: 50px;
   margin-top: 10px;
   min-width: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  box-sizing: border-box;
 `;
 
 /** Narrow column next to Venn — reduce padding so KM + risk table fit. */

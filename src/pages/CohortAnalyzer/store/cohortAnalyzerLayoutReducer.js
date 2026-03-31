@@ -12,6 +12,29 @@ import {
   CA_LAYOUT_HYDRATE,
   CA_LAYOUT_RESET,
 } from './cohortAnalyzerLayoutActionTypes';
+import {
+  CA_SURVIVAL_CARD_MIN_WIDTH,
+  CA_SURVIVAL_CARD_MAX_WIDTH,
+  CA_SURVIVAL_CARD_MIN_HEIGHT,
+  CA_SURVIVAL_CARD_MAX_HEIGHT,
+} from './cohortAnalyzerLayoutConstants';
+
+/** Enforce overall survival card min/max width & height (persisted + resize). */
+export function clampSurvivalPanelSize(size) {
+  if (!size || typeof size !== 'object') return size;
+  const w = size.width != null ? Number(size.width) : CA_SURVIVAL_CARD_MIN_WIDTH;
+  const h = size.height != null ? Number(size.height) : CA_SURVIVAL_CARD_MIN_HEIGHT;
+  return {
+    ...size,
+    width: Math.min(CA_SURVIVAL_CARD_MAX_WIDTH, Math.max(CA_SURVIVAL_CARD_MIN_WIDTH, Math.round(w))),
+    height: Math.min(CA_SURVIVAL_CARD_MAX_HEIGHT, Math.max(CA_SURVIVAL_CARD_MIN_HEIGHT, Math.round(h))),
+  };
+}
+
+function sizesWithSurvivalClamped(sizes) {
+  if (!sizes || !sizes.survival) return sizes;
+  return { ...sizes, survival: clampSurvivalPanelSize(sizes.survival) };
+}
 
 /**
  * Data-driven workspace layout: new chart types are added via `panelRegistry` + `stripOrder`
@@ -70,7 +93,10 @@ export function migrateLayoutPayloadToV2(raw) {
       prefsMeta: { ...cohortAnalyzerLayoutInitialState.prefsMeta, ...(raw.prefsMeta || {}) },
       panelRegistry: { ...cohortAnalyzerLayoutInitialState.panelRegistry, ...(raw.panelRegistry || {}) },
       visibility: { ...cohortAnalyzerLayoutInitialState.visibility, ...(raw.visibility || {}) },
-      sizes: { ...cohortAnalyzerLayoutInitialState.sizes, ...(raw.sizes || {}) },
+      sizes: sizesWithSurvivalClamped({
+        ...cohortAnalyzerLayoutInitialState.sizes,
+        ...(raw.sizes || {}),
+      }),
       topRowOrder: Array.isArray(raw.topRowOrder) ? raw.topRowOrder : cohortAnalyzerLayoutInitialState.topRowOrder,
       stripOrder: Array.isArray(raw.stripOrder) ? raw.stripOrder : cohortAnalyzerLayoutInitialState.stripOrder,
       besideStripPanelId:
@@ -103,7 +129,7 @@ export function migrateLayoutPayloadToV2(raw) {
     schemaVersion: 2,
     panelRegistry: raw.panelRegistry || {},
     visibility: raw.visibility || raw.panelVisibility || {},
-    sizes,
+    sizes: sizesWithSurvivalClamped(sizes),
     topRowOrder: raw.topRowOrder || raw.topRowPanelOrder || cohortAnalyzerLayoutInitialState.topRowOrder,
     stripOrder: raw.stripOrder || raw.histogramQueueOrder || [],
     besideStripPanelId:
@@ -157,9 +183,13 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
     case CA_LAYOUT_SET_PANEL_SIZE_FOR_ID: {
       const { panelId, size } = action.payload || {};
       if (!panelId) return state;
+      const merged =
+        panelId === 'survival' && size && typeof size === 'object'
+          ? clampSurvivalPanelSize(size)
+          : size;
       return {
         ...state,
-        sizes: { ...state.sizes, [panelId]: size },
+        sizes: { ...state.sizes, [panelId]: merged },
       };
     }
 
@@ -167,9 +197,13 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
       const panelId = legacyPanelSizeToId(action.payload);
       if (!panelId) return state;
       const size = action.payload && action.payload.size;
+      const merged =
+        panelId === 'survival' && size && typeof size === 'object'
+          ? clampSurvivalPanelSize(size)
+          : size;
       return {
         ...state,
-        sizes: { ...state.sizes, [panelId]: size },
+        sizes: { ...state.sizes, [panelId]: merged },
       };
     }
 
@@ -205,7 +239,10 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
           ...(normalized.panelRegistry || {}),
         },
         visibility: { ...cohortAnalyzerLayoutInitialState.visibility, ...(normalized.visibility || {}) },
-        sizes: { ...cohortAnalyzerLayoutInitialState.sizes, ...(normalized.sizes || {}) },
+        sizes: sizesWithSurvivalClamped({
+          ...cohortAnalyzerLayoutInitialState.sizes,
+          ...(normalized.sizes || {}),
+        }),
         uiFlags: { ...cohortAnalyzerLayoutInitialState.uiFlags, ...(normalized.uiFlags || {}) },
         chartVisualByPanelId: {
           ...cohortAnalyzerLayoutInitialState.chartVisualByPanelId,

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { CohortStateContext } from "../../components/CohortSelectorState/CohortStateContext";
@@ -52,6 +52,8 @@ export const CohortAnalyzer = () => {
     const stripOrder = useSelector((s) => s.cohortAnalyzerLayout.stripOrder);
 
     const [activeView, setActiveView] = useState("chart");
+    const [inlineAddChartOpen, setInlineAddChartOpen] = useState(false);
+    const [inlineAddChartNonce, setInlineAddChartNonce] = useState(0);
     const [survivalBesideVennEl, setSurvivalBesideVennEl] = useState(null);
     const [survivalBesideColumnActive, setSurvivalBesideColumnActive] = useState(false);
     //context
@@ -104,6 +106,12 @@ export const CohortAnalyzer = () => {
     const canvasRef = useRef(null);
     const classes = useStyle();
     const { state, dispatch: cohortDispatch } = useContext(CohortStateContext);
+    const hasParticipantData = useMemo(() => {
+        if (!state || !Array.isArray(selectedCohorts)) return false;
+        return selectedCohorts.some(
+            (id) => state[id] && Array.isArray(state[id].participants) && state[id].participants.length > 0,
+        );
+    }, [state, selectedCohorts]);
     const { setShowCohortModal, showCohortModal, setCurrentCohortChanges, setWarningMessage, warningMessage } = useContext(CohortModalContext);
     const { Notification } = useGlobal();
     const navigate = useNavigate();
@@ -430,6 +438,15 @@ export const CohortAnalyzer = () => {
 
     const survivalBesideReorderEnabled = survivalBesideColumnActive;
 
+    const besidePanelDraggingRef = useRef(null);
+    const [besidePanelDragging, setBesidePanelDragging] = useState(null);
+    const [besideDropTarget, setBesideDropTarget] = useState(null);
+
+    const besideColumnDropTargetStyle =
+        besideDropTarget && besidePanelDragging && besidePanelDragging.kind !== besideDropTarget
+            ? { outline: '2px solid #679AAA', outlineOffset: 4, borderRadius: 10, transition: 'outline 0.12s ease' }
+            : undefined;
+
     const handleBesidePanelDragStart = (e, panelId) => {
         const payload = encodePanelDragPayload({ kind: panelId, dataset: null });
         e.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
@@ -438,9 +455,45 @@ export const CohortAnalyzer = () => {
         if (typeof document === 'undefined') return;
         const domId = panelId === 'venn' ? 'cohort-analyzer-venn-card' : 'cohort-analyzer-survival-beside-card';
         const el = document.getElementById(domId);
-        if (el) {
+        if (el && typeof el.getBoundingClientRect === 'function') {
+            const r = el.getBoundingClientRect();
+            const dragState = {
+                kind: panelId,
+                width: Math.round(r.width),
+                height: Math.round(r.height),
+            };
+            besidePanelDraggingRef.current = dragState;
+            setBesidePanelDragging(dragState);
             e.dataTransfer.setDragImage(el, 32, 20);
+        } else {
+            const dragState = { kind: panelId, width: 400, height: 380 };
+            besidePanelDraggingRef.current = dragState;
+            setBesidePanelDragging(dragState);
         }
+    };
+
+    const handleBesidePanelDragEnd = () => {
+        besidePanelDraggingRef.current = null;
+        setBesidePanelDragging(null);
+        setBesideDropTarget(null);
+    };
+
+    const handleBesideColumnDragOver = (columnId) => (e) => {
+        handleBesidePanelDragOver(e);
+        const d = besidePanelDraggingRef.current;
+        if (!d) return;
+        if (d.kind === columnId) {
+            setBesideDropTarget(null);
+            return;
+        }
+        setBesideDropTarget(columnId);
+    };
+
+    const handleBesideRowDragLeave = (e) => {
+        if (!besidePanelDraggingRef.current) return;
+        const rel = e.relatedTarget;
+        if (rel && e.currentTarget.contains(rel)) return;
+        setBesideDropTarget(null);
     };
 
     const promoteHistogramToBesideSlot = (dataset) => {
@@ -510,7 +563,7 @@ export const CohortAnalyzer = () => {
             id: 'cohort-analyzer-venn-card',
             draggable: true,
             onDragStart: (e) => handleBesidePanelDragStart(e, 'venn'),
-            onDragEnd: () => {},
+            onDragEnd: handleBesidePanelDragEnd,
         }
         : undefined;
 
@@ -519,7 +572,7 @@ export const CohortAnalyzer = () => {
             id: 'cohort-analyzer-survival-beside-card',
             draggable: true,
             onDragStart: (e) => handleBesidePanelDragStart(e, 'survival'),
-            onDragEnd: () => {},
+            onDragEnd: handleBesidePanelDragEnd,
         }
         : undefined;
 
@@ -594,12 +647,21 @@ export const CohortAnalyzer = () => {
                         </div>
                         <div className={classes.chartTopControlRow}>
                             <div className={classes.categoryPills}>
-                                {["Reset View", "SEX AT BIRTH", "RACE", "SURVIVAL ANALYSIS AND RISK", "TREATMENT OUTCOME", "TREATMENT TYPE"].map((label) => (
+                                {["Reset View"].map((label) => (
                                     <button key={label} className={classes.categoryPillButton}>{label}</button>
                                 ))}
                             </div>
                             <div className={classes.chartActionButtons}>
-                                <button className={classes.addChartButton}>
+                                <button
+                                    type="button"
+                                    className={classes.addChartButton}
+                                    style={{ cursor: hasParticipantData ? 'pointer' : 'not-allowed' }}
+                                    disabled={!hasParticipantData}
+                                    onClick={() => {
+                                        setInlineAddChartOpen(true);
+                                        setInlineAddChartNonce((n) => n + 1);
+                                    }}
+                                >
                                     ADD CHART <span>+</span>
                                 </button>
                                 <button className={classes.downloadAllButton}>DOWNLOAD ALL</button>
@@ -607,12 +669,16 @@ export const CohortAnalyzer = () => {
                         </div>
                         {activeView === "chart" && (
                             <div className={classes.chartSummaryMain}>
-                                <div className={classes.vennSurvivalRow}>
+                                <div
+                                    className={classes.vennSurvivalRow}
+                                    onDragLeave={handleBesideRowDragLeave}
+                                >
                                     {!survivalBesideReorderEnabled ? (
                                         <>
                                             <div
                                                 className={classes.vennColumn}
-                                                onDragOver={handleBesidePanelDragOver}
+                                                style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
+                                                onDragOver={handleBesideColumnDragOver('venn')}
                                                 onDrop={handleBesidePanelDrop('venn')}
                                             >
                                                 <div className={classes.rightSideAnalyzerInnerContainer}>
@@ -623,13 +689,15 @@ export const CohortAnalyzer = () => {
                                                         canvasRef={canvasRef}
                                                         classes={classes}
                                                         headerPrefix={vennHeaderGrab}
+                                                        besidePanelDragState={besidePanelDragging}
                                                     />
                                                 </div>
                                             </div>
                                             <div
                                                 className={classes.survivalBesideVennColumn}
+                                                style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
                                                 ref={setSurvivalBesideVennEl}
-                                                onDragOver={handleBesidePanelDragOver}
+                                                onDragOver={handleBesideColumnDragOver('survival')}
                                                 onDrop={handleBesidePanelDrop('survival')}
                                             />
                                         </>
@@ -639,7 +707,8 @@ export const CohortAnalyzer = () => {
                                                 <div
                                                     key="venn"
                                                     className={classes.vennColumn}
-                                                    onDragOver={handleBesidePanelDragOver}
+                                                    style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
+                                                    onDragOver={handleBesideColumnDragOver('venn')}
                                                     onDrop={handleBesidePanelDrop('venn')}
                                                 >
                                                     <div className={classes.rightSideAnalyzerInnerContainer}>
@@ -651,6 +720,7 @@ export const CohortAnalyzer = () => {
                                                             classes={classes}
                                                             headerPrefix={vennHeaderGrab}
                                                             besideCardDrag={vennBesideDrag}
+                                                            besidePanelDragState={besidePanelDragging}
                                                         />
                                                     </div>
                                                 </div>
@@ -658,8 +728,9 @@ export const CohortAnalyzer = () => {
                                                 <div
                                                     key="survival"
                                                     className={classes.survivalBesideVennColumn}
+                                                    style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
                                                     ref={setSurvivalBesideVennEl}
-                                                    onDragOver={handleBesidePanelDragOver}
+                                                    onDragOver={handleBesideColumnDragOver('survival')}
                                                     onDrop={handleBesidePanelDrop('survival')}
                                                 />
                                             )
@@ -670,6 +741,10 @@ export const CohortAnalyzer = () => {
                                     survivalBesideVennTarget={survivalBesideVennEl}
                                     onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
                                     besideCardDrag={survivalBesideDrag}
+                                    besidePanelDragState={besidePanelDragging}
+                                    inlineAddChartOpen={inlineAddChartOpen}
+                                    onInlineAddChartClose={() => setInlineAddChartOpen(false)}
+                                    inlineAddChartNonce={inlineAddChartNonce}
                                     c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
                                     c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
                                     c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}

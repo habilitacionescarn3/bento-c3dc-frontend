@@ -1,4 +1,8 @@
 import { makeStyles } from "@material-ui/core";
+import {
+    CA_SURVIVAL_CARD_MIN_WIDTH,
+    CA_SURVIVAL_CARD_MIN_HEIGHT,
+} from './store/cohortAnalyzerLayoutConstants';
 
 export const useStyle = makeStyles((theme) => ({
     container: {
@@ -475,26 +479,35 @@ export const useStyle = makeStyles((theme) => ({
     vennSurvivalRow: {
         display: 'flex',
         flexDirection: 'row',
+        flexWrap: 'nowrap',
         alignItems: 'flex-start',
         gap: 26,
         width: '100%',
-        /* Keep Venn and survival side-by-side until smaller viewports (was lg / 1280px) */
+        minWidth: 0,
+        overflowX: 'auto',
+        overflowY: 'visible',
+        WebkitOverflowScrolling: 'touch',
+        /* One row on load (no wrap); scroll horizontally if Venn + survival exceed width */
         [theme.breakpoints.down('md')]: {
             flexDirection: 'column',
+            flexWrap: 'nowrap',
+            overflowX: 'visible',
             gap: 20,
         },
     },
     vennColumn: {
-        flex: '1 1 50%',
+        flex: '0 0 auto',
         minWidth: 0,
+        maxWidth: '100%',
     },
     survivalBesideVennColumn: {
-        flex: '1 1 50%',
-        minWidth: 280,
-        minHeight: 220,
+        flex: '0 0 auto',
+        minWidth: CA_SURVIVAL_CARD_MIN_WIDTH,
+        minHeight: CA_SURVIVAL_CARD_MIN_HEIGHT,
+        maxWidth: '100%',
         display: 'flex',
         flexDirection: 'column',
-        alignSelf: 'stretch',
+        alignSelf: 'flex-start',
     },
     rightSideAnalyzerInnerContainer: {
         display: 'flex',

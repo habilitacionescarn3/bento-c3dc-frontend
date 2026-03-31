@@ -199,6 +199,22 @@ const fetchChartData = async () => {
     }
   }, [c1, c2, c3]);
 
+  /** Ensure count/percentage exists for any histogram key (e.g. chart added from Add chart wizard). */
+  useEffect(() => {
+    setViewType((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      selectedDatasets.forEach((key) => {
+        if (key === 'survivalAnalysis') return;
+        if (next[key] == null) {
+          next[key] = 'percentage';
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [selectedDatasets]);
+
   const toCamelCase = (input) => {
   return input
     .split("_")
