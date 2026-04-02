@@ -27,5 +27,6 @@ export const CA_VENN_OUTER_MAX_H = 900;
  */
 export const CA_SURVIVAL_CARD_MIN_WIDTH = 554;
 export const CA_SURVIVAL_CARD_MAX_WIDTH = 2000;
+/** Also the default Venn outer height when no saved layout (top-row peers align). */
 export const CA_SURVIVAL_CARD_MIN_HEIGHT = 444;
 export const CA_SURVIVAL_CARD_MAX_HEIGHT = 980;

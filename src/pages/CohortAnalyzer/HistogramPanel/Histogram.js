@@ -10,15 +10,16 @@ import { KaplanMeierChart } from '@bento-core/kmplot';
 import useKmplot from './useKmplot';
 import useRiskTable from './useRiskTable';
 import { makeStyles } from '@material-ui/core';
-import DragIndicatorIcon from '@material-ui/icons/DragIndicator';
+import histogramChartTitleHandle from '../../../assets/icons/histogramChartTitleHandle.svg';
+import histogramCloseIcon from '../../../assets/icons/closeHistogramChart.svg';
 import { kmplotColors } from './HistogramPanel.styled';
 
 import {
   HistogramContainer, ChartWrapper, FullWidthChartWrapper, SurvivalBesideVennCard, HeaderSection, RadioGroup, RadioInput
   , RadioLabel, ChartActionButtons, ChartTitle,
-  CenterContainer, DatasetSelectionTitle, DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem
+  CenterContainer, DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem
   , SurvivalAnalysisHeader, SurvivalAnalysisContainer, KmChartWrapper, KmChartWrapperBesideVenn,
-  barColors, RiskTableWrapper, RiskTableWrapperBesideVenn, CheckBoxSection,
+  barColors, RiskTableWrapper, RiskTableWrapperBesideVenn,
   ChartTypeDropdownRoot, ChartTypeDropdownPanel, ChartTypeOption, ChartTypeTriggerButton,
   ChartResizeHandle,
 } from './HistogramPanel.styled';
@@ -44,7 +45,6 @@ import {
   patchChartVisuals,
 } from '../store/cohortAnalyzerLayoutActions';
 import {
-  CA_LAYOUT_SLOT,
   CA_PANEL_KIND,
   CA_SURVIVAL_CARD_MIN_WIDTH as SURVIVAL_CARD_MIN_WIDTH,
   CA_SURVIVAL_CARD_MAX_WIDTH as SURVIVAL_CARD_MAX_WIDTH,
@@ -56,15 +56,10 @@ import {
   parseDragDataTransfer,
   CA_PANEL_DRAG_MIME,
 } from '../store/panelDnD';
-
-/** Chart labels — add a key here to register a new strip chart in Redux via upsertPanelRegistry (no schema change). */
-const titles = {
-  survivalAnalysis: 'Survival Analysis',
-  sexAtBirth: 'Sex at Birth',
-  race: 'Race',
-  treatmentType: 'Treatment Type',
-  response: 'Treatment Outcome',
-};
+import {
+  COHORT_ANALYZER_HISTOGRAM_TITLES as titles,
+  buildDefaultCohortAnalyzerPanelRegistry,
+} from '../store/cohortAnalyzerDefaultPanelRegistry';
 
 const nullImages = {
   treatmentType: TreatmentTypePlaceHolder,
@@ -74,26 +69,6 @@ const nullImages = {
   survivalAnalysis: PlaceHolder2,
 };
 
-function buildPanelRegistryFromTitles() {
-  const patch = {
-    [CA_LAYOUT_SLOT.VENN]: {
-      kind: CA_PANEL_KIND.VENN,
-      chartKey: CA_LAYOUT_SLOT.VENN,
-      label: 'Venn diagram',
-    },
-    [CA_LAYOUT_SLOT.SURVIVAL]: {
-      kind: CA_PANEL_KIND.SURVIVAL,
-      chartKey: 'survivalAnalysis',
-      label: titles.survivalAnalysis,
-    },
-  };
-  Object.keys(titles).forEach((key) => {
-    if (key === 'survivalAnalysis') return;
-    patch[key] = { kind: CA_PANEL_KIND.HISTOGRAM, chartKey: key, label: titles[key] };
-  });
-  return patch;
-}
-
 const BESIDE_PEER_DRAG_STYLE = {
   boxShadow: '0 14px 28px rgba(29, 61, 73, 0.28)',
   filter: 'brightness(0.96)',
@@ -101,10 +76,22 @@ const BESIDE_PEER_DRAG_STYLE = {
 };
 
 const HISTOGRAM_CHART_PLOT_HEIGHT = 240;
+/** Plot + header, padding, borders, resize grip (~ full ChartWrapper height minus plot). */
+const HISTOGRAM_CARD_CHROME_HEIGHT = 132;
 const HISTOGRAM_CARD_MIN_WIDTH = 280;
 const HISTOGRAM_CARD_MAX_WIDTH = 2000;
 const HISTOGRAM_PLOT_MIN_HEIGHT = 120;
 const HISTOGRAM_PLOT_MAX_HEIGHT = 800;
+
+function measureDragCardElement(el) {
+  if (!el || typeof el.getBoundingClientRect !== 'function') return null;
+  const r = el.getBoundingClientRect();
+  const width = Math.round(r.width);
+  const height = Math.round(r.height);
+  if (width < 8 || height < 8) return null;
+  return { width, height };
+}
+
 const useStyles = makeStyles({
   cohortNameEllipsis: {
     maxWidth: '120px',
@@ -127,6 +114,25 @@ const useStyles = makeStyles({
     minHeight: HISTOGRAM_CHART_PLOT_HEIGHT,
     flex: 1,
     height: HISTOGRAM_CHART_PLOT_HEIGHT,
+  },
+  headerCloseButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 2,
+    border: 'none',
+    background: 'transparent',
+    cursor: 'pointer',
+    borderRadius: 4,
+    color: '#1C2B33',
+    lineHeight: 0,
+    '&:hover': {
+      backgroundColor: 'rgba(0, 0, 0, 0.06)',
+    },
+    '&:focus-visible': {
+      outline: '2px solid #18677A',
+      outlineOffset: 1,
+    },
   },
 });
 
@@ -198,7 +204,6 @@ const Histogram = ({
     expandedChart,
     setExpandedChart,
     chartRef,
-    handleDatasetChange,
     downloadChart,
   } = useHistogramData({ c1, c2, c3 });
   const {
@@ -260,8 +265,101 @@ const Histogram = ({
   const [survivalCardSize, setSurvivalCardSize] = useState(reduxSurvivalSize);
   const [draggingDataset, setDraggingDataset] = useState(null);
   const [dragOverDataset, setDragOverDataset] = useState(null);
-  /** Pixel size of the card being dragged (from layout); drop slot matches this */
+  /** Pixel size of the card being dragged; drop slot matches this */
   const [draggingCardDimensions, setDraggingCardDimensions] = useState(null);
+  /** Sync size for drop slot before React commits (dragOver can fire in the same frame as dragStart). */
+  const histogramDragSizeRef = useRef(null);
+
+  const estimateHistogramCardDropSize = useCallback((datasetKey) => {
+    if (!datasetKey) return { width: 320, height: 261 };
+    const entry = histogramCardSizes[datasetKey];
+    const w = entry && entry.width != null ? entry.width : 320;
+    const ph = entry && entry.plotHeight != null ? entry.plotHeight : HISTOGRAM_CHART_PLOT_HEIGHT;
+    return {
+      width: w,
+      height: Math.max(261, ph + HISTOGRAM_CARD_CHROME_HEIGHT),
+    };
+  }, [histogramCardSizes]);
+
+  const captureHistogramDragCardSize = useCallback((event, datasetKey) => {
+    const fromTarget = measureDragCardElement(event && event.currentTarget);
+    const fromRef = measureDragCardElement(chartRef.current[datasetKey]);
+    const measured = fromTarget || fromRef;
+    const fallback = estimateHistogramCardDropSize(datasetKey);
+    const dims = measured || fallback;
+    histogramDragSizeRef.current = dims;
+    setDraggingCardDimensions(dims);
+    const el = (event && event.currentTarget) || chartRef.current[datasetKey];
+    requestAnimationFrame(() => {
+      const again = measureDragCardElement(el);
+      if (!again) return;
+      const prev = histogramDragSizeRef.current;
+      if (prev && prev.width === again.width && prev.height === again.height) return;
+      histogramDragSizeRef.current = again;
+      setDraggingCardDimensions(again);
+    });
+  }, [estimateHistogramCardDropSize, chartRef]);
+
+  const clearHistogramDragSize = useCallback(() => {
+    histogramDragSizeRef.current = null;
+    setDraggingCardDimensions(null);
+  }, []);
+
+  /** Strip row: insert dragged histogram before `targetDataset` (same semantics as dashed slot). */
+  const handleStripChartDragOver = useCallback(
+    (event, targetDataset) => {
+      event.preventDefault();
+      const types = Array.from(event.dataTransfer.types || []);
+      if (
+        (!draggingDataset || draggingDataset === targetDataset)
+        && (types.includes(CA_PANEL_DRAG_MIME) || types.includes('text/plain'))
+      ) {
+        event.dataTransfer.dropEffect = 'move';
+        return;
+      }
+      if (!draggingDataset || draggingDataset === targetDataset) return;
+      event.dataTransfer.dropEffect = 'move';
+      setDragOverDataset(targetDataset);
+    },
+    [draggingDataset],
+  );
+
+  const handleStripChartDrop = useCallback(
+    (event, targetDataset) => {
+      event.preventDefault();
+      const parsed = parseDragDataTransfer(event.dataTransfer);
+      if (parsed && (parsed.kind === 'venn' || parsed.kind === 'survival')) {
+        const from = parsed.kind;
+        const order = [...topRowOrder];
+        const i = order.indexOf(from);
+        const other = from === 'venn' ? 'survival' : 'venn';
+        const j = order.indexOf(other);
+        if (i >= 0 && j >= 0) {
+          const tmp = order[i];
+          order[i] = order[j];
+          order[j] = tmp;
+          dispatch(setTopRowPanelOrder(order));
+        }
+        setDraggingDataset(null);
+        setDragOverDataset(null);
+        clearHistogramDragSize();
+        return;
+      }
+      if (!draggingDataset || draggingDataset === targetDataset) return;
+      const nextOrder = [...stripOrder];
+      const fromIndex = nextOrder.indexOf(draggingDataset);
+      const toIndex = nextOrder.indexOf(targetDataset);
+      if (fromIndex < 0 || toIndex < 0) return;
+      const insertIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
+      nextOrder.splice(fromIndex, 1);
+      nextOrder.splice(insertIndex, 0, draggingDataset);
+      dispatch(setStripOrder(nextOrder));
+      setDraggingDataset(null);
+      setDragOverDataset(null);
+      clearHistogramDragSize();
+    },
+    [stripOrder, draggingDataset, topRowOrder, dispatch, clearHistogramDragSize],
+  );
 
   const [inlineAddStep, setInlineAddStep] = useState(1);
   const [inlineSelectedCatalogId, setInlineSelectedCatalogId] = useState(null);
@@ -289,20 +387,46 @@ const Histogram = ({
   }, [chartTypeMenuDataset]);
 
   useEffect(() => {
-    dispatch(upsertPanelRegistry(buildPanelRegistryFromTitles()));
+    dispatch(upsertPanelRegistry(buildDefaultCohortAnalyzerPanelRegistry()));
   }, [dispatch]);
 
   const finalizeInlineAddChart = useCallback(
-    (chartTypeSelected) => {
-      if (chartTypeSelected == null) return;
-      const selectedEntry = ADD_CHART_DATA_TYPES.find((e) => e.id === inlineSelectedCatalogId);
+    (chartTypeSelected, catalogEntryId) => {
+      const catalogId = catalogEntryId != null ? catalogEntryId : inlineSelectedCatalogId;
+      const selectedEntry = ADD_CHART_DATA_TYPES.find((e) => e.id === catalogId);
       if (!selectedEntry || !selectedEntry.datasetKey) return;
+      const skipChartType = Boolean(selectedEntry.skipChartTypeStep);
+      if (!skipChartType && chartTypeSelected == null) return;
+
       const datasetKey = selectedEntry.datasetKey;
+      const label = selectedEntry.label;
+
+      if (datasetKey === 'survivalAnalysis') {
+        if (selectedDatasets.includes('survivalAnalysis')) {
+          if (typeof onInlineAddChartClose === 'function') onInlineAddChartClose();
+          return;
+        }
+        dispatch(
+          upsertPanelRegistry({
+            [datasetKey]: {
+              kind: CA_PANEL_KIND.SURVIVAL,
+              chartKey: datasetKey,
+              label: label || titles[datasetKey] || datasetKey,
+            },
+          }),
+        );
+        setSelectedDatasets((prev) => (prev.includes(datasetKey) ? prev : [...prev, datasetKey]));
+        setActiveTab(datasetKey);
+        if (typeof onInlineAddChartClose === 'function') {
+          onInlineAddChartClose();
+        }
+        return;
+      }
+
       if (stripOrder.includes(datasetKey)) {
         if (typeof onInlineAddChartClose === 'function') onInlineAddChartClose();
         return;
       }
-      const label = selectedEntry.label;
       dispatch(
         upsertPanelRegistry({
           [datasetKey]: {
@@ -325,6 +449,7 @@ const Histogram = ({
     },
     [
       inlineSelectedCatalogId,
+      selectedDatasets,
       dispatch,
       stripOrder,
       onInlineAddChartClose,
@@ -332,6 +457,24 @@ const Histogram = ({
       setActiveTab,
     ],
   );
+
+  const handleRemoveHistogramDataset = useCallback((dataset) => {
+    if (!dataset) return;
+    setShowDownloadDropdown(false);
+    setChartTypeMenuDataset((prev) => (prev === dataset ? null : prev));
+    setExpandedChart((prev) => (prev === dataset ? null : prev));
+    setSelectedDatasets((prev) => {
+      const next = prev.filter((d) => d !== dataset);
+      setActiveTab((tab) => {
+        if (tab !== dataset) return tab;
+        const remainingHisto = next.filter((d) => d !== 'survivalAnalysis');
+        if (remainingHisto.length > 0) return remainingHisto[0];
+        if (next.length > 0) return next[0];
+        return 'sexAtBirth';
+      });
+      return next;
+    });
+  }, [setSelectedDatasets, setActiveTab, setExpandedChart]);
 
   useEffect(() => {
     setHistogramCardSizes(reduxHistogramSizes);
@@ -894,7 +1037,14 @@ const Histogram = ({
             }}
             title={canBesideReorder ? 'Drag to swap with Venn diagram' : undefined}
           >
-            <DragIndicatorIcon fontSize="small" />
+            <img
+              src={histogramChartTitleHandle}
+              alt=""
+              width={14}
+              height={15}
+              aria-hidden
+              style={{ display: 'block', flexShrink: 0 }}
+            />
           </span>
           {'Overall Survival by Diagnosis'}
           <ToolTip
@@ -925,14 +1075,14 @@ const Histogram = ({
               setActiveTab('survivalAnalysis');
             }
           }} style={{ cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}>
-            <img src={ExpandIcon} alt={"expand"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
+            <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
           </span>
           <DownloadDropdown ref={dropdownRef}>
             <span
               onClick={() => !allInputsEmpty && setShowDownloadDropdown(!showDownloadDropdown)}
               style={{ cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}
             >
-              <img src={DownloadIcon} alt={"download"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
+              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
             </span>
             {showDownloadDropdown && !allInputsEmpty && (
               <DownloadDropdownMenu>
@@ -951,6 +1101,17 @@ const Histogram = ({
               </DownloadDropdownMenu>
             )}
           </DownloadDropdown>
+          <button
+            type="button"
+            className={classes.headerCloseButton}
+            aria-label="Remove survival chart from layout"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleRemoveHistogramDataset('survivalAnalysis');
+            }}
+          >
+            <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
+          </button>
         </ChartActionButtons>
       </SurvivalAnalysisHeader>
 
@@ -1005,28 +1166,20 @@ const Histogram = ({
           onDragStart={(event) => {
             setDraggingDataset(besideDatasetForColumn);
             setDragOverDataset(null);
-            const el = chartRef.current[besideDatasetForColumn];
-            if (el && typeof el.getBoundingClientRect === 'function') {
-              const rect = el.getBoundingClientRect();
-              setDraggingCardDimensions({
-                width: Math.round(rect.width),
-                height: Math.round(rect.height),
-              });
-            } else {
-              setDraggingCardDimensions(null);
-            }
+            captureHistogramDragCardSize(event, besideDatasetForColumn);
             const payload = encodePanelDragPayload({ kind: 'histogram', dataset: besideDatasetForColumn });
             event.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
             event.dataTransfer.setData('text/plain', besideDatasetForColumn);
             event.dataTransfer.effectAllowed = 'move';
-            if (el) {
-              event.dataTransfer.setDragImage(el, 32, 20);
+            const imgEl = event.currentTarget || chartRef.current[besideDatasetForColumn];
+            if (imgEl) {
+              event.dataTransfer.setDragImage(imgEl, 32, 20);
             }
           }}
           onDragEnd={() => {
             setDraggingDataset(null);
             setDragOverDataset(null);
-            setDraggingCardDimensions(null);
+            clearHistogramDragSize();
           }}
         >
           {/* Header + chart body mirror strip card — see main row map for full actions */}
@@ -1036,19 +1189,37 @@ const Histogram = ({
                 role="button"
                 tabIndex={0}
                 aria-label={`Drag ${getChartTitle(besideDatasetForColumn) || 'chart'}`}
-                style={{ display: 'inline-flex', alignItems: 'center', marginRight: 6, cursor: allInputsEmpty ? 'not-allowed' : 'grab', opacity: allInputsEmpty ? 0.45 : 1 }}
+                style={{ display: 'inline-flex', alignItems: 'center', marginRight: 9, cursor: allInputsEmpty ? 'not-allowed' : 'grab', opacity: allInputsEmpty ? 0.45 : 1 }}
               >
-                <DragIndicatorIcon fontSize="small" />
+                <img
+                  src={histogramChartTitleHandle}
+                  alt=""
+                  width={14}
+                  height={15}
+                  aria-hidden
+                  style={{ display: 'block', flexShrink: 0 }}
+                />
               </span>
               {getChartTitle(besideDatasetForColumn)}
             </ChartTitle>
             <ChartActionButtons>
               <span style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }} onClick={() => { if (!allInputsEmpty) { setExpandedChart(besideDatasetForColumn); setActiveTab(besideDatasetForColumn); } }}>
-                <img src={ExpandIcon} alt="expand" style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
+                <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
               </span>
               <span style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }} onClick={() => !allInputsEmpty && downloadChart(besideDatasetForColumn, false)}>
-                <img src={DownloadIcon} alt="download" style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
+                <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
               </span>
+              <button
+                type="button"
+                className={classes.headerCloseButton}
+                aria-label={`Remove ${getChartTitle(besideDatasetForColumn) || 'chart'} from layout`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleRemoveHistogramDataset(besideDatasetForColumn);
+                }}
+              >
+                <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
+              </button>
             </ChartActionButtons>
           </HeaderSection>
           <div
@@ -1225,24 +1396,14 @@ const Histogram = ({
             const isDropTarget = dragOverDataset === dataset && draggingDataset && draggingDataset !== dataset;
             const showDropSlotBefore = isDropTarget;
             const dropSlotSize = (() => {
-              if (draggingCardDimensions) {
-                return {
-                  width: draggingCardDimensions.width,
-                  height: draggingCardDimensions.height,
-                };
+              const fromDrag = draggingCardDimensions || histogramDragSizeRef.current;
+              if (fromDrag) {
+                return { width: fromDrag.width, height: fromDrag.height };
               }
               if (!draggingDataset) {
                 return { width: 320, height: 261 };
               }
-              const draggedEntry = histogramCardSizes[draggingDataset];
-              const w = draggedEntry && draggedEntry.width != null ? draggedEntry.width : 320;
-              const ph = draggedEntry && draggedEntry.plotHeight != null
-                ? draggedEntry.plotHeight
-                : HISTOGRAM_CHART_PLOT_HEIGHT;
-              return {
-                width: w,
-                height: Math.max(261, ph + 100),
-              };
+              return estimateHistogramCardDropSize(draggingDataset);
             })();
             const cardDragOpacity = isDraggedCard
               ? 0.42
@@ -1270,6 +1431,8 @@ const Histogram = ({
                 {showDropSlotBefore && (
                   <div
                     aria-hidden
+                    onDragOver={(e) => handleStripChartDragOver(e, dataset)}
+                    onDrop={(e) => handleStripChartDrop(e, dataset)}
                     style={{
                       flexShrink: 0,
                       alignSelf: 'flex-start',
@@ -1300,75 +1463,23 @@ const Histogram = ({
                   onDragStart={(event) => {
                     setDraggingDataset(dataset);
                     setDragOverDataset(null);
-                    const el = chartRef.current[dataset];
-                    if (el && typeof el.getBoundingClientRect === 'function') {
-                      const rect = el.getBoundingClientRect();
-                      setDraggingCardDimensions({
-                        width: Math.round(rect.width),
-                        height: Math.round(rect.height),
-                      });
-                    } else {
-                      setDraggingCardDimensions(null);
-                    }
+                    captureHistogramDragCardSize(event, dataset);
                     const payload = encodePanelDragPayload({ kind: 'histogram', dataset });
                     event.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
                     event.dataTransfer.setData('text/plain', dataset);
                     event.dataTransfer.effectAllowed = 'move';
-                    if (el) {
-                      event.dataTransfer.setDragImage(el, 32, 20);
+                    const imgEl = event.currentTarget || chartRef.current[dataset];
+                    if (imgEl) {
+                      event.dataTransfer.setDragImage(imgEl, 32, 20);
                     }
                   }}
                   onDragEnd={() => {
                     setDraggingDataset(null);
                     setDragOverDataset(null);
-                    setDraggingCardDimensions(null);
+                    clearHistogramDragSize();
                   }}
-                  onDragOver={(event) => {
-                    event.preventDefault();
-                    const types = Array.from(event.dataTransfer.types || []);
-                    if (
-                      (!draggingDataset || draggingDataset === dataset)
-                      && (types.includes(CA_PANEL_DRAG_MIME) || types.includes('text/plain'))
-                    ) {
-                      event.dataTransfer.dropEffect = 'move';
-                      return;
-                    }
-                    if (!draggingDataset || draggingDataset === dataset) return;
-                    event.dataTransfer.dropEffect = 'move';
-                    setDragOverDataset(dataset);
-                  }}
-                  onDrop={(event) => {
-                    event.preventDefault();
-                    const parsed = parseDragDataTransfer(event.dataTransfer);
-                    if (parsed && (parsed.kind === 'venn' || parsed.kind === 'survival')) {
-                      const from = parsed.kind;
-                      const order = [...topRowOrder];
-                      const i = order.indexOf(from);
-                      const other = from === 'venn' ? 'survival' : 'venn';
-                      const j = order.indexOf(other);
-                      if (i >= 0 && j >= 0) {
-                        const tmp = order[i];
-                        order[i] = order[j];
-                        order[j] = tmp;
-                        dispatch(setTopRowPanelOrder(order));
-                      }
-                      setDraggingDataset(null);
-                      setDragOverDataset(null);
-                      setDraggingCardDimensions(null);
-                      return;
-                    }
-                    if (!draggingDataset || draggingDataset === dataset) return;
-                    const nextOrder = [...stripOrder];
-                    const fromIndex = nextOrder.indexOf(draggingDataset);
-                    const toIndex = nextOrder.indexOf(dataset);
-                    if (fromIndex < 0 || toIndex < 0) return;
-                    nextOrder.splice(fromIndex, 1);
-                    nextOrder.splice(toIndex, 0, draggingDataset);
-                    dispatch(setStripOrder(nextOrder));
-                    setDraggingDataset(null);
-                    setDragOverDataset(null);
-                    setDraggingCardDimensions(null);
-                  }}
+                  onDragOver={(e) => handleStripChartDragOver(e, dataset)}
+                  onDrop={(e) => handleStripChartDrop(e, dataset)}
                 >
                 <HeaderSection>
                   <ChartTitle className={`${Array.isArray(data[dataset]) && data[dataset].length > 0 ? '' : 'empty'}`} >
@@ -1388,7 +1499,14 @@ const Histogram = ({
                       }}
                       title="Drag to reorder cards"
                     >
-                      <DragIndicatorIcon fontSize="small" />
+                      <img
+                        src={histogramChartTitleHandle}
+                        alt=""
+                        width={14}
+                        height={15}
+                        aria-hidden
+                        style={{ display: 'block', flexShrink: 0 }}
+                      />
                     </span>
                     {getChartTitle(dataset)}
                     {Array.isArray(filteredData[dataset]) && filteredData[dataset].length > 5 && (
@@ -1457,13 +1575,24 @@ const Histogram = ({
                           setActiveTab(dataset);
                         }
                       }} >
-                      <img src={ExpandIcon} alt={"expand"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
+                      <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
                     </span>
                     <span
                       style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
                       onClick={() => !allInputsEmpty && downloadChart(dataset, false)}>
-                      <img src={DownloadIcon} alt={"download"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
+                      <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
                     </span>
+                    <button
+                      type="button"
+                      className={classes.headerCloseButton}
+                      aria-label={`Remove ${getChartTitle(dataset) || 'chart'} from layout`}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleRemoveHistogramDataset(dataset);
+                      }}
+                    >
+                      <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
+                    </button>
 
                   </ChartActionButtons>
 
@@ -1556,8 +1685,6 @@ const Histogram = ({
             id="chart-inline-add"
             draggable={false}
             style={{
-              width: 'min(100%, 440px)',
-              minWidth: 320,
               flexShrink: 0,
               alignSelf: 'flex-start',
               maxWidth: '100%',
@@ -1578,6 +1705,7 @@ const Histogram = ({
                 setSelectedCatalogId={setInlineSelectedCatalogId}
                 onCompleteWithChartType={finalizeInlineAddChart}
                 existingStripKeys={stripOrder}
+                selectedDatasets={selectedDatasets}
               />
             </div>
           </ChartWrapper>

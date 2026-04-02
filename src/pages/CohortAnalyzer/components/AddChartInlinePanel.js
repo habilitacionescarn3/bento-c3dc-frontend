@@ -4,6 +4,14 @@ import { ADD_CHART_DATA_TYPES, isAddChartDataTypeOnStrip } from '../cohortAnalyz
 import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../HistogramPanel/HistogramChartTypeIcons';
 
 const useStyles = makeStyles(() => ({
+  root: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'stretch',
+    minHeight: 0,
+    width: '100%',
+  },
   header: {
     fontFamily: 'Poppins, sans-serif',
     fontSize: 14,
@@ -20,7 +28,8 @@ const useStyles = makeStyles(() => ({
     listStyle: 'none',
     margin: 0,
     padding: 0,
-    maxHeight: 260,
+    flex: 1,
+    minHeight: 0,
     overflowY: 'auto',
   },
   listItem: {
@@ -40,7 +49,9 @@ const useStyles = makeStyles(() => ({
   listItemDisabled: {
     cursor: 'not-allowed',
     color: '#9E9E9E',
-    opacity: 0.85,
+    opacity: 0.5,
+    filter: 'grayscale(1)',
+    pointerEvents: 'none',
   },
   radioOuter: {
     width: 16,
@@ -67,11 +78,19 @@ const useStyles = makeStyles(() => ({
     color: '#5C5C5C',
     margin: '0 0 10px',
   },
+  step2Body: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: 0,
+    marginTop: 4,
+  },
   chartGrid: {
     display: 'grid',
     gridTemplateColumns: '1fr 1fr',
     gap: 10,
-    marginTop: 4,
+    flex: 1,
+    alignContent: 'start',
   },
   chartCard: {
     borderRadius: 6,
@@ -104,6 +123,7 @@ const AddChartInlinePanel = ({
   setSelectedCatalogId,
   onCompleteWithChartType,
   existingStripKeys = [],
+  selectedDatasets = [],
 }) => {
   const classes = useStyles();
 
@@ -114,13 +134,17 @@ const AddChartInlinePanel = ({
 
   const handlePickDataType = (entry) => {
     if (!entry.available || !entry.datasetKey) return;
-    if (isAddChartDataTypeOnStrip(entry, existingStripKeys)) return;
+    if (isAddChartDataTypeOnStrip(entry, existingStripKeys, selectedDatasets)) return;
+    if (entry.skipChartTypeStep) {
+      onCompleteWithChartType(null, entry.id);
+      return;
+    }
     setSelectedCatalogId(entry.id);
     setStep(2);
   };
 
   return (
-    <div>
+    <div className={classes.root}>
       <p className={classes.header}>
         {step === 1 ? 'Choose one:' : 'Choose chart type:'}
       </p>
@@ -129,9 +153,21 @@ const AddChartInlinePanel = ({
       {step === 1 && (
         <ul className={classes.list} role="listbox" aria-label="Chart data types">
           {ADD_CHART_DATA_TYPES.map((entry) => {
-            const onStrip = isAddChartDataTypeOnStrip(entry, existingStripKeys);
+            const onStrip = isAddChartDataTypeOnStrip(entry, existingStripKeys, selectedDatasets);
             const disabled = !entry.available || !entry.datasetKey || onStrip;
             const selected = selectedCatalogId === entry.id;
+            const disabledHint = (() => {
+              if (!disabled) return null;
+              if (
+                entry.datasetKey === 'survivalAnalysis'
+                && Array.isArray(selectedDatasets)
+                && selectedDatasets.includes('survivalAnalysis')
+              ) {
+                return 'Already showing';
+              }
+              if (onStrip) return 'Already on chart';
+              return 'Coming soon';
+            })();
             return (
               <li
                 key={entry.id}
@@ -139,7 +175,7 @@ const AddChartInlinePanel = ({
                 aria-selected={selected}
                 aria-disabled={disabled}
                 className={`${classes.listItem} ${disabled ? classes.listItemDisabled : ''}`}
-                onClick={() => handlePickDataType(entry)}
+                onClick={() => !disabled && handlePickDataType(entry)}
                 onKeyDown={(ev) => {
                   if (disabled) return;
                   if (ev.key === 'Enter' || ev.key === ' ') {
@@ -156,9 +192,9 @@ const AddChartInlinePanel = ({
                   {selected ? <span className={classes.radioInner} /> : null}
                 </span>
                 <span>{entry.label}</span>
-                {disabled ? (
+                {disabledHint ? (
                   <span style={{ marginLeft: 'auto', fontSize: 10, color: '#9E9E9E' }}>
-                    {onStrip ? 'Already on chart' : 'Coming soon'}
+                    {disabledHint}
                   </span>
                 ) : null}
               </li>
@@ -168,7 +204,7 @@ const AddChartInlinePanel = ({
       )}
 
       {step === 2 && (
-        <>
+        <div className={classes.step2Body}>
           <p className={classes.hint}>{selectedEntry ? selectedEntry.label : null}</p>
           <div className={classes.chartGrid} role="listbox" aria-label="Chart visualizations">
             {CHART_TYPE_OPTIONS.map(({ type, label }) => (
@@ -197,7 +233,7 @@ const AddChartInlinePanel = ({
               </div>
             ))}
           </div>
-        </>
+        </div>
       )}
     </div>
   );

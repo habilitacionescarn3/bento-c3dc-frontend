@@ -295,6 +295,7 @@ export const ChartTypeDropdownRoot = styled.div`
   position: relative;
   display: inline-flex;
   align-items: center;
+  margin-right: -6px;
 `;
 
 export const ChartTypeDropdownPanel = styled.div`
@@ -544,8 +545,9 @@ export const DownloadButton = styled.span`
 `;
 
 export const DownloadIconImage = styled.img`
-  width: 23px;
-  height: 23px;
+  width: 19px;
+  height: 19px;
+  display: block;
 `;
 
 export const DownloadIconSmall = styled.img`
@@ -571,7 +573,7 @@ export const ModalRadioGroup = styled(RadioGroup)`
   margin-top: 20px;
   display: flex;
   flex-direction: row;
-  background-color: red;
+  
 `;
 
 export const ModalNoDataContainer = styled.div`

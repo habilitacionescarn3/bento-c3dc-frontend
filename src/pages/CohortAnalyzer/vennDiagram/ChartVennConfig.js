@@ -14,6 +14,7 @@ export const hexToRgba = (hex, alpha = 1) => {
 // Constants for color opacity adjustments
 const REDUCED_OPACITY = 0.85; // Opacity for the third color to make it visually distinct
 const THIRD_COLOR_INDEX = 2; // Index of the third color in the array
-export const baseColorArray = ["#F9E28B", "#86E2B9", "#5198C8"].map((color, index) => 
-  hexToRgba(color, index === THIRD_COLOR_INDEX ? REDUCED_OPACITY : 1)
+/** Primary set fills — aligned with cohort analyzer Venn reference (SVG). */
+export const baseColorArray = ['#FAF3CF', '#D2F1E0', '#C9E8FC'].map((color, index) =>
+  hexToRgba(color, index === THIRD_COLOR_INDEX ? REDUCED_OPACITY : 1),
 );

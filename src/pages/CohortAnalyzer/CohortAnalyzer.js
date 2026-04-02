@@ -36,7 +36,10 @@ import {
     setTopRowPanelOrder,
     setBesideStripPanelId,
     setStripOrder,
+    resetCohortAnalyzerLayout,
+    upsertPanelRegistry,
 } from './store/cohortAnalyzerLayoutActions';
+import { buildDefaultCohortAnalyzerPanelRegistry } from './store/cohortAnalyzerDefaultPanelRegistry';
 import {
     encodePanelDragPayload,
     parseDragDataTransfer,
@@ -58,6 +61,7 @@ export const CohortAnalyzer = () => {
     const [survivalBesideColumnActive, setSurvivalBesideColumnActive] = useState(false);
     //context
     const cohortAnalyzerContext = useCohortAnalyzer();
+    const { resetVennWorkspaceUi } = cohortAnalyzerContext;
     // Cohort selection and list management
     const {
         selectedCohorts,
@@ -436,7 +440,10 @@ export const CohortAnalyzer = () => {
         tableMsg: getTableMessage(cohortList, selectedCohortSection, tableConfig)
     });
 
-    const survivalBesideReorderEnabled = survivalBesideColumnActive;
+    /** Portal + survival target ready — enable native drag handles for Venn ↔ survival swap. */
+    const besidePanelDragEnabled = survivalBesideColumnActive;
+    /** Survival chart is on — top row follows Redux `topRowOrder` (not fixed Venn-first layout). */
+    const survivalBesideTopRowUsesOrder = survivalBesideFromSelection;
 
     const besidePanelDraggingRef = useRef(null);
     const [besidePanelDragging, setBesidePanelDragging] = useState(null);
@@ -543,22 +550,21 @@ export const CohortAnalyzer = () => {
 
     const vennHeaderGrab = (
         <span
-            aria-hidden={!survivalBesideReorderEnabled}
-            title={survivalBesideReorderEnabled ? 'Drag to swap position with survival chart' : undefined}
+            aria-hidden={!besidePanelDragEnabled}
+            title={besidePanelDragEnabled ? 'Drag to swap position with survival chart' : undefined}
             style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 alignSelf: 'center',
-                marginRight: 8,
-                cursor: survivalBesideReorderEnabled ? 'grab' : 'default',
-                opacity: survivalBesideReorderEnabled ? 1 : 0.55,
+                cursor: besidePanelDragEnabled ? 'grab' : 'default',
+                opacity: besidePanelDragEnabled ? 1 : 0.55,
             }}
         >
-            <DragIndicatorIcon style={{ color: 'rgba(255,255,255,0.92)' }} fontSize="small" />
+            <DragIndicatorIcon style={{ color: '#5C5C5C' }} fontSize="small" />
         </span>
     );
 
-    const vennBesideDrag = survivalBesideReorderEnabled
+    const vennBesideDrag = besidePanelDragEnabled
         ? {
             id: 'cohort-analyzer-venn-card',
             draggable: true,
@@ -567,7 +573,7 @@ export const CohortAnalyzer = () => {
         }
         : undefined;
 
-    const survivalBesideDrag = survivalBesideReorderEnabled
+    const survivalBesideDrag = besidePanelDragEnabled
         ? {
             id: 'cohort-analyzer-survival-beside-card',
             draggable: true,
@@ -630,142 +636,160 @@ export const CohortAnalyzer = () => {
                         <button className={classes.readmeButton}>README</button>
                     </div>
 
-                    <div className={classes.rightSideContentContainer}>
+                    <div className={classes.summaryViewShell}>
                         <div className={classes.summaryTabs}>
-                            <button
-                                className={`${classes.summaryTab} ${activeView === "chart" ? classes.summaryTabActive : ""}`}
-                                onClick={() => setActiveView("chart")}
-                            >
-                                Chart Summary View
-                            </button>
-                            <button
-                                className={`${classes.summaryTab} ${activeView === "table" ? classes.summaryTabActive : ""}`}
-                                onClick={() => setActiveView("table")}
-                            >
-                                Table View
-                            </button>
-                        </div>
-                        <div className={classes.chartTopControlRow}>
-                            <div className={classes.categoryPills}>
-                                {["Reset View"].map((label) => (
-                                    <button key={label} className={classes.categoryPillButton}>{label}</button>
-                                ))}
-                            </div>
-                            <div className={classes.chartActionButtons}>
                                 <button
                                     type="button"
-                                    className={classes.addChartButton}
-                                    style={{ cursor: hasParticipantData ? 'pointer' : 'not-allowed' }}
-                                    disabled={!hasParticipantData}
-                                    onClick={() => {
-                                        setInlineAddChartOpen(true);
-                                        setInlineAddChartNonce((n) => n + 1);
-                                    }}
+                                    className={`${classes.summaryTab} ${activeView === "chart" ? classes.summaryTabActive : ""}`}
+                                    onClick={() => setActiveView("chart")}
                                 >
-                                    ADD CHART <span>+</span>
+                                    Chart Summary View
                                 </button>
-                                <button className={classes.downloadAllButton}>DOWNLOAD ALL</button>
-                            </div>
-                        </div>
-                        {activeView === "chart" && (
-                            <div className={classes.chartSummaryMain}>
-                                <div
-                                    className={classes.vennSurvivalRow}
-                                    onDragLeave={handleBesideRowDragLeave}
+                                <button
+                                    type="button"
+                                    className={`${classes.summaryTab} ${activeView === "table" ? classes.summaryTabActive : ""}`}
+                                    onClick={() => setActiveView("table")}
                                 >
-                                    {!survivalBesideReorderEnabled ? (
-                                        <>
-                                            <div
-                                                className={classes.vennColumn}
-                                                style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
-                                                onDragOver={handleBesideColumnDragOver('venn')}
-                                                onDrop={handleBesidePanelDrop('venn')}
-                                            >
-                                                <div className={classes.rightSideAnalyzerInnerContainer}>
-                                                    <div className={classes.rightSideAnalyzerHeader2} />
-                                                    <VennDiagramContainer
-                                                        state={state}
-                                                        containerRef={containerRef}
-                                                        canvasRef={canvasRef}
-                                                        classes={classes}
-                                                        headerPrefix={vennHeaderGrab}
-                                                        besidePanelDragState={besidePanelDragging}
-                                                    />
-                                                </div>
+                                    Table View
+                                </button>
+                        </div>
+                        <div className={classes.summaryTabPanel}>
+                            {activeView === "chart" && (
+                                    <>
+                                        <div className={classes.chartTopControlRow}>
+                                            <div className={classes.categoryPills}>
+                                                {['Reset View'].map((label) => (
+                                                    <button
+                                                        key={label}
+                                                        type="button"
+                                                        className={classes.categoryPillButton}
+                                                        onClick={() => {
+                                                            dispatch(resetCohortAnalyzerLayout());
+                                                            dispatch(upsertPanelRegistry(buildDefaultCohortAnalyzerPanelRegistry()));
+                                                            setInlineAddChartOpen(false);
+                                                            resetVennWorkspaceUi();
+                                                        }}
+                                                    >
+                                                        {label}
+                                                    </button>
+                                                ))}
                                             </div>
-                                            <div
-                                                className={classes.survivalBesideVennColumn}
-                                                style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
-                                                ref={setSurvivalBesideVennEl}
-                                                onDragOver={handleBesideColumnDragOver('survival')}
-                                                onDrop={handleBesidePanelDrop('survival')}
-                                            />
-                                        </>
-                                    ) : (
-                                        topRowOrder.map((panel) => (
-                                            panel === 'venn' ? (
-                                                <div
-                                                    key="venn"
-                                                    className={classes.vennColumn}
-                                                    style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
-                                                    onDragOver={handleBesideColumnDragOver('venn')}
-                                                    onDrop={handleBesidePanelDrop('venn')}
+                                            <div className={classes.chartActionButtons}>
+                                                <button
+                                                    type="button"
+                                                    className={classes.addChartButton}
+                                                    style={{ cursor: hasParticipantData ? 'pointer' : 'not-allowed' }}
+                                                    disabled={!hasParticipantData}
+                                                    onClick={() => {
+                                                        setInlineAddChartOpen(true);
+                                                        setInlineAddChartNonce((n) => n + 1);
+                                                    }}
                                                 >
-                                                    <div className={classes.rightSideAnalyzerInnerContainer}>
-                                                        <div className={classes.rightSideAnalyzerHeader2} />
-                                                        <VennDiagramContainer
-                                                            state={state}
-                                                            containerRef={containerRef}
-                                                            canvasRef={canvasRef}
-                                                            classes={classes}
-                                                            headerPrefix={vennHeaderGrab}
-                                                            besideCardDrag={vennBesideDrag}
-                                                            besidePanelDragState={besidePanelDragging}
+                                                    ADD CHART <span>+</span>
+                                                </button>
+                                                <button type="button" className={classes.downloadAllButton}>DOWNLOAD ALL</button>
+                                            </div>
+                                        </div>
+                                        <div className={classes.chartSummaryMain}>
+                                            <div
+                                                className={classes.vennSurvivalRow}
+                                                onDragLeave={handleBesideRowDragLeave}
+                                            >
+                                                {!survivalBesideTopRowUsesOrder ? (
+                                                    <>
+                                                        <div
+                                                            className={classes.vennColumn}
+                                                            style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
+                                                            onDragOver={handleBesideColumnDragOver('venn')}
+                                                            onDrop={handleBesidePanelDrop('venn')}
+                                                        >
+                                                            <div className={classes.rightSideAnalyzerInnerContainer}>
+                                                                <div className={classes.rightSideAnalyzerHeader2} />
+                                                                <VennDiagramContainer
+                                                                    state={state}
+                                                                    containerRef={containerRef}
+                                                                    canvasRef={canvasRef}
+                                                                    classes={classes}
+                                                                    headerPrefix={vennHeaderGrab}
+                                                                    besidePanelDragState={besidePanelDragging}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <div
+                                                            className={classes.survivalBesideVennColumn}
+                                                            style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
+                                                            ref={setSurvivalBesideVennEl}
+                                                            onDragOver={handleBesideColumnDragOver('survival')}
+                                                            onDrop={handleBesidePanelDrop('survival')}
                                                         />
-                                                    </div>
-                                                </div>
-                                            ) : (
-                                                <div
-                                                    key="survival"
-                                                    className={classes.survivalBesideVennColumn}
-                                                    style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
-                                                    ref={setSurvivalBesideVennEl}
-                                                    onDragOver={handleBesideColumnDragOver('survival')}
-                                                    onDrop={handleBesidePanelDrop('survival')}
-                                                />
-                                            )
-                                        ))
-                                    )}
-                                </div>
-                                <Histogram
-                                    survivalBesideVennTarget={survivalBesideVennEl}
-                                    onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
-                                    besideCardDrag={survivalBesideDrag}
-                                    besidePanelDragState={besidePanelDragging}
-                                    inlineAddChartOpen={inlineAddChartOpen}
-                                    onInlineAddChartClose={() => setInlineAddChartOpen(false)}
-                                    inlineAddChartNonce={inlineAddChartNonce}
-                                    c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                                    c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                                    c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                                    c1Name={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].cohortName : ''}
-                                    c2Name={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].cohortName : ''}
-                                    c3Name={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].cohortName : ''}
-                                />
-                            </div>
-                        )}
-                        {activeView === "table" && (
-                            <CohortAnalyzerTableSection
-                                classes={classes}
-                                selectedCohortSection={selectedCohortSection}
-                                questionIcon={questionIcon}
-                                handleClick={handleClick}
-                                handleBuildInExplore={handleBuildInExplore}
-                                handleExportToCCDIHub={handleExportToCCDIHub}
-                                initTblState={initTblState}
-                                themeConfig={cohortAnalyzerThemeConfig}
-                            />
-                        )}
+                                                    </>
+                                                ) : (
+                                                    topRowOrder.map((panel) => (
+                                                        panel === 'venn' ? (
+                                                            <div
+                                                                key="venn"
+                                                                className={classes.vennColumn}
+                                                                style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
+                                                                onDragOver={handleBesideColumnDragOver('venn')}
+                                                                onDrop={handleBesidePanelDrop('venn')}
+                                                            >
+                                                                <div className={classes.rightSideAnalyzerInnerContainer}>
+                                                                    <div className={classes.rightSideAnalyzerHeader2} />
+                                                                    <VennDiagramContainer
+                                                                        state={state}
+                                                                        containerRef={containerRef}
+                                                                        canvasRef={canvasRef}
+                                                                        classes={classes}
+                                                                        headerPrefix={vennHeaderGrab}
+                                                                        besideCardDrag={vennBesideDrag}
+                                                                        besidePanelDragState={besidePanelDragging}
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div
+                                                                key="survival"
+                                                                className={classes.survivalBesideVennColumn}
+                                                                style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
+                                                                ref={setSurvivalBesideVennEl}
+                                                                onDragOver={handleBesideColumnDragOver('survival')}
+                                                                onDrop={handleBesidePanelDrop('survival')}
+                                                            />
+                                                        )
+                                                    ))
+                                                )}
+                                            </div>
+                                            <Histogram
+                                                survivalBesideVennTarget={survivalBesideVennEl}
+                                                onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
+                                                besideCardDrag={survivalBesideDrag}
+                                                besidePanelDragState={besidePanelDragging}
+                                                inlineAddChartOpen={inlineAddChartOpen}
+                                                onInlineAddChartClose={() => setInlineAddChartOpen(false)}
+                                                inlineAddChartNonce={inlineAddChartNonce}
+                                                c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
+                                                c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
+                                                c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
+                                                c1Name={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].cohortName : ''}
+                                                c2Name={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].cohortName : ''}
+                                                c3Name={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].cohortName : ''}
+                                            />
+                                        </div>
+                                    </>
+                            )}
+                            {activeView === "table" && (
+                                    <CohortAnalyzerTableSection
+                                        classes={classes}
+                                        selectedCohortSection={selectedCohortSection}
+                                        questionIcon={questionIcon}
+                                        handleClick={handleClick}
+                                        handleBuildInExplore={handleBuildInExplore}
+                                        handleExportToCCDIHub={handleExportToCCDIHub}
+                                        initTblState={initTblState}
+                                        themeConfig={cohortAnalyzerThemeConfig}
+                                    />
+                            )}
+                        </div>
                     </div>
                 </div>
             </div>
