@@ -2,6 +2,37 @@
 // The value 999 was chosen as a high threshold to ensure font size adjustments are only applied in extreme cases.
 // This threshold was determined based on observed data visualization needs, such as overlapping numbers when numbers are above 999.
 export const DEFAULT_FONT_SIZE_THRESHOLD = 999;
+
+/** Extra space around the Venn plot so cohort labels are not clipped (Chart.js layout padding). */
+export const VENN_CHART_LAYOUT_PADDING = {
+  left: 52,
+  right: 52,
+  top: 44,
+  bottom: 44,
+};
+
+/** Scale applied to canvas width/height so circles + external labels fit inside the card slot. */
+export const VENN_CANVAS_SIZE_SCALE = 0.86;
+
+/**
+ * Max characters of cohort name shown on Venn circles; longer names use `…` (ellipsis).
+ * Does not include the trailing ` (participantCount)`.
+ */
+export const VENN_COHORT_NAME_MAX_CHARS = 13;
+
+/**
+ * Single-line Venn set label: `Name (n)` or `Longer na… (n)` when over {@link VENN_COHORT_NAME_MAX_CHARS}.
+ */
+export function buildVennCohortSetLabel(
+  cohortName,
+  participantCount,
+  maxNameChars = VENN_COHORT_NAME_MAX_CHARS,
+) {
+  const name = String(cohortName || '').trim();
+  const shortName = name.length > maxNameChars ? `${name.slice(0, maxNameChars)}...` : name;
+  return `${shortName} (${participantCount})`;
+}
+
 export const nodes = ["participant_pk","diagnosis","treatment_type"];
 
 

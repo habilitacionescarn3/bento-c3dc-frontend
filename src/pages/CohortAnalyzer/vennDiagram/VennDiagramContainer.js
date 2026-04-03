@@ -13,6 +13,7 @@ import ChartVenn from './ChartVenn';
 import placeHolder from '../../../assets/vennDigram/placeHolder.png';
 import { useCohortAnalyzer } from '../CohortAnalyzerContext';
 import { ChartResizeHandle } from '../HistogramPanel/HistogramPanel.styled';
+import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../HistogramPanel/histogramConstants';
 
 /** Toolbar + divider + prompt + radios (aligned with reference layout). */
 const VENN_CARD_HEADER_RESERVE = 138;
@@ -37,6 +38,9 @@ const VennDiagramContainer = ({
   headerPrefix,
   besideCardDrag,
   besidePanelDragState,
+  chartModalOpen = false,
+  chartModalActiveTab,
+  onExpandVenn,
 }) => {
   const dispatch = useDispatch();
   const vennSizeFromStore = useSelector((s) => s.cohortAnalyzerLayout.sizes.venn);
@@ -47,7 +51,6 @@ const VennDiagramContainer = ({
     nodeIndex,
     cohortData,
     setSelectedChart,
-    refreshSelectedChart,
     setRefreshSelectedChart,
     setSelectedCohortSections,
     selectedCohortSection,
@@ -70,24 +73,6 @@ const VennDiagramContainer = ({
   );
   const vennContainerSizeRef = useRef(null);
   vennContainerSizeRef.current = vennContainerSize;
-  const vennCardShellRef = useRef(null);
-
-  const handleExpandVenn = useCallback(() => {
-    const el = vennCardShellRef.current;
-    if (!el) return;
-    const doc = typeof document !== 'undefined' ? document : null;
-    if (!doc) return;
-    const fsEl = doc.fullscreenElement || doc.webkitFullscreenElement;
-    if (fsEl === el) {
-      const exit = doc.exitFullscreen || doc.webkitExitFullscreen;
-      if (exit) exit.call(doc);
-      return;
-    }
-    const req = el.requestFullscreen || el.webkitRequestFullscreen;
-    if (req) {
-      Promise.resolve(req.call(el)).catch(() => {});
-    }
-  }, []);
 
   useEffect(() => {
     setVennContainerSize(vennSizeFromStore != null ? vennSizeFromStore : VENN_OUTER_DEFAULT);
@@ -169,10 +154,33 @@ const VennDiagramContainer = ({
     }
   };
 
-  const handleSetSelectedChart = (data) => {
+  const handleSetSelectedChart = useCallback((data) => {
     setSelectedChart(data);
-    setRefreshSelectedChart(!refreshSelectedChart);
-  };
+    setRefreshSelectedChart((v) => !v);
+  }, [setSelectedChart, setRefreshSelectedChart]);
+
+  const chartVennProps = useMemo(
+    () => ({
+      intersection: nodeIndex,
+      cohortData: mappedCohortData,
+      setSelectedChart: handleSetSelectedChart,
+      setSelectedCohortSections: (data) => {
+        setSelectedCohortSections(data);
+      },
+      selectedCohortSection,
+      selectedCohort: selectedCohorts,
+      setGeneralInfo,
+    }),
+    [
+      nodeIndex,
+      mappedCohortData,
+      handleSetSelectedChart,
+      selectedCohortSection,
+      selectedCohorts,
+      setGeneralInfo,
+      setSelectedCohortSections,
+    ],
+  );
 
   const containerStyle = {
     position: 'relative',
@@ -199,7 +207,6 @@ const VennDiagramContainer = ({
 
   return (
     <div
-      ref={vennCardShellRef}
       id={dragId}
       className={`${classes.chartContainer} ${classes.vennDiagramCard}`}
       style={containerStyle}
@@ -213,22 +220,15 @@ const VennDiagramContainer = ({
         setNodeIndex={setNodeIndex}
         setRowData={setRowData}
         handleDownload={handleDownload}
-        onExpandVenn={handleExpandVenn}
+        onExpandVenn={onExpandVenn}
         classes={classes}
         headerPrefix={headerPrefix}
       />
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0, width: '100%' }}>
-        {refreshTableContent && selectedCohorts.length > 0 && (
+        {refreshTableContent && selectedCohorts.length > 0
+          && !(chartModalOpen && chartModalActiveTab === CA_EXPANDED_CHART_MODAL_TAB_VENN) && (
           <ChartVenn
-            intersection={nodeIndex}
-            cohortData={mappedCohortData}
-            setSelectedChart={handleSetSelectedChart}
-            setSelectedCohortSections={(data) => {
-              setSelectedCohortSections(data);
-            }}
-            selectedCohortSection={selectedCohortSection}
-            selectedCohort={selectedCohorts}
-            setGeneralInfo={setGeneralInfo}
+            {...chartVennProps}
             containerRef={containerRef}
             canvasRef={canvasRef}
             slotWidth={chartSlot.slotWidth}

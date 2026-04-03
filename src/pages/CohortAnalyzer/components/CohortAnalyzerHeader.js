@@ -1,7 +1,8 @@
 import React from 'react';
-import questionIcon3 from '../../../assets/icons/Question_Icon_3.svg';
+import questionIcon3 from '../../../assets/icons/Question_icon_2.svg';
 import vennToolbarActions from '../../../assets/icons/VennToolbarActions.svg';
 import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
+
 
 /** Hit targets aligned to viewBox 0 0 73 19 (expand ~x 27–46, download ~x 54–73). */
 const VENN_TOOLBAR_ACTION_W = 73;
@@ -74,8 +75,8 @@ const CohortAnalyzerHeader = ({
           />
           <button
             type="button"
-            aria-label="Full screen Venn diagram"
-            title="Full screen"
+            aria-label="Expand Venn diagram"
+            title="Expand chart"
             onClick={() => onExpandVenn && onExpandVenn()}
             style={{
               ...toolbarActionBtn(Boolean(onExpandVenn)),
@@ -107,7 +108,6 @@ const CohortAnalyzerHeader = ({
           </p>
           <ToolTip
             maxWidth="380px"
-            backgroundColor="white"
             zIndex={3000}
             title="The venn diagram is a stylized representation of the selected cohorts and their shared Participant IDs, and are not proportionally accurate,"
             arrow

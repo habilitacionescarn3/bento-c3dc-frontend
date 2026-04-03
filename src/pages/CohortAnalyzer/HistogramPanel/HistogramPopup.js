@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useMemo } from "react";
+import React, { useRef, useEffect, useMemo, useLayoutEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   RadioInput,
@@ -38,6 +38,10 @@ import { DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem, } from '.
 import * as htmlToImage from 'html-to-image';
 import { NoDataCard } from "../NoDataCard";
 import { kmplotColors } from './HistogramPanel.styled';
+import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from './histogramConstants';
+import { useCohortAnalyzer } from '../CohortAnalyzerContext';
+import ChartVenn from '../vennDiagram/ChartVenn';
+import placeHolder from '../../../assets/vennDigram/placeHolder.png';
 
 const MODAL_DATASET_CHART_HEIGHT = 420;
 
@@ -65,14 +69,109 @@ const ExpandedChartModal = ({
   c3Name = '',
   chartVisualByPanelId = {},
   onSetChartVisual = () => {},
+  cohortParticipantState,
+  containerRef,
+  canvasRef,
 }) => {
-  const [showDownloadDropdown, setShowDownloadDropdown] = React.useState(false);
-  const [showChartTypeMenu, setShowChartTypeMenu] = React.useState(false);
-  const [chartHeight, setChartHeight] = React.useState(350);
+  const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
+  const [showChartTypeMenu, setShowChartTypeMenu] = useState(false);
+  const [chartHeight, setChartHeight] = useState(350);
   const dropdownRef = useRef(null);
   const chartTypeMenuRef = useRef(null);
   const survivalAnalysisContainerRef = useRef(null);
-  
+  const vennModalChartAreaRef = useRef(null);
+  const [vennModalSlot, setVennModalSlot] = useState({ slotWidth: 920, slotHeight: 520 });
+
+  const {
+    refreshTableContent,
+    selectedCohorts,
+    nodeIndex,
+    cohortData,
+    setSelectedChart,
+    setRefreshSelectedChart,
+    setSelectedCohortSections,
+    selectedCohortSection,
+    setGeneralInfo,
+    setAlert,
+  } = useCohortAnalyzer();
+
+  const mappedCohortData = useMemo(() => {
+    if (cohortData && selectedCohorts.length > 0 && cohortParticipantState) {
+      const mappingFunction = (cohortId) => (cohortData || cohortParticipantState)[cohortId];
+      return selectedCohorts.map(mappingFunction);
+    }
+    return [];
+  }, [cohortData, selectedCohorts, cohortParticipantState]);
+
+  const handleSetSelectedChartVenn = useCallback((data) => {
+    setSelectedChart(data);
+    setRefreshSelectedChart((v) => !v);
+  }, [setSelectedChart, setRefreshSelectedChart]);
+
+  const chartVennModalProps = useMemo(
+    () => ({
+      intersection: nodeIndex,
+      cohortData: mappedCohortData,
+      setSelectedChart: handleSetSelectedChartVenn,
+      setSelectedCohortSections: (d) => setSelectedCohortSections(d),
+      selectedCohortSection,
+      selectedCohort: selectedCohorts,
+      setGeneralInfo,
+    }),
+    [
+      nodeIndex,
+      mappedCohortData,
+      handleSetSelectedChartVenn,
+      selectedCohortSection,
+      selectedCohorts,
+      setGeneralInfo,
+      setSelectedCohortSections,
+    ],
+  );
+
+  useLayoutEffect(() => {
+    if (activeTab !== CA_EXPANDED_CHART_MODAL_TAB_VENN) return undefined;
+    const el = vennModalChartAreaRef.current;
+    if (!el) return undefined;
+    const measure = () => {
+      const r = el.getBoundingClientRect();
+      setVennModalSlot({
+        slotWidth: Math.max(260, Math.floor(r.width)),
+        slotHeight: Math.max(140, Math.floor(r.height)),
+      });
+    };
+    measure();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (ro) ro.observe(el);
+    window.addEventListener('resize', measure);
+    return () => {
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, [activeTab]);
+
+  const handleVennDownload = useCallback(() => {
+    if (!containerRef || !containerRef.current || !canvasRef || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    const tempCanvas = document.createElement('canvas');
+    const tempCtx = tempCanvas.getContext('2d');
+    tempCanvas.width = canvas.width;
+    tempCanvas.height = canvas.height;
+    tempCtx.fillStyle = 'white';
+    tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+    tempCtx.drawImage(canvas, 0, 0);
+    const link = document.createElement('a');
+    link.download = 'venn-diagram.png';
+    link.href = tempCanvas.toDataURL('image/png');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setAlert({
+      type: 'success',
+      message: 'Confirmed download of Venn Diagram from the Cohort Analyzer by Participant ID',
+    });
+  }, [containerRef, canvasRef, setAlert]);
+
   // Filter KM plot data to only include selected cohorts - must be at top level
   const filteredKmPlotData = useMemo(() => {
     if (!kmPlotData || !Array.isArray(kmPlotData)) return [];
@@ -290,7 +389,11 @@ const ExpandedChartModal = ({
   let valueA = 0;
   let valueB = 0;
   let valueC = 0;
-  if (Array.isArray(data[activeTab])) {
+  if (
+    activeTab !== CA_EXPANDED_CHART_MODAL_TAB_VENN
+    && activeTab !== 'survivalAnalysis'
+    && Array.isArray(data[activeTab])
+  ) {
     data[activeTab].forEach((entry) => {
       valueA += entry.valueA || 0;
       valueB += entry.valueB || 0;
@@ -344,6 +447,12 @@ const ExpandedChartModal = ({
           <ModalHeaderContainer>
           {/* Tab Navigation */}
           <TabContainer>
+            <Tab
+              active={activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN}
+              onClick={() => setActiveTab(CA_EXPANDED_CHART_MODAL_TAB_VENN)}
+            >
+              Venn Diagram
+            </Tab>
             {Object.keys(data).map(dataset => (
               <Tab
                 key={dataset}
@@ -391,6 +500,17 @@ const ExpandedChartModal = ({
                 )}
               </DownloadDropdown>
               </DownloadButtonWrapper>
+            ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
+              <DownloadButton
+                onClick={() => selectedCohorts.length > 0 && handleVennDownload()}
+                style={{
+                  opacity: selectedCohorts.length > 0 ? 1 : 0.45,
+                  cursor: selectedCohorts.length > 0 ? 'pointer' : 'not-allowed',
+                  pointerEvents: selectedCohorts.length > 0 ? 'auto' : 'none',
+                }}
+              >
+                <DownloadIconImage src={DownloadIcon} alt="" />
+              </DownloadButton>
             ) : (
               <>
                 <ChartTypeDropdownRoot ref={chartTypeMenuRef}>
@@ -460,6 +580,37 @@ const ExpandedChartModal = ({
                 </RiskTableModalWrapper>
               </SurvivalAnalysisModalContent>
             </SurvivalAnalysisModalContainer>
+          ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
+            <div
+              ref={vennModalChartAreaRef}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minHeight: 0,
+                overflow: 'auto',
+                boxSizing: 'border-box',
+              }}
+            >
+              {refreshTableContent && selectedCohorts.length > 0 ? (
+                <ChartVenn
+                  {...chartVennModalProps}
+                  containerRef={containerRef}
+                  canvasRef={canvasRef}
+                  slotWidth={vennModalSlot.slotWidth}
+                  slotHeight={vennModalSlot.slotHeight}
+                />
+              ) : (
+                <img
+                  src={placeHolder}
+                  alt=""
+                  style={{ maxWidth: '90%', maxHeight: '70vh', objectFit: 'contain' }}
+                />
+              )}
+            </div>
           ) : (
             <ModalChartContainer>
              <ModalRadioFieldset>

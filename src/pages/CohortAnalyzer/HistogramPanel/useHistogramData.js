@@ -2,7 +2,15 @@ import { useState, useRef, useMemo, useEffect } from "react";
 import { gql } from "@apollo/client";
 import { useApolloClient } from "@apollo/client";
 import { barColors } from "./HistogramPanel.styled";
-export const useHistogramData = ({c1=[],c2=[],c3=[]}) => {
+export const useHistogramData = ({
+  c1 = [],
+  c2 = [],
+  c3 = [],
+  expandedChart,
+  setExpandedChart,
+  activeTab,
+  setActiveTab,
+}) => {
   const viewTypeApiKeys= {
     treatmentType: 'treatment_type',
     response: 'response',
@@ -17,11 +25,10 @@ export const useHistogramData = ({c1=[],c2=[],c3=[]}) => {
     race: "percentage"
   });
 
-  const [expandedChart, setExpandedChart] = useState(null);
-  const [activeTab, setActiveTab] = useState("sexAtBirth");
   const [selectedDatasets, setSelectedDatasets] = useState([
     "sexAtBirth",
     "race",
+    "response",
     "survivalAnalysis",
   ]);
   const chartRef = useRef({});
@@ -195,7 +202,7 @@ const fetchChartData = async () => {
   useEffect(() => {
     const allInputsEmpty = [c1, c2, c3].every(arr => arr.length === 0);
     if (allInputsEmpty) {
-      setSelectedDatasets(["sexAtBirth", "race", "survivalAnalysis"]);
+      setSelectedDatasets(["sexAtBirth", "race", "response", "survivalAnalysis"]);
     }
   }, [c1, c2, c3]);
 

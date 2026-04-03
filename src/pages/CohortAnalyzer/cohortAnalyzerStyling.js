@@ -82,9 +82,9 @@ export const useStyle = makeStyles((theme) => ({
         alignItems: 'center',
         justifyContent: 'space-between',
         width: '100%',
-        minHeight: 44,
-        padding: '12px 14px 10px 16px',
+        padding: '12px 14px 10px 8px',
         boxSizing: 'border-box',
+        borderBottom: '0.5px solid #ADADAD',
     },
     vennToolbarLeading: {
         display: 'flex',
@@ -119,6 +119,8 @@ export const useStyle = makeStyles((theme) => ({
     vennSubHeader: {
         padding: '12px 16px 16px',
         flexShrink: 0,
+        width: '100%',
+
     },
     vennSubHeaderPromptRow: {
         display: 'flex',
@@ -129,9 +131,9 @@ export const useStyle = makeStyles((theme) => ({
     },
     vennSubHeaderPrompt: {
         margin: 0,
-        fontSize: 17,
-        fontFamily: 'Poppins, sans-serif',
-        color: '#1C2B33',
+        fontSize: 16,
+        fontFamily: 'Poppins',
+        color: '#5C5C5C',
         lineHeight: 1.35,
     },
     vennChartRadioContainer: {
@@ -647,7 +649,7 @@ export const useStyle = makeStyles((theme) => ({
         whiteSpace: 'nowrap',
     },
     summaryTabActive: {
-        background: '#EFF5FB',
+        background: '#FFFFFF',
         color: '#000000',
         borderTop: '3px solid #3E7D8E',
         fontWeight: 500,

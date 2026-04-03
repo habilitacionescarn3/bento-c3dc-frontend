@@ -56,7 +56,7 @@ export const CheckBoxSection = styled.div`
 
 export const ChartTitle = styled.h2`
   font-family: Poppins; 
-  font-size: 19px;
+  font-size: 14px;
   font-weight: 400;
   color: #000000;
   margin: 0;
@@ -206,7 +206,7 @@ export const HeaderSection = styled.div`
 export const RadioGroup = styled.div`
   display: flex;
   align-items: center;
-  margin: 0 0 10px 12px;
+  margin: 6px 0 10px 12px;
   gap: 16px;
   justify-content: flex-start;
   flex-direction: row;
@@ -361,7 +361,9 @@ export const ChartTypeTriggerButton = styled.button`
 
 export const DownloadDropdown = styled.div`
   position: relative;
-  display: inline-block;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 `;
 
 export const DownloadDropdownMenu = styled.div`

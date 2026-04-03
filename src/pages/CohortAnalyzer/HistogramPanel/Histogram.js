@@ -1,25 +1,18 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import DownloadIcon from "../../../assets/icons/Download_Histogram_icon.svg";
-import DownloadIconBorderless from "../../../assets/icons/download-icon-borderless.svg";
 import ExpandIcon from "../../../assets/icons/Expand_Histogram_icon.svg";
 import { useHistogramData } from './useHistogramData';
 import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
 import questionIcon from "../../../assets/icons/Question_icon_2.svg";
-import { KaplanMeierChart } from '@bento-core/kmplot';
 import useKmplot from './useKmplot';
 import useRiskTable from './useRiskTable';
-import { makeStyles } from '@material-ui/core';
 import histogramChartTitleHandle from '../../../assets/icons/histogramChartTitleHandle.svg';
 import histogramCloseIcon from '../../../assets/icons/closeHistogramChart.svg';
-import { kmplotColors } from './HistogramPanel.styled';
-
 import {
   HistogramContainer, ChartWrapper, FullWidthChartWrapper, SurvivalBesideVennCard, HeaderSection, RadioGroup, RadioInput
   , RadioLabel, ChartActionButtons, ChartTitle,
-  CenterContainer, DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem
-  , SurvivalAnalysisHeader, SurvivalAnalysisContainer, KmChartWrapper, KmChartWrapperBesideVenn,
-  barColors, RiskTableWrapper, RiskTableWrapperBesideVenn,
+  CenterContainer,
   ChartTypeDropdownRoot, ChartTypeDropdownPanel, ChartTypeOption, ChartTypeTriggerButton,
   ChartResizeHandle,
 } from './HistogramPanel.styled';
@@ -27,10 +20,6 @@ import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetCha
 import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
 import ExpandedChartModal from './HistogramPopup';
 import PlaceHolder2 from '../../../assets/histogram/Placeholder2.svg';
-import TreatmentTypePlaceHolder from '../../../assets/histogram/TreatmentTypePlaceHolder.svg';
-import RiskTable from '@bento-core/risk-table';
-
-import * as htmlToImage from 'html-to-image';
 import { NoDataCard } from '../NoDataCard';
 import AddChartInlinePanel from '../components/AddChartInlinePanel';
 import { ADD_CHART_DATA_TYPES } from '../cohortAnalyzerChartCatalog';
@@ -60,81 +49,25 @@ import {
   COHORT_ANALYZER_HISTOGRAM_TITLES as titles,
   buildDefaultCohortAnalyzerPanelRegistry,
 } from '../store/cohortAnalyzerDefaultPanelRegistry';
-
-const nullImages = {
-  treatmentType: TreatmentTypePlaceHolder,
-  response: TreatmentTypePlaceHolder,
-  sexAtBirth: PlaceHolder2,
-  race: PlaceHolder2,
-  survivalAnalysis: PlaceHolder2,
-};
-
-const BESIDE_PEER_DRAG_STYLE = {
-  boxShadow: '0 14px 28px rgba(29, 61, 73, 0.28)',
-  filter: 'brightness(0.96)',
-  transition: 'box-shadow 0.15s ease, filter 0.15s ease, opacity 0.15s ease',
-};
-
-const HISTOGRAM_CHART_PLOT_HEIGHT = 240;
-/** Plot + header, padding, borders, resize grip (~ full ChartWrapper height minus plot). */
-const HISTOGRAM_CARD_CHROME_HEIGHT = 132;
-const HISTOGRAM_CARD_MIN_WIDTH = 280;
-const HISTOGRAM_CARD_MAX_WIDTH = 2000;
-const HISTOGRAM_PLOT_MIN_HEIGHT = 120;
-const HISTOGRAM_PLOT_MAX_HEIGHT = 800;
-
-function measureDragCardElement(el) {
-  if (!el || typeof el.getBoundingClientRect !== 'function') return null;
-  const r = el.getBoundingClientRect();
-  const width = Math.round(r.width);
-  const height = Math.round(r.height);
-  if (width < 8 || height < 8) return null;
-  return { width, height };
-}
-
-const useStyles = makeStyles({
-  cohortNameEllipsis: {
-    maxWidth: '120px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    display: 'block',
-  },
-  chartContentWrapper: {
-    margin: 0,
-    width: '100%',
-    flex: 1,
-    minHeight: 0,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'stretch',
-  },
-  chartPlotArea: {
-    width: '100%',
-    minHeight: HISTOGRAM_CHART_PLOT_HEIGHT,
-    flex: 1,
-    height: HISTOGRAM_CHART_PLOT_HEIGHT,
-  },
-  headerCloseButton: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 2,
-    border: 'none',
-    background: 'transparent',
-    cursor: 'pointer',
-    borderRadius: 4,
-    color: '#1C2B33',
-    lineHeight: 0,
-    '&:hover': {
-      backgroundColor: 'rgba(0, 0, 0, 0.06)',
-    },
-    '&:focus-visible': {
-      outline: '2px solid #18677A',
-      outlineOffset: 1,
-    },
-  },
-});
+import {
+  nullImages,
+  BESIDE_PEER_DRAG_STYLE,
+  HISTOGRAM_CHART_PLOT_HEIGHT,
+  HISTOGRAM_CARD_CHROME_HEIGHT,
+  HISTOGRAM_CARD_MIN_WIDTH,
+  HISTOGRAM_CARD_MAX_WIDTH,
+  HISTOGRAM_PLOT_MIN_HEIGHT,
+  HISTOGRAM_PLOT_MAX_HEIGHT,
+} from './histogramConstants';
+import { measureDragCardElement, requiresCompactSpacing } from './histogramLayoutUtils';
+import { useHistogramPanelMuiStyles } from './histogramMuiStyles';
+import {
+  useFilteredKmPlotData,
+  useKmCohortColors,
+  useRiskTableCohortsShape,
+  useFilteredHistogramGraphData,
+} from './hooks/useHistogramDerivedData';
+import { SurvivalAnalysisCardBody } from './SurvivalAnalysisCardBody';
 
 const Histogram = ({
   c1,
@@ -150,8 +83,15 @@ const Histogram = ({
   inlineAddChartOpen = false,
   onInlineAddChartClose,
   inlineAddChartNonce = 0,
+  chartModalExpandedChart,
+  setChartModalExpandedChart,
+  chartModalActiveTab,
+  setChartModalActiveTab,
+  cohortParticipantState,
+  containerRef,
+  canvasRef,
 }) => {
-  const classes = useStyles();
+  const classes = useHistogramPanelMuiStyles();
   const dispatch = useDispatch();
   const stripOrder = useSelector((state) => state.cohortAnalyzerLayout.stripOrder);
   const panelRegistry = useSelector((state) => state.cohortAnalyzerLayout.panelRegistry || {});
@@ -205,7 +145,15 @@ const Histogram = ({
     setExpandedChart,
     chartRef,
     downloadChart,
-  } = useHistogramData({ c1, c2, c3 });
+  } = useHistogramData({
+    c1,
+    c2,
+    c3,
+    expandedChart: chartModalExpandedChart,
+    setExpandedChart: setChartModalExpandedChart,
+    activeTab: chartModalActiveTab,
+    setActiveTab: setChartModalActiveTab,
+  });
   const {
     data: kmPlotData,
     loading: kmLoading,
@@ -216,41 +164,8 @@ const Histogram = ({
     data: riskTableData,
   } = useRiskTable({ c1, c2, c3 });
 
-  // Map cohort colors based on which cohorts are selected - memoized to update when cohorts change
-  const cohortColors = useMemo(() => {
-    const colors = [];
-    if (c1 && c1.length > 0) colors.push(kmplotColors.colorA);
-    if (c2 && c2.length > 0) colors.push(kmplotColors.colorB);
-    if (c3 && c3.length > 0) colors.push(kmplotColors.colorC);
-    return colors;
-  }, [c1, c2, c3]);
-
-  // Filter KM plot data to only include selected cohorts
-  const filteredKmPlotData = useMemo(() => {
-    if (!kmPlotData || !Array.isArray(kmPlotData)) return [];
-
-    const selectedGroups = [];
-    if (c1 && c1.length > 0) selectedGroups.push('c1');
-    if (c2 && c2.length > 0) selectedGroups.push('c2');
-    if (c3 && c3.length > 0) selectedGroups.push('c3');
-
-    // Filter data to only include groups that match selected cohorts
-    return kmPlotData.filter(item => {
-      // Check if the item's group matches any selected cohort
-      // The group field might be 'c1', 'c2', 'c3' or '1', '2', '3' or similar
-      const group = item.group || item.group_id || '';
-      return selectedGroups.some(selectedGroup => {
-        // Handle different group formats: 'c1', '1', 'Cohort 1', etc.
-        const groupStr = String(group).toLowerCase();
-        const selectedStr = selectedGroup.toLowerCase();
-        return groupStr.includes(selectedStr) ||
-          groupStr.includes(selectedStr.replace('c', '')) ||
-          (selectedGroup === 'c1' && (groupStr === '1' || groupStr === 'cohort 1' || groupStr === 'cohort1')) ||
-          (selectedGroup === 'c2' && (groupStr === '2' || groupStr === 'cohort 2' || groupStr === 'cohort2')) ||
-          (selectedGroup === 'c3' && (groupStr === '3' || groupStr === 'cohort 3' || groupStr === 'cohort3'));
-      });
-    });
-  }, [kmPlotData, c1, c2, c3]);
+  const cohortColors = useKmCohortColors(c1, c2, c3);
+  const filteredKmPlotData = useFilteredKmPlotData(kmPlotData, c1, c2, c3);
   const kmChartRef = useRef(null);
   const kmChartRefExpanded = useRef(null);
   const survivalAnalysisContainerRef = useRef(null);
@@ -581,238 +496,19 @@ const Histogram = ({
     onSurvivalBesideColumnActive(active);
   }, [survivalBesideVennTarget, selectedDatasets, onSurvivalBesideColumnActive]);
 
-  // Download function for Kaplan-Meier chart
-  const downloadKaplanMeierChart = (kmChartRef) => {
-    try {
-      if (!kmChartRef.current) return;
-
-      const svgElement = kmChartRef.current.querySelector("svg");
-      if (!svgElement) return;
-
-      const scaleFactor = 2;
-
-      // Get SVG dimensions from viewBox or width/height attributes, fallback to bounding rect
-      let width, height;
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [, , vw, vh] = viewBox.split(/\s+/).map(parseFloat);
-        width = vw || svgElement.width.baseVal.value || svgElement.getBoundingClientRect().width;
-        height = vh || svgElement.height.baseVal.value || svgElement.getBoundingClientRect().height;
-      } else {
-        width = svgElement.width.baseVal.value || svgElement.getBoundingClientRect().width;
-        height = svgElement.height.baseVal.value || svgElement.getBoundingClientRect().height;
-      }
-
-      // Clone SVG and set explicit dimensions to ensure proper rendering
-      const clonedSvg = svgElement.cloneNode(true);
-      clonedSvg.setAttribute('width', width);
-      clonedSvg.setAttribute('height', height);
-      clonedSvg.removeAttribute('style'); // Remove any inline styles that might affect size
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width * scaleFactor;
-      canvas.height = height * scaleFactor;
-      const ctx = canvas.getContext("2d");
-      const TRANSPARENT_COLOR = "#00000000";
-
-      ctx.fillStyle = TRANSPARENT_COLOR;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scaleFactor, scaleFactor);
-
-      const svgData = new XMLSerializer().serializeToString(clonedSvg);
-      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(svgBlob);
-
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-
-        canvas.toBlob((blob) => {
-          const downloadUrl = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = downloadUrl;
-          a.download = `kaplan_meier_chart.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(downloadUrl);
-        }, "image/png");
-      };
-
-      img.src = url;
-      setShowDownloadDropdown(false);
-    } catch (error) {
-      console.error("Error downloading Kaplan-Meier chart:", error);
-    }
-  };
-
-
-  // Download function for Risk table
-  const downloadRiskTable = (riskTableRef) => {
-    try {
-      if (!riskTableRef || !riskTableRef.current) {
-        console.error("Risk table ref not available");
-        return;
-      }
-
-      // Use the ref directly to capture the Risk Table element
-      const tableElement = riskTableRef.current;
-
-      // Store original margin and temporarily remove it
-      const originalMargin = tableElement.style.marginLeft;
-      tableElement.style.marginLeft = '0';
-      tableElement.style.backgroundColor = 'transparent';
-
-      // Generate image from the ref element using html-to-image
-      htmlToImage.toPng(tableElement, {
-        backgroundColor: 'transparent',
-        pixelRatio: 4,
-        quality: 1.0
-      }).then((dataUrl) => {
-        // Restore original margin
-        tableElement.style.marginLeft = originalMargin;
-
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `risk_table.png`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-        }, 100);
-      }).catch(error => {
-        // Restore original margin even on error
-        tableElement.style.marginLeft = originalMargin;
-        console.error("Error using html-to-image:", error);
-        alert("Error downloading Risk table. Please check the console for details.");
-      });
-
-      setShowDownloadDropdown(false);
-    } catch (error) {
-      console.error("Error downloading Risk table:", error);
-      alert("Error downloading Risk table. Please check the console for details.");
-    }
-  };
-
-  // Download both charts as a single combined image
-  const downloadBoth = () => {
-    try {
-      setShowDownloadDropdown(false);
-
-      if (!survivalAnalysisContainerRef.current) {
-        console.error("Survival analysis container ref not available");
-        alert("Container not available for download.");
-        return;
-      }
-
-      const containerElement = survivalAnalysisContainerRef.current;
-
-      htmlToImage.toPng(containerElement, {
-        backgroundColor: 'transparent',
-        pixelRatio: 2,
-        quality: 1.0,
-        useCORS: true,
-        allowTaint: true
-      }).then((dataUrl) => {
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `survival_analysis_combined.png`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-        }, 100);
-      }).catch((error) => {
-        console.error("Error downloading combined chart:", error);
-        alert("Error downloading combined chart. Please check the console for details.");
-      });
-    } catch (error) {
-      console.error("Error downloading combined chart:", error);
-      alert("Error downloading combined chart. Please check the console for details.");
-    }
-  };
-
-  // Transform risk table data to match RiskTable component format
-  const { cohorts, timeIntervals } = useMemo(() => {
-    if (!riskTableData || !riskTableData.cohorts) {
-      return { cohorts: [], timeIntervals: [] };
-    }
-
-    const cohortColors = {
-      'c1': barColors.colorA,
-      'c2': barColors.colorB,
-      'c3': barColors.colorC,
-    };
-
-    const transformedCohorts = riskTableData.cohorts
-      .filter(cohort => {
-        // Only include cohorts that have data and match selected cohorts
-        const cohortKey = cohort.cohort.toLowerCase();
-        return (
-          (cohortKey === 'c1' && c1 && c1.length > 0) ||
-          (cohortKey === 'c2' && c2 && c2.length > 0) ||
-          (cohortKey === 'c3' && c3 && c3.length > 0)
-        );
-      })
-      .map((cohort) => {
-        // Convert survivalData array to data object format
-        const data = {};
-        cohort.survivalData.forEach(item => {
-          // Convert float subjects to integer (e.g., 2.0 -> 2)
-          data[item.group] = Math.round(item.subjects || 0);
-        });
-
-        // Determine the cohort name based on which cohort it is
-        const cohortKey = cohort.cohort.toLowerCase();
-        let cohortName;
-        if (cohortKey === 'c1') cohortName = c1Name || 'Cohort A';
-        else if (cohortKey === 'c2') cohortName = c2Name || 'Cohort B';
-        else if (cohortKey === 'c3') cohortName = c3Name || 'Cohort C';
-
-        return {
-          id: cohortKey,
-          name: cohortName,
-          color: cohortColors[cohort.cohort.toLowerCase()] || '#ADD8E6',
-          data: data,
-        };
-      });
-
-    return {
-      cohorts: transformedCohorts,
-      timeIntervals: riskTableData.timeIntervals || [],
-    };
-  }, [riskTableData, c1, c2, c3, c1Name, c2Name, c3Name]);
+  const { cohorts, timeIntervals } = useRiskTableCohortsShape(
+    riskTableData,
+    c1,
+    c2,
+    c3,
+    c1Name,
+    c2Name,
+    c3Name,
+  );
 
   let data = graphData;
-  const MAX_BARS_DISPLAYED = 6;
-  const MAX_BARS_DISPLAYED_EXPANDED = 21;
   const cellHover = useRef(null);
-  const filteredData = useMemo(() => {
-    if (Object.keys(graphData).length > 0 && selectedDatasets.length > 0) {
-      const otherKey = expandedChart ? 'OtherMany' : 'OtherFew';
-      const maxDisplayed = expandedChart ? MAX_BARS_DISPLAYED_EXPANDED : MAX_BARS_DISPLAYED;
-      const graphDataCopy = JSON.parse(JSON.stringify(graphData));
-
-      selectedDatasets.forEach((dataset) => {
-        // Skip survivalAnalysis as it doesn't have data in graphData
-        if (dataset === 'survivalAnalysis' || !graphDataCopy[dataset]) {
-          return;
-        }
-        const manyOthers = graphDataCopy[dataset].find(item => item.name === otherKey);
-
-        const filteredRegularItems = graphDataCopy[dataset]
-          .filter(item => item.name !== 'OtherFew' && item.name !== 'OtherMany');
-        const regularItems = filteredRegularItems.slice(0, manyOthers ? maxDisplayed - 1 : maxDisplayed);
-        graphDataCopy[dataset] = [...regularItems];
-        if (manyOthers) {
-          graphDataCopy[dataset].push(manyOthers);
-        }
-      })
-      return graphDataCopy;
-    }
-    return graphData;
-  }, [graphData, selectedDatasets, expandedChart]);
+  const filteredData = useFilteredHistogramGraphData(graphData, selectedDatasets, expandedChart);
 
   const besideHistogramBarSums = useMemo(() => {
     const d = besideDatasetForColumn;
@@ -879,11 +575,6 @@ const Histogram = ({
     }
     return { ...base, ...drag };
   }, [survivalCardSize, besideCardDrag, allInputsEmpty, besidePanelDragState]);
-
-  // Helper function to check if dataset requires compact spacing
-  const requiresCompactSpacing = (dataset) => {
-    return dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
-  };
 
   const handleHistogramCardResizeStart = (e, dataset) => {
     if (allInputsEmpty) return;
@@ -995,152 +686,26 @@ const Histogram = ({
     document.addEventListener('mouseup', onUp);
   };
 
-  const renderSurvivalAnalysisBody = (besideVenn = false) => {
-    const KmWrap = besideVenn ? KmChartWrapperBesideVenn : KmChartWrapper;
-    const RiskWrap = besideVenn ? RiskTableWrapperBesideVenn : RiskTableWrapper;
-    const survivalHeaderChromePx = 140;
-    const kmPlotMaxPx = 480;
-    const effectiveSurvivalH =
-      survivalCardSize && survivalCardSize.height != null
-        ? Math.min(
-          SURVIVAL_CARD_MAX_HEIGHT,
-          Math.max(SURVIVAL_CARD_MIN_HEIGHT, survivalCardSize.height),
-        )
-        : SURVIVAL_CARD_MIN_HEIGHT;
-    const kmHeight = Math.max(
-      160,
-      Math.min(
-        kmPlotMaxPx,
-        Math.round((effectiveSurvivalH - survivalHeaderChromePx) * 0.65),
-      ),
-    );
-    const canBesideReorder = Boolean(
-      besideVenn && besideCardDrag && besideCardDrag.draggable,
-    );
-    return (
-    <>
-      <SurvivalAnalysisHeader>
-        <ChartTitle style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
-          <span
-            role="button"
-            tabIndex={0}
-            aria-label={canBesideReorder ? 'Drag to swap position with Venn diagram' : 'Chart reorder handle'}
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' || event.key === ' ') event.preventDefault();
-            }}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              marginRight: 6,
-              cursor: allInputsEmpty ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
-              opacity: allInputsEmpty ? 0.45 : 1,
-            }}
-            title={canBesideReorder ? 'Drag to swap with Venn diagram' : undefined}
-          >
-            <img
-              src={histogramChartTitleHandle}
-              alt=""
-              width={14}
-              height={15}
-              aria-hidden
-              style={{ display: 'block', flexShrink: 0 }}
-            />
-          </span>
-          {'Overall Survival by Diagnosis'}
-          <ToolTip
-            maxWidth="235px"
-            border={'1px solid #598ac5'}
-            arrowBorder={'1px solid #598AC5'}
-            title={<div>
-              Participants with unreported age values or whose last diagnosis age is later than their last survival follow-up were excluded to ensure valid survival timelines.
-              <br />
-              <br />
-              Displays survival data based on the earliest diagnosis when multiple diagnoses exist.
-            </div>}
-            placement="top-end"
-            arrow
-            interactive
-            arrowSize="30px"
-          >
-
-            <img alt="Question Icon" src={questionIcon} width={10} style={{ border: "0px", top: -3, position: 'relative', marginLeft: 3 }} />
-
-          </ToolTip>
-        </ChartTitle>
-
-        <ChartActionButtons>
-          <span onClick={() => {
-            if (!allInputsEmpty) {
-              setExpandedChart('survivalAnalysis');
-              setActiveTab('survivalAnalysis');
-            }
-          }} style={{ cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}>
-            <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
-          </span>
-          <DownloadDropdown ref={dropdownRef}>
-            <span
-              onClick={() => !allInputsEmpty && setShowDownloadDropdown(!showDownloadDropdown)}
-              style={{ cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}
-            >
-              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
-            </span>
-            {showDownloadDropdown && !allInputsEmpty && (
-              <DownloadDropdownMenu>
-                <DownloadDropdownItem onClick={() => downloadKaplanMeierChart(kmChartRef)}>
-                  <img src={DownloadIconBorderless} alt="download Kaplan Meier Plot" style={{ width: '10px', height: '12px' }} />
-                  Kaplan Meier Plot
-                </DownloadDropdownItem>
-                <DownloadDropdownItem onClick={() => downloadRiskTable(riskTableRef)}>
-                  <img src={DownloadIconBorderless} alt="download Risk Table" style={{ width: '10px', height: '12px' }} />
-                  Risk Table
-                </DownloadDropdownItem>
-                <DownloadDropdownItem onClick={() => downloadBoth()}>
-                  <img src={DownloadIconBorderless} alt="download Both Kaplan Meier Plot and Risk Table" style={{ width: '10px', height: '12px' }} />
-                  Download Both
-                </DownloadDropdownItem>
-              </DownloadDropdownMenu>
-            )}
-          </DownloadDropdown>
-          <button
-            type="button"
-            className={classes.headerCloseButton}
-            aria-label="Remove survival chart from layout"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRemoveHistogramDataset('survivalAnalysis');
-            }}
-          >
-            <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
-          </button>
-        </ChartActionButtons>
-      </SurvivalAnalysisHeader>
-
-      <SurvivalAnalysisContainer ref={survivalAnalysisContainerRef}>
-        <KmWrap ref={kmChartRef}>
-          <KaplanMeierChart
-            data={filteredKmPlotData}
-            title=""
-            width={"100%"}
-            height={kmHeight}
-            loading={kmLoading}
-            error={kmError}
-            colors={cohortColors}
-            showLabels={false}
-            showLegend={false}
-          />
-        </KmWrap>
-        <RiskWrap ref={riskTableRef}>
-          <RiskTable
-            classes={{ cohortName: classes.cohortNameEllipsis }}
-            cohortNameCharLimit={10}
-            cohorts={cohorts}
-            timeIntervals={timeIntervals}
-          />
-
-        </RiskWrap>
-      </SurvivalAnalysisContainer>
-    </>
-    );
+  const survivalAnalysisBodyProps = {
+    classes,
+    allInputsEmpty,
+    besideCardDrag,
+    survivalCardSize,
+    kmChartRef,
+    survivalAnalysisContainerRef,
+    riskTableRef,
+    filteredKmPlotData,
+    kmLoading,
+    kmError,
+    cohortColors,
+    cohorts,
+    timeIntervals,
+    showDownloadDropdown,
+    setShowDownloadDropdown,
+    dropdownRef,
+    setExpandedChart,
+    setActiveTab,
+    handleRemoveHistogramDataset,
   };
 
   const histogramBesideVennPortal =
@@ -1206,20 +771,22 @@ const Histogram = ({
               <span style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }} onClick={() => { if (!allInputsEmpty) { setExpandedChart(besideDatasetForColumn); setActiveTab(besideDatasetForColumn); } }}>
                 <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
               </span>
-              <span style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }} onClick={() => !allInputsEmpty && downloadChart(besideDatasetForColumn, false)}>
-                <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
-              </span>
-              <button
-                type="button"
-                className={classes.headerCloseButton}
-                aria-label={`Remove ${getChartTitle(besideDatasetForColumn) || 'chart'} from layout`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveHistogramDataset(besideDatasetForColumn);
-                }}
-              >
-                <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
-              </button>
+              <div style={{ display: 'inline-flex', alignItems: 'center', columnGap: 4 }}>
+                <span style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }} onClick={() => !allInputsEmpty && downloadChart(besideDatasetForColumn, false)}>
+                  <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
+                </span>
+                <button
+                  type="button"
+                  className={classes.headerCloseButton}
+                  aria-label={`Remove ${getChartTitle(besideDatasetForColumn) || 'chart'} from layout`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemoveHistogramDataset(besideDatasetForColumn);
+                  }}
+                >
+                  <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
+                </button>
+              </div>
             </ChartActionButtons>
           </HeaderSection>
           <div
@@ -1295,7 +862,7 @@ const Histogram = ({
         onDragEnd={besideCardDrag && besideCardDrag.onDragEnd ? besideCardDrag.onDragEnd : undefined}
         style={survivalBesideVennCardStyle}
       >
-        {renderSurvivalAnalysisBody(true)}
+        <SurvivalAnalysisCardBody {...survivalAnalysisBodyProps} besideVenn />
         <ChartResizeHandle
           aria-label="Resize survival analysis card"
           title="Drag to resize card"
@@ -1337,7 +904,7 @@ const Histogram = ({
             boxSizing: 'border-box',
           }}
       >
-        {renderSurvivalAnalysisBody(false)}
+        <SurvivalAnalysisCardBody {...survivalAnalysisBodyProps} besideVenn={false} />
         <ChartResizeHandle
           aria-label="Resize survival analysis card"
           title="Drag to resize card"
@@ -1577,22 +1144,24 @@ const Histogram = ({
                       }} >
                       <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
                     </span>
-                    <span
-                      style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
-                      onClick={() => !allInputsEmpty && downloadChart(dataset, false)}>
-                      <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
-                    </span>
-                    <button
-                      type="button"
-                      className={classes.headerCloseButton}
-                      aria-label={`Remove ${getChartTitle(dataset) || 'chart'} from layout`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveHistogramDataset(dataset);
-                      }}
-                    >
-                      <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
-                    </button>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', columnGap: 4 }}>
+                      <span
+                        style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
+                        onClick={() => !allInputsEmpty && downloadChart(dataset, false)}>
+                        <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
+                      </span>
+                      <button
+                        type="button"
+                        className={classes.headerCloseButton}
+                        aria-label={`Remove ${getChartTitle(dataset) || 'chart'} from layout`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveHistogramDataset(dataset);
+                        }}
+                      >
+                        <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
+                      </button>
+                    </div>
 
                   </ChartActionButtons>
 
@@ -1737,6 +1306,9 @@ const Histogram = ({
           c3Name={c3Name}
           chartVisualByPanelId={chartVisualByPanelId}
           onSetChartVisual={(panelId, type) => dispatch(patchChartVisuals({ [panelId]: type }))}
+          cohortParticipantState={cohortParticipantState}
+          containerRef={containerRef}
+          canvasRef={canvasRef}
         />
       )}
 

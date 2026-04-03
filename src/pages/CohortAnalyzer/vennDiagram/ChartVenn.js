@@ -1,7 +1,14 @@
 import React, { useEffect, useRef, useState } from "react";
 import { VennDiagramChart, extractSets } from "chartjs-chart-venn";
-import { baseColorArray, nodes, DEFAULT_FONT_SIZE_THRESHOLD, hexToRgba } from "./ChartVennConfig";
-
+import {
+  baseColorArray,
+  nodes,
+  DEFAULT_FONT_SIZE_THRESHOLD,
+  hexToRgba,
+  VENN_CHART_LAYOUT_PADDING,
+  VENN_CANVAS_SIZE_SCALE,
+  buildVennCohortSetLabel,
+} from "./ChartVennConfig";
 
 const intersectionColors = [
   "#000","#000","#cbdfcc",
@@ -118,6 +125,9 @@ if(data){
     },
     options: {
       onClick: handleChartClick,
+      layout: {
+        padding: VENN_CHART_LAYOUT_PADDING,
+      },
       scales: {
         x: {
             ticks: {
@@ -155,7 +165,7 @@ if(data){
     const updatedBaseSets = cohortData.filter(cohort => cohort && cohort.cohortName).map((cohort) => {
       const seenValues = new Set();
       return {
-        label: `${cohort.cohortName.length > 13 ? cohort.cohortName.slice(0, 13) + '...' : cohort.cohortName} (${cohort.participants.length})`,
+        label: buildVennCohortSetLabel(cohort.cohortName, cohort.participants.length),
         values: cohort.participants
           .map(p => p[nodes[intersection]])
           .filter(value => {
@@ -170,7 +180,7 @@ if(data){
     });
 
     setBaseSets(updatedBaseSets);
-  }, [cohortData]);
+  }, [cohortData, intersection]);
 
   useEffect(() => {
     if (baseSets.length > 0) {
@@ -187,15 +197,18 @@ useEffect(() => {
   }
   
   if (canvasRef.current && containerRef.current && data && config && config.type) {
-    const defaultW = cohortData.length === 2 ? 750 : 800;
-    const defaultH = cohortData.length === 2 ? 200 : 390;
+    const defaultW = cohortData.length === 2 ? 680 : 720;
+    const defaultH = cohortData.length === 2 ? 180 : 340;
 
     let maxWidth = defaultW;
     let maxHeight = defaultH;
     if (slotWidth != null && slotHeight != null) {
-      maxWidth = Math.max(280, Math.round(slotWidth - 32));
-      maxHeight = Math.max(100, Math.round(slotHeight - 56));
+      maxWidth = Math.max(260, Math.round(slotWidth - 48));
+      maxHeight = Math.max(96, Math.round(slotHeight - 72));
     }
+
+    maxWidth = Math.round(maxWidth * VENN_CANVAS_SIZE_SCALE);
+    maxHeight = Math.round(maxHeight * VENN_CANVAS_SIZE_SCALE);
 
     canvasRef.current.width = maxWidth;
     canvasRef.current.height = maxHeight;
