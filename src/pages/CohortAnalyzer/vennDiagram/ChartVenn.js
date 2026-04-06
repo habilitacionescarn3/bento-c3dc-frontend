@@ -9,6 +9,7 @@ import {
   VENN_CANVAS_SIZE_SCALE,
   buildVennCohortSetLabel,
 } from "./ChartVennConfig";
+import { chartVennFallbackCanvasDimensionsPx } from "../cohortAnalyzerViewPercentDefaults";
 
 const intersectionColors = [
   "#000","#000","#cbdfcc",
@@ -197,14 +198,12 @@ useEffect(() => {
   }
   
   if (canvasRef.current && containerRef.current && data && config && config.type) {
-    const defaultW = cohortData.length === 2 ? 680 : 720;
-    const defaultH = cohortData.length === 2 ? 180 : 340;
-
-    let maxWidth = defaultW;
-    let maxHeight = defaultH;
+    const fallback = chartVennFallbackCanvasDimensionsPx(cohortData.length);
+    let maxWidth = fallback.width;
+    let maxHeight = fallback.height;
     if (slotWidth != null && slotHeight != null) {
-      maxWidth = Math.max(260, Math.round(slotWidth - 48));
-      maxHeight = Math.max(96, Math.round(slotHeight - 72));
+      maxWidth = Math.max(220, Math.round(slotWidth * 0.96) - 16);
+      maxHeight = Math.max(120, Math.round(slotHeight * 0.92) - 24);
     }
 
     maxWidth = Math.round(maxWidth * VENN_CANVAS_SIZE_SCALE);
@@ -246,11 +245,19 @@ useEffect(() => {
     )
   }
   return (
-    <div ref={containerRef} style={{ paddingTop: 20, paddingBottom: 30}} className="App">
+    <div
+      ref={containerRef}
+      className="App"
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+        boxSizing: 'border-box',
+      }}
+    >
       <div className="chart-container">
-        <canvas ref={canvasRef} id="canvas"></canvas>
+        <canvas ref={canvasRef} id="canvas" />
       </div>
-
     </div>
   );
 };

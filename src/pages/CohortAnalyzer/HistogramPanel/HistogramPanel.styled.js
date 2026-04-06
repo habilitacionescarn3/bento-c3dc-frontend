@@ -1,8 +1,9 @@
 import styled from 'styled-components';
+import { CA_SURVIVAL_CARD_MIN_HEIGHT } from '../store/cohortAnalyzerLayoutConstants';
 import {
-  CA_SURVIVAL_CARD_MIN_WIDTH,
-  CA_SURVIVAL_CARD_MIN_HEIGHT,
-} from '../store/cohortAnalyzerLayoutConstants';
+  HISTOGRAM_CARD_MIN_WIDTH,
+  HISTOGRAM_CARD_SHELL_MIN_VH,
+} from './histogramConstants';
 
 export const barColors = {
   colorA: '#FAE69C',
@@ -100,8 +101,8 @@ gap: 14px;
 export const ChartWrapper = styled.div`
   position: relative;
   width: calc((100% - 28px) / 3);
-  min-width: 320px;
-  min-height: 261px;
+  min-width: clamp(${HISTOGRAM_CARD_MIN_WIDTH}px, 17vw, 100%);
+  min-height: max(200px, ${HISTOGRAM_CARD_SHELL_MIN_VH}vh);
   max-height: auto;
   margin-bottom: 0;
   padding: 0px;
@@ -169,9 +170,11 @@ export const FullWidthChartWrapper = styled(ChartWrapper)`
 /** Survival card when mounted beside the Venn (narrow column; not a full flex-row span). */
 export const SurvivalBesideVennCard = styled.div`
   position: relative;
-  width: auto;
+  width: 100%;
   max-width: 100%;
-  min-width: ${CA_SURVIVAL_CARD_MIN_WIDTH}px;
+  min-width: 0;
+  flex: 1 1 auto;
+  align-self: stretch;
   min-height: ${CA_SURVIVAL_CARD_MIN_HEIGHT}px;
   box-sizing: border-box;
   overflow: hidden;
@@ -248,21 +251,25 @@ export const ModalOverlay = styled.div`
 export const ModalContent = styled.div`
   background: white;
   border-radius: 8px;
-  width: 1081px;
-  max-width: 1200px;
+  width: 1220px;
+  max-width: calc(100vw - 48px);
   height: 80%;
   max-height: 800px;
   position: relative;
   z-index: 2000px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  box-sizing: border-box;
 `;
 
 export const CloseButton = styled.button`
   background: none;
   border: none;
   font-size: 24px;
+  line-height: 1;
+  padding: 4px 6px;
   cursor: pointer;
   color: #666;
+  flex-shrink: 0;
   &:hover {
     color: #333;
   }
@@ -270,24 +277,35 @@ export const CloseButton = styled.button`
 
 export const ModalChartWrapper = styled.div`
   width: 100%;
-  height: calc(100% - 50px);
+  height: calc(100% - 56px);
   margin-top: 0px;
 `;
 
 export const TabContainer = styled.div`
   display: flex;
+  flex: 1;
+  min-width: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  align-items: stretch;
+  gap: 0;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 `;
 
 export const Tab = styled.button`
   background: transparent;
   border: none;
-  padding: 12px 24px;
+  padding: 10px 17px;
   cursor: pointer;
   font-family: 'Nunito', sans-serif;
   font-size: 20px;
+  line-height: 1.25;
+  white-space: nowrap;
+  flex: 0 0 auto;
   color: ${props => props.active ? '#3A7587' : '#666'};
   border-bottom: ${props => props.active ? '2px solid #3A7587' : 'none'};
- 
 `;
 
 /** Chart type selector (pie / vertical bar / horizontal bar / line) */
@@ -516,22 +534,24 @@ export const ModalHeaderContainer = styled.div`
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   position: relative;
   width: 100%;
-  padding: 0px;
-  height: 55px;
+  padding: 0 10px 0 4px;
+  box-sizing: border-box;
+  min-height: 48px;
   border-bottom: 1px solid #E0E0E0;
   border-top-left-radius: 8px;
 `;
 
 export const ModalActionButtons = styled.div`
-  min-width: 300px;
-  right: 10px;
-  top: 2px;
-  position: absolute;
-  justify-content: flex-end;
+  flex-shrink: 0;
   display: flex;
-  gap: 5px;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
 `;
 
 export const DownloadButtonWrapper = styled.div`

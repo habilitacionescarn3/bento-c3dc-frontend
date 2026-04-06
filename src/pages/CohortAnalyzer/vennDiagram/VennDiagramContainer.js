@@ -1,28 +1,23 @@
-import React, { useMemo, useState, useRef, useEffect, useCallback } from 'react';
+import React, {
+  useMemo, useState, useRef, useEffect, useCallback, useLayoutEffect,
+} from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setPanelSize } from '../store/cohortAnalyzerLayoutActions';
 import {
   CA_VENN_OUTER_MIN_W,
-  CA_VENN_OUTER_MAX_W,
   CA_VENN_OUTER_MIN_H,
   CA_VENN_OUTER_MAX_H,
-  CA_SURVIVAL_CARD_MIN_HEIGHT,
 } from '../store/cohortAnalyzerLayoutConstants';
 import CohortAnalyzerHeader from '../components/CohortAnalyzerHeader';
 import ChartVenn from './ChartVenn';
-import placeHolder from '../../../assets/vennDigram/placeHolder.png';
 import { useCohortAnalyzer } from '../CohortAnalyzerContext';
 import { ChartResizeHandle } from '../HistogramPanel/HistogramPanel.styled';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../HistogramPanel/histogramConstants';
-
-/** Toolbar + divider + prompt + radios (aligned with reference layout). */
-const VENN_CARD_HEADER_RESERVE = 138;
-
-/** When Redux has no saved Venn size — match survival card initial outer height (top row). */
-const VENN_OUTER_DEFAULT = {
-  width: CA_VENN_OUTER_MIN_W,
-  height: CA_SURVIVAL_CARD_MIN_HEIGHT,
-};
+import { HistogramChartEmptyState } from '../HistogramPanel/HistogramChartEmptyState';
+import {
+  defaultVennOuterPx,
+  vennChartSlotDimensionsFromOuterPx,
+} from '../cohortAnalyzerViewPercentDefaults';
 
 const BESIDE_PEER_DRAG_STYLE = {
   boxShadow: '0 14px 28px rgba(29, 61, 73, 0.28)',
@@ -68,22 +63,71 @@ const VennDiagramContainer = ({
     return [];
   }, [cohortData, selectedCohorts, state]);
 
-  const [vennContainerSize, setVennContainerSize] = useState(
-    vennSizeFromStore != null ? vennSizeFromStore : VENN_OUTER_DEFAULT,
+  const vennHasRenderableCohorts = useMemo(
+    () => mappedCohortData.some(
+      (c) => c && c.cohortName && Array.isArray(c.participants),
+    ),
+    [mappedCohortData],
+  );
+
+  const chartModalVennActive = chartModalOpen && chartModalActiveTab === CA_EXPANDED_CHART_MODAL_TAB_VENN;
+
+  const showChartVenn = refreshTableContent
+    && selectedCohorts.length > 0
+    && vennHasRenderableCohorts
+    && !chartModalVennActive;
+
+  const showVennEmptyState = selectedCohorts.length === 0
+    || (
+      refreshTableContent
+      && !chartModalVennActive
+      && selectedCohorts.length > 0
+      && cohortData != null
+      && !vennHasRenderableCohorts
+    );
+
+  const [vennContainerSize, setVennContainerSize] = useState(() =>
+    (vennSizeFromStore != null ? vennSizeFromStore : defaultVennOuterPx()),
   );
   const vennContainerSizeRef = useRef(null);
   vennContainerSizeRef.current = vennContainerSize;
 
+  const vennCardMeasureRef = useRef(null);
+  const [measuredCardWidth, setMeasuredCardWidth] = useState(null);
+
+  useLayoutEffect(() => {
+    const el = vennCardMeasureRef.current;
+    if (!el) return () => {};
+
+    const measureWidth = () => {
+      const w = Math.round(el.getBoundingClientRect().width);
+      if (w > 0) {
+        setMeasuredCardWidth(w);
+      }
+    };
+
+    // First paint uses Redux/default width; column is often wider — measure synchronously.
+    measureWidth();
+
+    if (typeof ResizeObserver === 'undefined') return () => {};
+    const ro = new ResizeObserver(() => {
+      measureWidth();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
-    setVennContainerSize(vennSizeFromStore != null ? vennSizeFromStore : VENN_OUTER_DEFAULT);
+    setVennContainerSize(vennSizeFromStore != null ? vennSizeFromStore : defaultVennOuterPx());
   }, [vennSizeFromStore]);
 
+  const slotOuterWidth = measuredCardWidth != null
+    ? measuredCardWidth
+    : vennContainerSize.width;
+
   const chartSlot = useMemo(
-    () => ({
-      slotWidth: Math.max(240, vennContainerSize.width - 24),
-      slotHeight: Math.max(140, vennContainerSize.height - VENN_CARD_HEADER_RESERVE),
-    }),
-    [vennContainerSize],
+    () => vennChartSlotDimensionsFromOuterPx(slotOuterWidth, vennContainerSize.height),
+    [slotOuterWidth, vennContainerSize.height],
   );
 
   const handleVennContainerResizeStart = (e) => {
@@ -93,36 +137,37 @@ const VennDiagramContainer = ({
     if (!card) return;
     const rect = card.getBoundingClientRect();
     const prev = vennContainerSizeRef.current;
-    const startW = prev && prev.width != null ? prev.width : rect.width;
     const startH = prev && prev.height != null ? prev.height : rect.height;
-    const startX = e.clientX;
     const startY = e.clientY;
-    const maxW = typeof window !== 'undefined'
-      ? Math.min(CA_VENN_OUTER_MAX_W, window.innerWidth - 24)
-      : CA_VENN_OUTER_MAX_W;
 
     document.body.style.userSelect = 'none';
 
-    let lastW;
     let lastH;
     const onMove = (moveEvent) => {
-      const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
-      const w = Math.round(Math.min(maxW, Math.max(CA_VENN_OUTER_MIN_W, startW + dx)));
       const h = Math.round(
         Math.min(CA_VENN_OUTER_MAX_H, Math.max(CA_VENN_OUTER_MIN_H, startH + dy)),
       );
-      lastW = w;
       lastH = h;
-      setVennContainerSize({ width: w, height: h });
+      setVennContainerSize((cur) => ({
+        ...cur,
+        height: h,
+      }));
     };
 
     const onUp = () => {
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       document.body.style.userSelect = '';
-      if (lastW != null && lastH != null) {
-        dispatch(setPanelSize({ panel: 'venn', size: { width: lastW, height: lastH } }));
+      if (lastH != null) {
+        const wPx = vennCardMeasureRef.current
+          ? Math.round(vennCardMeasureRef.current.getBoundingClientRect().width)
+          : (vennContainerSizeRef.current && vennContainerSizeRef.current.width);
+        const widthToSave = wPx != null ? wPx : CA_VENN_OUTER_MIN_W;
+        dispatch(setPanelSize({
+          panel: 'venn',
+          size: { width: widthToSave, height: lastH },
+        }));
       }
     };
 
@@ -184,11 +229,13 @@ const VennDiagramContainer = ({
 
   const containerStyle = {
     position: 'relative',
-    width: vennContainerSize.width,
+    width: '100%',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
     height: vennContainerSize.height,
     flex: '0 0 auto',
     maxHeight: 'none',
-    alignSelf: 'flex-start',
+    alignSelf: 'stretch',
     ...(besidePanelDragState && besidePanelDragState.kind === 'venn'
       ? {
         opacity: 0.42,
@@ -207,6 +254,7 @@ const VennDiagramContainer = ({
 
   return (
     <div
+      ref={vennCardMeasureRef}
       id={dragId}
       className={`${classes.chartContainer} ${classes.vennDiagramCard}`}
       style={containerStyle}
@@ -225,8 +273,7 @@ const VennDiagramContainer = ({
         headerPrefix={headerPrefix}
       />
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1, minHeight: 0, width: '100%' }}>
-        {refreshTableContent && selectedCohorts.length > 0
-          && !(chartModalOpen && chartModalActiveTab === CA_EXPANDED_CHART_MODAL_TAB_VENN) && (
+        {showChartVenn && (
           <ChartVenn
             {...chartVennProps}
             containerRef={containerRef}
@@ -236,8 +283,20 @@ const VennDiagramContainer = ({
           />
         )}
 
-        {selectedCohorts.length === 0 && (
-          <img src={placeHolder} alt="placeholder" width="100%" style={{ marginTop: 10, alignSelf: 'center', flex: 1 }} />
+        {showVennEmptyState && (
+          <div
+            style={{
+              width: '100%',
+              flex: 1,
+              minHeight: chartSlot.slotHeight,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+            }}
+          >
+            <HistogramChartEmptyState />
+          </div>
         )}
       </div>
       <ChartResizeHandle

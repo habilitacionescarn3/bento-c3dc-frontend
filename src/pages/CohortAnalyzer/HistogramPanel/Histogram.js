@@ -19,8 +19,6 @@ import {
 import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
 import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
 import ExpandedChartModal from './HistogramPopup';
-import PlaceHolder2 from '../../../assets/histogram/Placeholder2.svg';
-import { NoDataCard } from '../NoDataCard';
 import AddChartInlinePanel from '../components/AddChartInlinePanel';
 import { ADD_CHART_DATA_TYPES } from '../cohortAnalyzerChartCatalog';
 import { useDispatch, useSelector } from 'react-redux';
@@ -50,15 +48,18 @@ import {
   buildDefaultCohortAnalyzerPanelRegistry,
 } from '../store/cohortAnalyzerDefaultPanelRegistry';
 import {
-  nullImages,
   BESIDE_PEER_DRAG_STYLE,
-  HISTOGRAM_CHART_PLOT_HEIGHT,
   HISTOGRAM_CARD_CHROME_HEIGHT,
   HISTOGRAM_CARD_MIN_WIDTH,
   HISTOGRAM_CARD_MAX_WIDTH,
   HISTOGRAM_PLOT_MIN_HEIGHT,
   HISTOGRAM_PLOT_MAX_HEIGHT,
 } from './histogramConstants';
+import {
+  defaultHistogramPlotHeightPx,
+  defaultHistogramStripDropSlotWidthPx,
+  defaultHistogramCardOuterMinHeightPx,
+} from '../cohortAnalyzerViewPercentDefaults';
 import { measureDragCardElement, requiresCompactSpacing } from './histogramLayoutUtils';
 import { useHistogramPanelMuiStyles } from './histogramMuiStyles';
 import {
@@ -68,6 +69,7 @@ import {
   useFilteredHistogramGraphData,
 } from './hooks/useHistogramDerivedData';
 import { SurvivalAnalysisCardBody } from './SurvivalAnalysisCardBody';
+import { HistogramChartEmptyState } from './HistogramChartEmptyState';
 
 const Histogram = ({
   c1,
@@ -116,11 +118,6 @@ const Histogram = ({
     });
     return out;
   }, [panelRegistry]);
-
-  const placeholderForDataset = useCallback(
-    (dataset) => nullImages[dataset] || PlaceHolder2,
-    [],
-  );
 
   const reduxHistogramSizes = useMemo(() => {
     const out = {};
@@ -185,16 +182,21 @@ const Histogram = ({
   /** Sync size for drop slot before React commits (dragOver can fire in the same frame as dragStart). */
   const histogramDragSizeRef = useRef(null);
 
+  const defaultPlotHeightPx = useMemo(() => defaultHistogramPlotHeightPx(), []);
+  const defaultDropSlotWidthPx = useMemo(() => defaultHistogramStripDropSlotWidthPx(), []);
+
   const estimateHistogramCardDropSize = useCallback((datasetKey) => {
-    if (!datasetKey) return { width: 320, height: 261 };
+    const ph0 = defaultPlotHeightPx;
+    const outerH0 = defaultHistogramCardOuterMinHeightPx(ph0);
+    if (!datasetKey) return { width: defaultDropSlotWidthPx, height: outerH0 };
     const entry = histogramCardSizes[datasetKey];
-    const w = entry && entry.width != null ? entry.width : 320;
-    const ph = entry && entry.plotHeight != null ? entry.plotHeight : HISTOGRAM_CHART_PLOT_HEIGHT;
+    const w = entry && entry.width != null ? entry.width : defaultDropSlotWidthPx;
+    const ph = entry && entry.plotHeight != null ? entry.plotHeight : ph0;
     return {
       width: w,
-      height: Math.max(261, ph + HISTOGRAM_CARD_CHROME_HEIGHT),
+      height: Math.max(outerH0, ph + HISTOGRAM_CARD_CHROME_HEIGHT),
     };
-  }, [histogramCardSizes]);
+  }, [histogramCardSizes, defaultPlotHeightPx, defaultDropSlotWidthPx]);
 
   const captureHistogramDragCardSize = useCallback((event, datasetKey) => {
     const fromTarget = measureDragCardElement(event && event.currentTarget);
@@ -526,6 +528,12 @@ const Histogram = ({
     return { valueA, valueB, valueC };
   }, [besideDatasetForColumn, filteredData]);
 
+  const besideStripPlotHeight = useMemo(() => {
+    if (!besideDatasetForColumn) return defaultPlotHeightPx;
+    const s = histogramCardSizes[besideDatasetForColumn];
+    return s && s.plotHeight != null ? s.plotHeight : defaultPlotHeightPx;
+  }, [besideDatasetForColumn, histogramCardSizes, defaultPlotHeightPx]);
+
   // Hover effect for bars
   const handleMouseEnter = (entry) => {
     cellHover.current = entry;
@@ -538,29 +546,20 @@ const Histogram = ({
   const allInputsEmpty = [c1, c2, c3].every(arr => !Array.isArray(arr) || arr.length === 0);
 
   const survivalBesideVennCardStyle = useMemo(() => {
-    const clampW = (w) => Math.min(SURVIVAL_CARD_MAX_WIDTH, Math.max(SURVIVAL_CARD_MIN_WIDTH, w));
     const clampH = (h) => Math.min(SURVIVAL_CARD_MAX_HEIGHT, Math.max(SURVIVAL_CARD_MIN_HEIGHT, h));
-    const base =
-      survivalCardSize && survivalCardSize.width != null
-        ? {
-          width: clampW(survivalCardSize.width),
-          height: clampH(survivalCardSize.height),
-          minWidth: SURVIVAL_CARD_MIN_WIDTH,
-          minHeight: SURVIVAL_CARD_MIN_HEIGHT,
-          maxWidth: '100%',
-          boxSizing: 'border-box',
-          alignSelf: 'flex-start',
-          cursor: besideCardDrag && besideCardDrag.draggable && !allInputsEmpty ? 'grab' : undefined,
-        }
-        : {
-          width: SURVIVAL_CARD_MIN_WIDTH,
-          height: SURVIVAL_CARD_MIN_HEIGHT,
-          minWidth: SURVIVAL_CARD_MIN_WIDTH,
-          minHeight: SURVIVAL_CARD_MIN_HEIGHT,
-          maxWidth: '100%',
-          boxSizing: 'border-box',
-          ...(besideCardDrag && besideCardDrag.draggable && !allInputsEmpty ? { cursor: 'grab' } : {}),
-        };
+    const base = {
+      width: '100%',
+      maxWidth: '100%',
+      minWidth: 0,
+      boxSizing: 'border-box',
+      alignSelf: 'stretch',
+      height:
+        survivalCardSize && survivalCardSize.height != null
+          ? clampH(survivalCardSize.height)
+          : SURVIVAL_CARD_MIN_HEIGHT,
+      minHeight: SURVIVAL_CARD_MIN_HEIGHT,
+      cursor: besideCardDrag && besideCardDrag.draggable && !allInputsEmpty ? 'grab' : undefined,
+    };
     const drag = {};
     if (besidePanelDragState && besidePanelDragState.kind === 'survival') {
       Object.assign(drag, {
@@ -585,7 +584,7 @@ const Histogram = ({
     const rect = card.getBoundingClientRect();
     const current = histogramCardSizes[dataset];
     const startWidth = current && current.width != null ? current.width : rect.width;
-    const startPlot = current && current.plotHeight != null ? current.plotHeight : HISTOGRAM_CHART_PLOT_HEIGHT;
+    const startPlot = current && current.plotHeight != null ? current.plotHeight : defaultPlotHeightPx;
     const maxW = typeof window !== 'undefined'
       ? Math.min(HISTOGRAM_CARD_MAX_WIDTH, window.innerWidth - 24)
       : HISTOGRAM_CARD_MAX_WIDTH;
@@ -628,7 +627,8 @@ const Histogram = ({
     document.addEventListener('mouseup', onUp);
   };
 
-  const handleSurvivalCardResizeStart = (e) => {
+  const handleSurvivalCardResizeStart = (e, options = {}) => {
+    const { fillColumnWidth = false } = options;
     if (allInputsEmpty) return;
     e.preventDefault();
     e.stopPropagation();
@@ -659,12 +659,16 @@ const Histogram = ({
     const onMove = (moveEvent) => {
       const dx = moveEvent.clientX - startX;
       const dy = moveEvent.clientY - startY;
-      const w = Math.round(Math.min(maxW, Math.max(SURVIVAL_CARD_MIN_WIDTH, startWidth + dx)));
       const h = Math.round(
         Math.min(SURVIVAL_CARD_MAX_HEIGHT, Math.max(SURVIVAL_CARD_MIN_HEIGHT, startHeight + dy)),
       );
-      lastSurvivalW = w;
       lastSurvivalH = h;
+      if (fillColumnWidth) {
+        setSurvivalCardSize((prev) => ({ ...(prev || {}), height: h }));
+        return;
+      }
+      const w = Math.round(Math.min(maxW, Math.max(SURVIVAL_CARD_MIN_WIDTH, startWidth + dx)));
+      lastSurvivalW = w;
       setSurvivalCardSize({ width: w, height: h });
     };
 
@@ -672,6 +676,17 @@ const Histogram = ({
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
       document.body.style.userSelect = '';
+      if (fillColumnWidth) {
+        const hToSave = lastSurvivalH != null ? lastSurvivalH : startHeight;
+        const wPx = Math.round(card.getBoundingClientRect().width);
+        dispatch(
+          setPanelSize({
+            panel: 'survival',
+            size: { width: wPx, height: hToSave },
+          }),
+        );
+        return;
+      }
       if (lastSurvivalW != null && lastSurvivalH != null) {
         dispatch(
           setPanelSize({
@@ -797,12 +812,8 @@ const Histogram = ({
               <div
                 className={classes.chartPlotArea}
                 style={{
-                  minHeight: histogramCardSizes[besideDatasetForColumn] && histogramCardSizes[besideDatasetForColumn].plotHeight != null
-                    ? histogramCardSizes[besideDatasetForColumn].plotHeight
-                    : HISTOGRAM_CHART_PLOT_HEIGHT,
-                  height: histogramCardSizes[besideDatasetForColumn] && histogramCardSizes[besideDatasetForColumn].plotHeight != null
-                    ? histogramCardSizes[besideDatasetForColumn].plotHeight
-                    : HISTOGRAM_CHART_PLOT_HEIGHT,
+                  minHeight: besideStripPlotHeight,
+                  height: besideStripPlotHeight,
                 }}
               >
                 <HistogramDatasetChart
@@ -813,9 +824,7 @@ const Histogram = ({
                   valueB={besideHistogramBarSums.valueB}
                   valueC={besideHistogramBarSums.valueC}
                   compact={requiresCompactSpacing(besideDatasetForColumn)}
-                  height={histogramCardSizes[besideDatasetForColumn] && histogramCardSizes[besideDatasetForColumn].plotHeight != null
-                    ? histogramCardSizes[besideDatasetForColumn].plotHeight
-                    : HISTOGRAM_CHART_PLOT_HEIGHT}
+                  height={besideStripPlotHeight}
                   width="100%"
                   estimatedChartWidth={
                     histogramCardSizes[besideDatasetForColumn] && histogramCardSizes[besideDatasetForColumn].width != null
@@ -832,12 +841,18 @@ const Histogram = ({
                 />
               </div>
             ) : (
-              <div style={{ width: '100%', minHeight: HISTOGRAM_CHART_PLOT_HEIGHT, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                {allInputsEmpty ? (
-                  <img src={placeholderForDataset(besideDatasetForColumn)} alt="No data" style={{ maxWidth: '100%', maxHeight: '100%' }} />
-                ) : (
-                  <NoDataCard />
-                )}
+              <div
+                style={{
+                  width: '100%',
+                  minHeight: besideStripPlotHeight,
+                  height: besideStripPlotHeight,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <HistogramChartEmptyState />
               </div>
             )}
           </div>
@@ -866,7 +881,7 @@ const Histogram = ({
         <ChartResizeHandle
           aria-label="Resize survival analysis card"
           title="Drag to resize card"
-          onMouseDown={handleSurvivalCardResizeStart}
+          onMouseDown={(ev) => handleSurvivalCardResizeStart(ev, { fillColumnWidth: true })}
           style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
         />
       </SurvivalBesideVennCard>,
@@ -946,7 +961,7 @@ const Histogram = ({
               });
             }
             const cardSize = histogramCardSizes[dataset];
-            const plotH = cardSize && cardSize.plotHeight != null ? cardSize.plotHeight : HISTOGRAM_CHART_PLOT_HEIGHT;
+            const plotH = cardSize && cardSize.plotHeight != null ? cardSize.plotHeight : defaultPlotHeightPx;
             const chartWrapperStyle = cardSize && cardSize.width != null
               ? {
                 width: cardSize.width,
@@ -968,7 +983,10 @@ const Histogram = ({
                 return { width: fromDrag.width, height: fromDrag.height };
               }
               if (!draggingDataset) {
-                return { width: 320, height: 261 };
+                return {
+                  width: defaultDropSlotWidthPx,
+                  height: defaultHistogramCardOuterMinHeightPx(defaultPlotHeightPx),
+                };
               }
               return estimateHistogramCardDropSize(draggingDataset);
             })();
@@ -1228,14 +1246,19 @@ const Histogram = ({
                       </div>
                     </>
                   ) : (
-                    allInputsEmpty ? (
-                      <div style={{ width: '100%', height: plotH, minHeight: plotH, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <img src={placeholderForDataset(dataset)} alt="No data" style={{ maxWidth: '100%', maxHeight: '100%' }} />
-                      </div>) : (
-                      <div style={{ width: '100%', height: plotH, minHeight: plotH, display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-                        <NoDataCard />
-                      </div>
-                    )
+                    <div
+                      style={{
+                        width: '100%',
+                        height: plotH,
+                        minHeight: plotH,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        boxSizing: 'border-box',
+                      }}
+                    >
+                      <HistogramChartEmptyState />
+                    </div>
                   )}
 
                 </div>

@@ -36,14 +36,16 @@ import { KaplanMeierChart } from '@bento-core/kmplot';
 import RiskTable from '@bento-core/risk-table';
 import { DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem, } from './HistogramPanel.styled';
 import * as htmlToImage from 'html-to-image';
-import { NoDataCard } from "../NoDataCard";
+import { HistogramChartEmptyState } from './HistogramChartEmptyState';
 import { kmplotColors } from './HistogramPanel.styled';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from './histogramConstants';
 import { useCohortAnalyzer } from '../CohortAnalyzerContext';
 import ChartVenn from '../vennDiagram/ChartVenn';
-import placeHolder from '../../../assets/vennDigram/placeHolder.png';
-
-const MODAL_DATASET_CHART_HEIGHT = 420;
+import {
+  defaultVennModalSlotPx,
+  defaultModalKmChartHeightPx,
+  defaultModalHistogramDatasetChartHeightPx,
+} from '../cohortAnalyzerViewPercentDefaults';
 
 const ExpandedChartModal = ({
   activeTab,
@@ -75,12 +77,17 @@ const ExpandedChartModal = ({
 }) => {
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const [showChartTypeMenu, setShowChartTypeMenu] = useState(false);
-  const [chartHeight, setChartHeight] = useState(350);
+  const [chartHeight, setChartHeight] = useState(() => defaultModalKmChartHeightPx());
   const dropdownRef = useRef(null);
   const chartTypeMenuRef = useRef(null);
   const survivalAnalysisContainerRef = useRef(null);
   const vennModalChartAreaRef = useRef(null);
-  const [vennModalSlot, setVennModalSlot] = useState({ slotWidth: 920, slotHeight: 520 });
+  const [vennModalSlot, setVennModalSlot] = useState(() => defaultVennModalSlotPx());
+
+  const modalHistogramDatasetChartHeight = useMemo(
+    () => defaultModalHistogramDatasetChartHeightPx(),
+    [],
+  );
 
   const {
     refreshTableContent,
@@ -102,6 +109,27 @@ const ExpandedChartModal = ({
     }
     return [];
   }, [cohortData, selectedCohorts, cohortParticipantState]);
+
+  const vennModalHasRenderableCohorts = useMemo(
+    () => mappedCohortData.some(
+      (c) => c && c.cohortName && Array.isArray(c.participants),
+    ),
+    [mappedCohortData],
+  );
+
+  const vennModalShowsChart = refreshTableContent
+    && selectedCohorts.length > 0
+    && vennModalHasRenderableCohorts;
+
+  const vennModalShowsEmptyState = selectedCohorts.length === 0
+    || (
+      refreshTableContent
+      && selectedCohorts.length > 0
+      && cohortData != null
+      && !vennModalHasRenderableCohorts
+    );
+
+  const vennModalCanDownload = selectedCohorts.length > 0 && vennModalHasRenderableCohorts;
 
   const handleSetSelectedChartVenn = useCallback((data) => {
     setSelectedChart(data);
@@ -195,6 +223,11 @@ const ExpandedChartModal = ({
     });
   }, [kmPlotData, c1, c2, c3]);
 
+  const survivalModalHasNoDisplayData =
+    !kmLoading
+    && !kmError
+    && (!Array.isArray(filteredKmPlotData) || filteredKmPlotData.length === 0);
+
   // Map cohort colors based on which cohorts are selected - must be at top level
   const cohortColors = useMemo(() => {
     const colors = [];
@@ -236,6 +269,10 @@ const ExpandedChartModal = ({
   useEffect(() => {
     setShowChartTypeMenu(false);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (survivalModalHasNoDisplayData) setShowDownloadDropdown(false);
+  }, [survivalModalHasNoDisplayData]);
 
   const requiresCompactSpacingModal = (dataset) =>
     dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
@@ -475,14 +512,19 @@ const ExpandedChartModal = ({
           <ModalActionButtons>
             {activeTab === 'survivalAnalysis' ? (
               <DownloadButtonWrapper>
-               <DownloadButton 
-                  onClick={() => setShowDownloadDropdown(!showDownloadDropdown)}
+               <DownloadButton
+                  onClick={() => !survivalModalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
+                  style={{
+                    opacity: survivalModalHasNoDisplayData ? 0.45 : 1,
+                    cursor: survivalModalHasNoDisplayData ? 'not-allowed' : 'pointer',
+                    pointerEvents: survivalModalHasNoDisplayData ? 'none' : 'auto',
+                  }}
                 >
                   <DownloadIconImage src={DownloadIcon} alt={"download"} />
                 </DownloadButton>
               <DownloadDropdown ref={dropdownRef}>
                
-                {showDownloadDropdown && (
+                {showDownloadDropdown && !survivalModalHasNoDisplayData && (
                   <DownloadDropdownMenu>
                     <DownloadDropdownItem onClick={() => downloadKaplanMeierChart(kmChartRef)}>
                       <DownloadIconSmall src={DownloadIconBorderless} alt="download" />
@@ -502,11 +544,11 @@ const ExpandedChartModal = ({
               </DownloadButtonWrapper>
             ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
               <DownloadButton
-                onClick={() => selectedCohorts.length > 0 && handleVennDownload()}
+                onClick={() => vennModalCanDownload && handleVennDownload()}
                 style={{
-                  opacity: selectedCohorts.length > 0 ? 1 : 0.45,
-                  cursor: selectedCohorts.length > 0 ? 'pointer' : 'not-allowed',
-                  pointerEvents: selectedCohorts.length > 0 ? 'auto' : 'none',
+                  opacity: vennModalCanDownload ? 1 : 0.45,
+                  cursor: vennModalCanDownload ? 'pointer' : 'not-allowed',
+                  pointerEvents: vennModalCanDownload ? 'auto' : 'none',
                 }}
               >
                 <DownloadIconImage src={DownloadIcon} alt="" />
@@ -559,25 +601,43 @@ const ExpandedChartModal = ({
           {activeTab === 'survivalAnalysis' ? (
             <SurvivalAnalysisModalContainer>
               <SurvivalAnalysisModalContent ref={survivalAnalysisContainerRef}>
-                <KmChartModalWrapper ref={kmChartRef}>
-                  <KaplanMeierChart
-                    data={filteredKmPlotData}
-                    title=""
-                    width={"100%"}
-                    height={chartHeight}
-                    loading={kmLoading}
-                    error={kmError}
-                    colors={cohortColors}
-                    showLabels={false}
-                    showLegend={false}
-                  />
-                </KmChartModalWrapper>
-                <RiskTableModalWrapper ref={riskTableRef}>
-                  <RiskTable
-                    cohorts={cohorts}
-                    timeIntervals={timeIntervals}
-                  />
-                </RiskTableModalWrapper>
+                {survivalModalHasNoDisplayData ? (
+                  <div
+                    style={{
+                      width: '100%',
+                      flex: 1,
+                      minHeight: chartHeight + 280,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxSizing: 'border-box',
+                    }}
+                  >
+                    <HistogramChartEmptyState />
+                  </div>
+                ) : (
+                  <>
+                    <KmChartModalWrapper ref={kmChartRef}>
+                      <KaplanMeierChart
+                        data={filteredKmPlotData}
+                        title=""
+                        width={"100%"}
+                        height={chartHeight}
+                        loading={kmLoading}
+                        error={kmError}
+                        colors={cohortColors}
+                        showLabels={false}
+                        showLegend={false}
+                      />
+                    </KmChartModalWrapper>
+                    <RiskTableModalWrapper ref={riskTableRef}>
+                      <RiskTable
+                        cohorts={cohorts}
+                        timeIntervals={timeIntervals}
+                      />
+                    </RiskTableModalWrapper>
+                  </>
+                )}
               </SurvivalAnalysisModalContent>
             </SurvivalAnalysisModalContainer>
           ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
@@ -595,7 +655,7 @@ const ExpandedChartModal = ({
                 boxSizing: 'border-box',
               }}
             >
-              {refreshTableContent && selectedCohorts.length > 0 ? (
+              {vennModalShowsChart ? (
                 <ChartVenn
                   {...chartVennModalProps}
                   containerRef={containerRef}
@@ -603,13 +663,21 @@ const ExpandedChartModal = ({
                   slotWidth={vennModalSlot.slotWidth}
                   slotHeight={vennModalSlot.slotHeight}
                 />
-              ) : (
-                <img
-                  src={placeHolder}
-                  alt=""
-                  style={{ maxWidth: '90%', maxHeight: '70vh', objectFit: 'contain' }}
-                />
-              )}
+              ) : vennModalShowsEmptyState ? (
+                <div
+                  style={{
+                    width: '100%',
+                    flex: 1,
+                    minHeight: Math.max(280, vennModalSlot.slotHeight - 40),
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxSizing: 'border-box',
+                  }}
+                >
+                  <HistogramChartEmptyState />
+                </div>
+              ) : null}
             </div>
           ) : (
             <ModalChartContainer>
@@ -646,8 +714,8 @@ const ExpandedChartModal = ({
                 id={`expanded-chart-${activeTab}`}
                 style={{
                   width: '100%',
-                  height: MODAL_DATASET_CHART_HEIGHT,
-                  minHeight: MODAL_DATASET_CHART_HEIGHT,
+                  height: modalHistogramDatasetChartHeight,
+                  minHeight: modalHistogramDatasetChartHeight,
                 }}
               >
                 <HistogramDatasetChart
@@ -658,7 +726,7 @@ const ExpandedChartModal = ({
                   valueB={valueB}
                   valueC={valueC}
                   compact={requiresCompactSpacingModal(activeTab)}
-                  height={MODAL_DATASET_CHART_HEIGHT}
+                  height={modalHistogramDatasetChartHeight}
                   width="100%"
                   estimatedChartWidth={800}
                   cellHover={cellHover}
@@ -672,7 +740,7 @@ const ExpandedChartModal = ({
               </div>
 ) : (
   <ModalNoDataContainer>
-   <NoDataCard /> 
+    <HistogramChartEmptyState />
   </ModalNoDataContainer>
 )}
 

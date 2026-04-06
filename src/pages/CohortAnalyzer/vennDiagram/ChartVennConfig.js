@@ -12,7 +12,7 @@ export const VENN_CHART_LAYOUT_PADDING = {
 };
 
 /** Scale applied to canvas width/height so circles + external labels fit inside the card slot. */
-export const VENN_CANVAS_SIZE_SCALE = 0.86;
+export const VENN_CANVAS_SIZE_SCALE = 0.1;
 
 /**
  * Max characters of cohort name shown on Venn circles; longer names use `…` (ellipsis).

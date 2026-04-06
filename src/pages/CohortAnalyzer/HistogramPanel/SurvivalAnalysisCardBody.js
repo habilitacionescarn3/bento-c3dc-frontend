@@ -30,6 +30,7 @@ import {
   downloadRiskTable,
   downloadSurvivalCombined,
 } from './histogramSurvivalDownloads';
+import { HistogramChartEmptyState } from './HistogramChartEmptyState';
 
 /**
  * Survival analysis card: header actions, KM plot, and risk table (inline or beside Venn).
@@ -74,6 +75,14 @@ export function SurvivalAnalysisCardBody({
       Math.round((effectiveSurvivalH - survivalHeaderChromePx) * 0.65),
     ),
   );
+  const survivalHasNoDisplayData =
+    !kmLoading
+    && !kmError
+    && (!Array.isArray(filteredKmPlotData) || filteredKmPlotData.length === 0);
+  const survivalBodyMinHeight = Math.max(
+    kmHeight + 120,
+    Math.round(effectiveSurvivalH - survivalHeaderChromePx),
+  );
   const canBesideReorder = Boolean(
     besideVenn && besideCardDrag && besideCardDrag.draggable,
   );
@@ -81,7 +90,10 @@ export function SurvivalAnalysisCardBody({
   return (
     <>
       <SurvivalAnalysisHeader>
-        <ChartTitle style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+        <ChartTitle
+          className={survivalHasNoDisplayData ? 'empty' : ''}
+          style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}
+        >
           <span
             role="button"
             tabIndex={0}
@@ -93,8 +105,8 @@ export function SurvivalAnalysisCardBody({
               display: 'inline-flex',
               alignItems: 'center',
               marginRight: 6,
-              cursor: allInputsEmpty ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
-              opacity: allInputsEmpty ? 0.45 : 1,
+              cursor: survivalHasNoDisplayData ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
+              opacity: survivalHasNoDisplayData ? 0.45 : 1,
             }}
             title={canBesideReorder ? 'Drag to swap with Venn diagram' : undefined}
           >
@@ -138,16 +150,16 @@ export function SurvivalAnalysisCardBody({
           <button
             type="button"
             aria-label="Expand survival chart"
-            disabled={allInputsEmpty}
+            disabled={survivalHasNoDisplayData}
             onClick={() => {
-              if (!allInputsEmpty) {
+              if (!survivalHasNoDisplayData) {
                 setExpandedChart('survivalAnalysis');
                 setActiveTab('survivalAnalysis');
               }
             }}
-            style={{ padding: 0, background: 'none', border: 'none', cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}
+            style={{ padding: 0, background: 'none', border: 'none', cursor: survivalHasNoDisplayData ? 'not-allowed' : 'pointer' }}
           >
-            <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
+            <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: survivalHasNoDisplayData ? 0.5 : 1, display: 'block' }} />
           </button>
           <DownloadDropdown ref={dropdownRef}>
             <button
@@ -155,13 +167,13 @@ export function SurvivalAnalysisCardBody({
               aria-label="Survival chart download options"
               aria-expanded={showDownloadDropdown}
               aria-haspopup="menu"
-              disabled={allInputsEmpty}
-              onClick={() => !allInputsEmpty && setShowDownloadDropdown(!showDownloadDropdown)}
-              style={{ padding: 0, background: 'none', border: 'none', cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}
+              disabled={survivalHasNoDisplayData}
+              onClick={() => !survivalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
+              style={{ padding: 0, background: 'none', border: 'none', cursor: survivalHasNoDisplayData ? 'not-allowed' : 'pointer' }}
             >
-              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
+              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: survivalHasNoDisplayData ? 0.5 : 1, display: 'block' }} />
             </button>
-            {showDownloadDropdown && !allInputsEmpty && (
+            {showDownloadDropdown && !survivalHasNoDisplayData && (
               <DownloadDropdownMenu role="menu">
                 <DownloadDropdownItem
                   role="menuitem"
@@ -211,27 +223,45 @@ export function SurvivalAnalysisCardBody({
       </SurvivalAnalysisHeader>
 
       <SurvivalAnalysisContainer ref={survivalAnalysisContainerRef}>
-        <KmWrap ref={kmChartRef}>
-          <KaplanMeierChart
-            data={filteredKmPlotData}
-            title=""
-            width="100%"
-            height={kmHeight}
-            loading={kmLoading}
-            error={kmError}
-            colors={cohortColors}
-            showLabels={false}
-            showLegend={false}
-          />
-        </KmWrap>
-        <RiskWrap ref={riskTableRef}>
-          <RiskTable
-            classes={{ cohortName: classes.cohortNameEllipsis }}
-            cohortNameCharLimit={10}
-            cohorts={cohorts}
-            timeIntervals={timeIntervals}
-          />
-        </RiskWrap>
+        {survivalHasNoDisplayData ? (
+          <div
+            style={{
+              width: '100%',
+              flex: 1,
+              minHeight: survivalBodyMinHeight,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxSizing: 'border-box',
+            }}
+          >
+            <HistogramChartEmptyState />
+          </div>
+        ) : (
+          <>
+            <KmWrap ref={kmChartRef}>
+              <KaplanMeierChart
+                data={filteredKmPlotData}
+                title=""
+                width="100%"
+                height={kmHeight}
+                loading={kmLoading}
+                error={kmError}
+                colors={cohortColors}
+                showLabels={false}
+                showLegend={false}
+              />
+            </KmWrap>
+            <RiskWrap ref={riskTableRef}>
+              <RiskTable
+                classes={{ cohortName: classes.cohortNameEllipsis }}
+                cohortNameCharLimit={10}
+                cohorts={cohorts}
+                timeIntervals={timeIntervals}
+              />
+            </RiskWrap>
+          </>
+        )}
       </SurvivalAnalysisContainer>
     </>
   );
