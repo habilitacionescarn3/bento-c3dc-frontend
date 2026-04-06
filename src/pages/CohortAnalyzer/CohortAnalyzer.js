@@ -28,6 +28,7 @@ import { useCohortAnalyzer } from "./CohortAnalyzerContext";
 import { cohortAnalyzerThemeConfig } from './cohortAnalyzerThemeConfig';
 import { useBesidePanelDnD } from './hooks/useBesidePanelDnD';
 import { CohortAnalyzerChartArea } from './components/CohortAnalyzerChartArea';
+import { CohortAnalyzerSummaryView } from './components/CohortAnalyzerSummaryView';
 import { getJoinedCohortData } from "./CohortAnalyzerUtil/CohortDataTransform";
 import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortData";
 import { exportToCCDIHub } from "../../components/CohortModal/utils";
@@ -40,44 +41,26 @@ export const CohortAnalyzer = () => {
     const [inlineAddChartNonce, setInlineAddChartNonce] = useState(0);
     const [survivalBesideVennEl, setSurvivalBesideVennEl] = useState(null);
     const [survivalBesideColumnActive, setSurvivalBesideColumnActive] = useState(false);
-    //context
-    const cohortAnalyzerContext = useCohortAnalyzer();
-    const { resetVennWorkspaceUi } = cohortAnalyzerContext;
-    // Cohort selection and list management
     const {
+        resetVennWorkspaceUi,
         selectedCohorts,
         setSelectedCohorts,
         cohortList,
         setCohortList,
         nodeIndex,
-    } = cohortAnalyzerContext;
-    // Cohort data and general info
-    const {
         cohortData,
         setCohortData,
         generalInfo,
         setGeneralInfo,
-    } = cohortAnalyzerContext;
-    // Row data and table refresh
-    const {
         rowData,
         setRowData,
         setRefreshTableContent,
-    } = cohortAnalyzerContext;
-    // Search and query
-    const {
         searchValue,
         setSearchValue,
         setQueryVariable,
-    } = cohortAnalyzerContext;
-    // Chart and cohort section selection
-    const {
         selectedChart,
         selectedCohortSection,
         setSelectedCohortSections,
-    } = cohortAnalyzerContext;
-    // Modal and alert handling
-    const {
         setDeleteInfo,
         deleteInfo,
         handleCheckbox,
@@ -85,7 +68,7 @@ export const CohortAnalyzer = () => {
         setShowNavigateAwayModal,
         setAlert,
         alert,
-    } = cohortAnalyzerContext;
+    } = useCohortAnalyzer();
 
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
@@ -450,67 +433,52 @@ export const CohortAnalyzer = () => {
                         <button className={classes.readmeButton}>README</button>
                     </div>
 
-                    <div className={classes.summaryViewShell}>
-                        <div className={classes.summaryTabs}>
-                                <button
-                                    type="button"
-                                    className={`${classes.summaryTab} ${activeView === "chart" ? classes.summaryTabActive : ""}`}
-                                    onClick={() => setActiveView("chart")}
-                                >
-                                    Chart Summary View
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`${classes.summaryTab} ${activeView === "table" ? classes.summaryTabActive : ""}`}
-                                    onClick={() => setActiveView("table")}
-                                >
-                                    Table View
-                                </button>
-                        </div>
-                        <div className={classes.summaryTabPanel}>
-                            {activeView === "chart" && (
-                                <CohortAnalyzerChartArea
-                                    classes={classes}
-                                    state={state}
-                                    containerRef={containerRef}
-                                    canvasRef={canvasRef}
-                                    selectedCohorts={selectedCohorts}
-                                    hasParticipantData={hasParticipantData}
-                                    survivalBesideTopRowUsesOrder={besideDnD.survivalBesideTopRowUsesOrder}
-                                    topRowOrder={topRowOrder}
-                                    besideDropTarget={besideDnD.besideDropTarget}
-                                    besideColumnDropTargetStyle={besideDnD.besideColumnDropTargetStyle}
-                                    handleBesideRowDragLeave={besideDnD.handleBesideRowDragLeave}
-                                    handleBesideColumnDragOver={besideDnD.handleBesideColumnDragOver}
-                                    handleBesidePanelDrop={besideDnD.handleBesidePanelDrop}
-                                    vennHeaderGrab={besideDnD.vennHeaderGrab}
-                                    vennBesideDrag={besideDnD.vennBesideDrag}
-                                    survivalBesideDrag={besideDnD.survivalBesideDrag}
-                                    besidePanelDragging={besideDnD.besidePanelDragging}
-                                    survivalBesideVennEl={survivalBesideVennEl}
-                                    setSurvivalBesideVennEl={setSurvivalBesideVennEl}
-                                    setSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
-                                    inlineAddChartOpen={inlineAddChartOpen}
-                                    setInlineAddChartOpen={setInlineAddChartOpen}
-                                    inlineAddChartNonce={inlineAddChartNonce}
-                                    setInlineAddChartNonce={setInlineAddChartNonce}
-                                    resetVennWorkspaceUi={resetVennWorkspaceUi}
-                                />
-                            )}
-                            {activeView === "table" && (
-                                    <CohortAnalyzerTableSection
-                                        classes={classes}
-                                        selectedCohortSection={selectedCohortSection}
-                                        questionIcon={questionIcon}
-                                        handleClick={handleClick}
-                                        handleBuildInExplore={handleBuildInExplore}
-                                        handleExportToCCDIHub={handleExportToCCDIHub}
-                                        initTblState={initTblState}
-                                        themeConfig={cohortAnalyzerThemeConfig}
-                                    />
-                            )}
-                        </div>
-                    </div>
+                    <CohortAnalyzerSummaryView
+                        classes={classes}
+                        activeView={activeView}
+                        setActiveView={setActiveView}
+                        chartPanel={(
+                            <CohortAnalyzerChartArea
+                                classes={classes}
+                                state={state}
+                                containerRef={containerRef}
+                                canvasRef={canvasRef}
+                                selectedCohorts={selectedCohorts}
+                                hasParticipantData={hasParticipantData}
+                                survivalBesideTopRowUsesOrder={besideDnD.survivalBesideTopRowUsesOrder}
+                                topRowOrder={topRowOrder}
+                                besideDropTarget={besideDnD.besideDropTarget}
+                                besideColumnDropTargetStyle={besideDnD.besideColumnDropTargetStyle}
+                                handleBesideRowDragLeave={besideDnD.handleBesideRowDragLeave}
+                                handleBesideColumnDragOver={besideDnD.handleBesideColumnDragOver}
+                                handleBesidePanelDrop={besideDnD.handleBesidePanelDrop}
+                                vennHeaderGrab={besideDnD.vennHeaderGrab}
+                                vennBesideDrag={besideDnD.vennBesideDrag}
+                                survivalBesideDrag={besideDnD.survivalBesideDrag}
+                                besidePanelDragging={besideDnD.besidePanelDragging}
+                                survivalBesideVennEl={survivalBesideVennEl}
+                                setSurvivalBesideVennEl={setSurvivalBesideVennEl}
+                                setSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
+                                inlineAddChartOpen={inlineAddChartOpen}
+                                setInlineAddChartOpen={setInlineAddChartOpen}
+                                inlineAddChartNonce={inlineAddChartNonce}
+                                setInlineAddChartNonce={setInlineAddChartNonce}
+                                resetVennWorkspaceUi={resetVennWorkspaceUi}
+                            />
+                        )}
+                        tablePanel={(
+                            <CohortAnalyzerTableSection
+                                classes={classes}
+                                selectedCohortSection={selectedCohortSection}
+                                questionIcon={questionIcon}
+                                handleClick={handleClick}
+                                handleBuildInExplore={handleBuildInExplore}
+                                handleExportToCCDIHub={handleExportToCCDIHub}
+                                initTblState={initTblState}
+                                themeConfig={cohortAnalyzerThemeConfig}
+                            />
+                        )}
+                    />
                 </div>
             </div>
         </>

@@ -1,46 +1,21 @@
 import React, { useRef, useEffect, useMemo, useLayoutEffect, useCallback, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  RadioInput,
-  RadioLabel,
   ModalChartWrapper,
   ModalContent,
   ModalOverlay,
-  CloseButton,
-  Tab,
-  TabContainer,
-  SurvivalAnalysisModalContainer,
-  SurvivalAnalysisModalContent,
-  KmChartModalWrapper,
-  RiskTableModalWrapper,
-  ModalHeaderContainer,
-  ModalActionButtons,
-  DownloadButtonWrapper,
-  DownloadButton,
-  DownloadIconImage,
-  DownloadIconSmall,
-  ModalChartContainer,
-  ModalRadioFieldset,
-  ModalRadioGroup,
-  ModalNoDataContainer,
-  ChartTypeDropdownRoot,
-  ChartTypeDropdownPanel,
-  ChartTypeOption,
-  ChartTypeTriggerButton,
 } from './HistogramPanel.styled';
-import DownloadIcon from "../../../assets/icons/Download_Histogram_icon.svg";
-import DownloadIconBorderless from "../../../assets/icons/download-icon-borderless.svg";
-import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
-import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
-import { KaplanMeierChart } from '@bento-core/kmplot';
-import RiskTable from '@bento-core/risk-table';
-import { DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem, } from './HistogramPanel.styled';
-import * as htmlToImage from 'html-to-image';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
-import { kmplotColors } from './HistogramPanel.styled';
+import { createHistogramModalSurvivalDownloads } from './histogramModalSurvivalDownloads';
+import {
+  useHistogramPopupFilteredKmData,
+  useHistogramPopupKmCohortColors,
+} from './histogramPopupKmDerived';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from './histogramConstants';
 import { useCohortAnalyzer } from '../CohortAnalyzerContext';
-import ChartVenn from '../vennDiagram/ChartVenn';
+import { HistogramPopupModalHeader } from './HistogramPopupModalHeader';
+import { HistogramPopupModalSurvivalTab } from './HistogramPopupModalSurvivalTab';
+import { HistogramPopupModalVennTab } from './HistogramPopupModalVennTab';
+import { HistogramPopupModalHistogramTab } from './HistogramPopupModalHistogramTab';
 import {
   defaultVennModalSlotPx,
   defaultModalKmChartHeightPx,
@@ -200,42 +175,14 @@ const ExpandedChartModal = ({
     });
   }, [containerRef, canvasRef, setAlert]);
 
-  // Filter KM plot data to only include selected cohorts - must be at top level
-  const filteredKmPlotData = useMemo(() => {
-    if (!kmPlotData || !Array.isArray(kmPlotData)) return [];
-    
-    const selectedGroups = [];
-    if (c1 && c1.length > 0) selectedGroups.push('c1');
-    if (c2 && c2.length > 0) selectedGroups.push('c2');
-    if (c3 && c3.length > 0) selectedGroups.push('c3');
-    
-    return kmPlotData.filter(item => {
-      const group = item.group || item.group_id || '';
-      return selectedGroups.some(selectedGroup => {
-        const groupStr = String(group).toLowerCase();
-        const selectedStr = selectedGroup.toLowerCase();
-        return groupStr.includes(selectedStr) || 
-               groupStr.includes(selectedStr.replace('c', '')) ||
-               (selectedGroup === 'c1' && (groupStr === '1' || groupStr === 'cohort 1' || groupStr === 'cohort1')) ||
-               (selectedGroup === 'c2' && (groupStr === '2' || groupStr === 'cohort 2' || groupStr === 'cohort2')) ||
-               (selectedGroup === 'c3' && (groupStr === '3' || groupStr === 'cohort 3' || groupStr === 'cohort3'));
-      });
-    });
-  }, [kmPlotData, c1, c2, c3]);
+  const filteredKmPlotData = useHistogramPopupFilteredKmData(kmPlotData, c1, c2, c3);
 
   const survivalModalHasNoDisplayData =
     !kmLoading
     && !kmError
     && (!Array.isArray(filteredKmPlotData) || filteredKmPlotData.length === 0);
 
-  // Map cohort colors based on which cohorts are selected - must be at top level
-  const cohortColors = useMemo(() => {
-    const colors = [];
-    if (c1 && c1.length > 0) colors.push(kmplotColors.colorA);
-    if (c2 && c2.length > 0) colors.push(kmplotColors.colorB);
-    if (c3 && c3.length > 0) colors.push(kmplotColors.colorC);
-    return colors;
-  }, [c1, c2, c3]);
+  const cohortColors = useHistogramPopupKmCohortColors(c1, c2, c3);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -274,154 +221,13 @@ const ExpandedChartModal = ({
     if (survivalModalHasNoDisplayData) setShowDownloadDropdown(false);
   }, [survivalModalHasNoDisplayData]);
 
-  const requiresCompactSpacingModal = (dataset) =>
-    dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
-
-  // Download functions for survival analysis
-  const downloadKaplanMeierChart = (kmChartRef) => {
-    try {
-      if (!kmChartRef || !kmChartRef.current) {
-        console.error("KM chart ref not available");
-        return;
-      }
-      
-      const svgElement = kmChartRef.current.querySelector("svg");
-      if (!svgElement) {
-        console.error("Could not find SVG element in KM chart");
-        return;
-      }
-
-      const scaleFactor = 2;
-      
-      // Get SVG dimensions from viewBox or width/height attributes, fallback to bounding rect
-      let width, height;
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [, , vw, vh] = viewBox.split(/\s+/).map(parseFloat);
-        width = vw || svgElement.width.baseVal.value || svgElement.getBoundingClientRect().width;
-        height = vh || svgElement.height.baseVal.value || svgElement.getBoundingClientRect().height;
-      } else {
-        width = svgElement.width.baseVal.value || svgElement.getBoundingClientRect().width;
-        height = svgElement.height.baseVal.value || svgElement.getBoundingClientRect().height;
-      }
-
-      // Clone SVG and set explicit dimensions to ensure proper rendering
-      const clonedSvg = svgElement.cloneNode(true);
-      clonedSvg.setAttribute('width', width);
-      clonedSvg.setAttribute('height', height);
-      clonedSvg.removeAttribute('style'); // Remove any inline styles that might affect size
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width * scaleFactor;
-      canvas.height = height * scaleFactor;
-      const ctx = canvas.getContext("2d");
-      const TRANSPARENT_COLOR = "#00000000";
-
-      ctx.fillStyle = TRANSPARENT_COLOR;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scaleFactor, scaleFactor);
-
-      const svgData = new XMLSerializer().serializeToString(clonedSvg);
-      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(svgBlob);
-
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-
-        canvas.toBlob((blob) => {
-          const downloadUrl = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = downloadUrl;
-          a.download = `kaplan_meier_chart.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(downloadUrl);
-        }, "image/png");
-      };
-
-      img.src = url;
-      setShowDownloadDropdown(false);
-    } catch (error) {
-      console.error("Error downloading Kaplan-Meier chart:", error);
-      alert("Error downloading Kaplan-Meier chart. Please check the console for details.");
-    }
-  };
-
-  const downloadRiskTable = (riskTableRef) => {
-    try {
-      if (!riskTableRef || !riskTableRef.current) {
-        console.error("Risk table ref not available");
-        return;
-      }
-
-      const tableElement = riskTableRef.current;
-      tableElement.style.height = 'auto';
-      // Generate image directly from the element without modifying styles
-      htmlToImage.toPng(tableElement, {
-        backgroundColor: 'transparent',
-        pixelRatio: 6,
-        quality: 1.0,
-        skipAutoScale: true,
-      }).then((dataUrl) => {
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `risk_table.png`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-        }, 100);
-      }).catch(error => {
-        console.error("Error using html-to-image:", error);
-        alert("Error downloading Risk table. Please check the console for details.");
-      });
-      tableElement.style.height = '280px';
-      setShowDownloadDropdown(false);
-    } catch (error) {
-      console.error("Error downloading Risk table:", error);
-      alert("Error downloading Risk table. Please check the console for details.");
-    }
-  };
-
-  const downloadBoth = () => {
-    try {
-      setShowDownloadDropdown(false);
-      
-      if (!survivalAnalysisContainerRef.current) {
-        console.error("Survival analysis container ref not available");
-        alert("Container not available for download.");
-        return;
-      }
-
-      const containerElement = survivalAnalysisContainerRef.current;
-
-      htmlToImage.toPng(containerElement, {
-        backgroundColor: 'transparent',
-        pixelRatio: 2,
-        quality: 1.0,
-        useCORS: true,
-        allowTaint: true
-      }).then((dataUrl) => {
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `survival_analysis_combined.png`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-        }, 100);
-      }).catch((error) => {
-        console.error("Error downloading combined chart:", error);
-        alert("Error downloading combined chart. Please check the console for details.");
-      });
-    } catch (error) {
-      console.error("Error downloading combined chart:", error);
-      alert("Error downloading combined chart. Please check the console for details.");
-    }
-  };
+  const { downloadKaplanMeierChart, downloadRiskTable, downloadBoth } = useMemo(
+    () => createHistogramModalSurvivalDownloads({
+      setShowDownloadDropdown,
+      survivalAnalysisContainerRef,
+    }),
+    [survivalAnalysisContainerRef],
+  );
 
   let valueA = 0;
   let valueB = 0;
@@ -478,279 +284,82 @@ const ExpandedChartModal = ({
 
   return (
     createPortal(
-    <ModalOverlay onClick={() => setExpandedChart(null)}>
-            
-      <ModalContent onClick={(e) => e.stopPropagation()}>
-          <ModalHeaderContainer>
-          {/* Tab Navigation */}
-          <TabContainer>
-            <Tab
-              active={activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN}
-              onClick={() => setActiveTab(CA_EXPANDED_CHART_MODAL_TAB_VENN)}
-            >
-              Venn Diagram
-            </Tab>
-            {Object.keys(data).map(dataset => (
-              <Tab
-                key={dataset}
-                active={activeTab === dataset}
-                onClick={() => setActiveTab(dataset)}
-              >
-                {titles[dataset]}
-              </Tab>
-            ))}
-            {titles.survivalAnalysis && (
-              <Tab
-                active={activeTab === 'survivalAnalysis'}
-                onClick={() => setActiveTab('survivalAnalysis')}
-              >
-                {titles.survivalAnalysis}
-              </Tab>
-            )}
-          </TabContainer>
-
-          <ModalActionButtons>
+      <ModalOverlay onClick={() => setExpandedChart(null)}>
+        <ModalContent onClick={(e) => e.stopPropagation()}>
+          <HistogramPopupModalHeader
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            setExpandedChart={setExpandedChart}
+            data={data}
+            titles={titles}
+            downloadChart={downloadChart}
+            survivalModalHasNoDisplayData={survivalModalHasNoDisplayData}
+            showDownloadDropdown={showDownloadDropdown}
+            setShowDownloadDropdown={setShowDownloadDropdown}
+            dropdownRef={dropdownRef}
+            downloadKaplanMeierChart={downloadKaplanMeierChart}
+            downloadRiskTable={downloadRiskTable}
+            downloadBoth={downloadBoth}
+            kmChartRef={kmChartRef}
+            riskTableRef={riskTableRef}
+            vennModalCanDownload={vennModalCanDownload}
+            handleVennDownload={handleVennDownload}
+            showChartTypeMenu={showChartTypeMenu}
+            setShowChartTypeMenu={setShowChartTypeMenu}
+            chartTypeMenuRef={chartTypeMenuRef}
+            chartVisualByPanelId={chartVisualByPanelId}
+            onSetChartVisual={onSetChartVisual}
+          />
+          <ModalChartWrapper>
             {activeTab === 'survivalAnalysis' ? (
-              <DownloadButtonWrapper>
-               <DownloadButton
-                  onClick={() => !survivalModalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
-                  style={{
-                    opacity: survivalModalHasNoDisplayData ? 0.45 : 1,
-                    cursor: survivalModalHasNoDisplayData ? 'not-allowed' : 'pointer',
-                    pointerEvents: survivalModalHasNoDisplayData ? 'none' : 'auto',
-                  }}
-                >
-                  <DownloadIconImage src={DownloadIcon} alt={"download"} />
-                </DownloadButton>
-              <DownloadDropdown ref={dropdownRef}>
-               
-                {showDownloadDropdown && !survivalModalHasNoDisplayData && (
-                  <DownloadDropdownMenu>
-                    <DownloadDropdownItem onClick={() => downloadKaplanMeierChart(kmChartRef)}>
-                      <DownloadIconSmall src={DownloadIconBorderless} alt="download" />
-                      Kaplan-Meier 
-                    </DownloadDropdownItem>
-                    <DownloadDropdownItem onClick={() => downloadRiskTable(riskTableRef)}>
-                      <DownloadIconSmall src={DownloadIconBorderless} alt="download" />
-                      Risk Table 
-                    </DownloadDropdownItem>
-                    <DownloadDropdownItem onClick={() => downloadBoth()}>
-                      <DownloadIconSmall src={DownloadIconBorderless} alt="download" />
-                      Download Both
-                    </DownloadDropdownItem>
-                  </DownloadDropdownMenu>
-                )}
-              </DownloadDropdown>
-              </DownloadButtonWrapper>
+              <HistogramPopupModalSurvivalTab
+                survivalModalHasNoDisplayData={survivalModalHasNoDisplayData}
+                chartHeight={chartHeight}
+                survivalAnalysisContainerRef={survivalAnalysisContainerRef}
+                kmChartRef={kmChartRef}
+                riskTableRef={riskTableRef}
+                filteredKmPlotData={filteredKmPlotData}
+                kmLoading={kmLoading}
+                kmError={kmError}
+                cohortColors={cohortColors}
+                cohorts={cohorts}
+                timeIntervals={timeIntervals}
+              />
             ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
-              <DownloadButton
-                onClick={() => vennModalCanDownload && handleVennDownload()}
-                style={{
-                  opacity: vennModalCanDownload ? 1 : 0.45,
-                  cursor: vennModalCanDownload ? 'pointer' : 'not-allowed',
-                  pointerEvents: vennModalCanDownload ? 'auto' : 'none',
-                }}
-              >
-                <DownloadIconImage src={DownloadIcon} alt="" />
-              </DownloadButton>
+              <HistogramPopupModalVennTab
+                vennModalChartAreaRef={vennModalChartAreaRef}
+                vennModalShowsChart={vennModalShowsChart}
+                chartVennModalProps={chartVennModalProps}
+                containerRef={containerRef}
+                canvasRef={canvasRef}
+                vennModalSlot={vennModalSlot}
+                vennModalShowsEmptyState={vennModalShowsEmptyState}
+              />
             ) : (
-              <>
-                <ChartTypeDropdownRoot ref={chartTypeMenuRef}>
-                  <ChartTypeTriggerButton
-                    type="button"
-                    aria-haspopup="listbox"
-                    aria-expanded={showChartTypeMenu}
-                    aria-label="Chart type"
-                    onClick={() => setShowChartTypeMenu((o) => !o)}
-                  >
-                    <ChartTypeIcon
-                      type={chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE}
-                      size={22}
-                    />
-                  </ChartTypeTriggerButton>
-                  {showChartTypeMenu && (
-                    <ChartTypeDropdownPanel role="listbox" aria-label="Choose chart type">
-                      {CHART_TYPE_OPTIONS.map(({ type, label }) => (
-                        <ChartTypeOption
-                          key={type}
-                          type="button"
-                          $active={(chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE) === type}
-                          aria-label={label}
-                          aria-selected={(chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE) === type}
-                          onClick={() => {
-                            onSetChartVisual(activeTab, type);
-                            setShowChartTypeMenu(false);
-                          }}
-                        >
-                          <ChartTypeIcon type={type} size={20} />
-                        </ChartTypeOption>
-                      ))}
-                    </ChartTypeDropdownPanel>
-                  )}
-                </ChartTypeDropdownRoot>
-                <DownloadButton onClick={() => downloadChart(activeTab, true)}>
-                  <DownloadIconImage src={DownloadIcon} alt={"download"} />
-                </DownloadButton>
-              </>
+              <HistogramPopupModalHistogramTab
+                activeTab={activeTab}
+                data={data}
+                viewType={viewType}
+                setViewType={setViewType}
+                chartVisualByPanelId={chartVisualByPanelId}
+                valueA={valueA}
+                valueB={valueB}
+                valueC={valueC}
+                modalHistogramDatasetChartHeight={modalHistogramDatasetChartHeight}
+                cellHover={cellHover}
+                handleMouseEnter={handleMouseEnter}
+                handleMouseLeave={handleMouseLeave}
+                c1Name={c1Name}
+                c2Name={c2Name}
+                c3Name={c3Name}
+              />
             )}
-            <CloseButton onClick={() => setExpandedChart(null)}>×</CloseButton>
-          </ModalActionButtons>
-
-        </ModalHeaderContainer>
-        <ModalChartWrapper>
-          {activeTab === 'survivalAnalysis' ? (
-            <SurvivalAnalysisModalContainer>
-              <SurvivalAnalysisModalContent ref={survivalAnalysisContainerRef}>
-                {survivalModalHasNoDisplayData ? (
-                  <div
-                    style={{
-                      width: '100%',
-                      flex: 1,
-                      minHeight: chartHeight + 280,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      boxSizing: 'border-box',
-                    }}
-                  >
-                    <HistogramChartEmptyState />
-                  </div>
-                ) : (
-                  <>
-                    <KmChartModalWrapper ref={kmChartRef}>
-                      <KaplanMeierChart
-                        data={filteredKmPlotData}
-                        title=""
-                        width={"100%"}
-                        height={chartHeight}
-                        loading={kmLoading}
-                        error={kmError}
-                        colors={cohortColors}
-                        showLabels={false}
-                        showLegend={false}
-                      />
-                    </KmChartModalWrapper>
-                    <RiskTableModalWrapper ref={riskTableRef}>
-                      <RiskTable
-                        cohorts={cohorts}
-                        timeIntervals={timeIntervals}
-                      />
-                    </RiskTableModalWrapper>
-                  </>
-                )}
-              </SurvivalAnalysisModalContent>
-            </SurvivalAnalysisModalContainer>
-          ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
-            <div
-              ref={vennModalChartAreaRef}
-              style={{
-                width: '100%',
-                height: '100%',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minHeight: 0,
-                overflow: 'auto',
-                boxSizing: 'border-box',
-              }}
-            >
-              {vennModalShowsChart ? (
-                <ChartVenn
-                  {...chartVennModalProps}
-                  containerRef={containerRef}
-                  canvasRef={canvasRef}
-                  slotWidth={vennModalSlot.slotWidth}
-                  slotHeight={vennModalSlot.slotHeight}
-                />
-              ) : vennModalShowsEmptyState ? (
-                <div
-                  style={{
-                    width: '100%',
-                    flex: 1,
-                    minHeight: Math.max(280, vennModalSlot.slotHeight - 40),
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    boxSizing: 'border-box',
-                  }}
-                >
-                  <HistogramChartEmptyState />
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <ModalChartContainer>
-             <ModalRadioFieldset>
-              <ModalRadioGroup>
-                <RadioLabel>
-                  <RadioInput
-                    type="radio"
-                    name={`modalViewType-${activeTab}`}
-                    value="count"
-                    checked={viewType[activeTab] === 'count'}
-                    onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-                  />
-                      <legend>
-                        # of Cases
-                      </legend>
-                </RadioLabel>
-                <RadioLabel>
-                  <RadioInput
-                    type="radio"
-                    name={`modalViewType-${activeTab}`}
-                    value="percentage"
-                    checked={viewType[activeTab] === 'percentage'}
-                    onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-                  />
-                  <legend>
-                    % of Cases
-                  </legend>
-                </RadioLabel>
-              </ModalRadioGroup>
-               </ModalRadioFieldset>
-             {Array.isArray(data[activeTab]) && data[activeTab].length > 0 ? (
-              <div
-                id={`expanded-chart-${activeTab}`}
-                style={{
-                  width: '100%',
-                  height: modalHistogramDatasetChartHeight,
-                  minHeight: modalHistogramDatasetChartHeight,
-                }}
-              >
-                <HistogramDatasetChart
-                  rows={data[activeTab]}
-                  viewType={viewType[activeTab]}
-                  chartType={chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE}
-                  valueA={valueA}
-                  valueB={valueB}
-                  valueC={valueC}
-                  compact={requiresCompactSpacingModal(activeTab)}
-                  height={modalHistogramDatasetChartHeight}
-                  width="100%"
-                  estimatedChartWidth={800}
-                  cellHover={cellHover}
-                  handleMouseEnter={handleMouseEnter}
-                  handleMouseLeave={handleMouseLeave}
-                  xAxisHeight={80}
-                  c1Name={c1Name || 'Cohort A'}
-                  c2Name={c2Name || 'Cohort B'}
-                  c3Name={c3Name || 'Cohort C'}
-                />
-              </div>
-) : (
-  <ModalNoDataContainer>
-    <HistogramChartEmptyState />
-  </ModalNoDataContainer>
-)}
-
-            </ModalChartContainer>
-          )}
-        </ModalChartWrapper>
-      </ModalContent>
-    </ModalOverlay>,
-  document.body
-));
+          </ModalChartWrapper>
+        </ModalContent>
+      </ModalOverlay>,
+      document.body,
+    )
+  );
 };
 
 export default ExpandedChartModal;
