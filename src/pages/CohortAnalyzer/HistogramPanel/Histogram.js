@@ -15,12 +15,12 @@ import {
   COHORT_ANALYZER_HISTOGRAM_TITLES as titles,
 } from '../store/cohortAnalyzerDefaultPanelRegistry';
 import { HISTOGRAM_CARD_CHROME_HEIGHT } from './histogramConstants';
-import { hasAnyAddableChartCatalogEntry } from '../cohortAnalyzerChartCatalog';
+import { hasAnyAddableChartCatalogEntry } from '../config/cohortAnalyzerChartCatalog';
 import {
   defaultHistogramPlotHeightPx,
   defaultHistogramStripDropSlotWidthPx,
   defaultHistogramCardOuterMinHeightPx,
-} from '../cohortAnalyzerViewPercentDefaults';
+} from '../config/cohortAnalyzerViewPercentDefaults';
 import { useHistogramPanelMuiStyles } from './styles/histogramMuiStyles';
 import {
   useFilteredKmPlotData,

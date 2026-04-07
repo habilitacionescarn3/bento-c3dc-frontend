@@ -10,7 +10,7 @@ import {
   VENN_CANVAS_SIZE_SCALE_EXPANDED,
   buildVennCohortSetLabel,
 } from "./ChartVennConfig";
-import { chartVennFallbackCanvasDimensionsPx } from "../cohortAnalyzerViewPercentDefaults";
+import { chartVennFallbackCanvasDimensionsPx } from '../config/cohortAnalyzerViewPercentDefaults';
 
 const intersectionColors = [
   "#000","#000","#cbdfcc",

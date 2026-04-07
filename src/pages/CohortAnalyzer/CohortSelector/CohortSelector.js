@@ -1,6 +1,6 @@
 import React, {useState, useContext, useRef} from "react";
 import { useStyle, Wrapper, CohortSelectionChild, TrashCanIcon, InstructionsWrapper, Instructions } from "./cohortSelectorStyling";
-import { useStyle as useMainStyle } from "../cohortAnalyzerStyling";
+import { useStyle as useMainStyle } from '../styling/cohortAnalyzerStyling';
 import trashCan from "../../../assets/icons/trash_can.svg";
 import trashCanBlack from "../../../assets/icons/trash_can_black.svg";
 import sortIcon from "../../../assets/icons/sort_icon.svg";
@@ -11,7 +11,7 @@ import {
     sortBy,
     sortByReturn,
 } from "../CohortAnalyzerUtil/CohortAnalyzerUtil";
-import { useCohortAnalyzer } from "../CohortAnalyzerContext";
+import { useCohortAnalyzer } from '../context/CohortAnalyzerContext';
 import { CohortStateContext } from "../../../components/CohortSelectorState/CohortStateContext";
 import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
 import { exampleButtonConfig, getExampleCohortKeys } from "../../../bento/exampleCohortData";

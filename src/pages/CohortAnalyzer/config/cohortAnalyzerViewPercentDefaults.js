@@ -24,12 +24,12 @@ import {
   CA_VENN_OUTER_MAX_W,
   CA_VENN_OUTER_MIN_H,
   CA_VENN_OUTER_MAX_H,
-} from './store/cohortAnalyzerLayoutConstants';
+} from '../store/cohortAnalyzerLayoutConstants';
 import {
   HISTOGRAM_CARD_CHROME_HEIGHT,
   HISTOGRAM_PLOT_MIN_HEIGHT,
   HISTOGRAM_PLOT_MAX_HEIGHT,
-} from './HistogramPanel/histogramConstants';
+} from '../HistogramPanel/histogramConstants';
 
 const VIEWPORT_CAP_W = 2560;
 const VIEWPORT_CAP_H = 1100;

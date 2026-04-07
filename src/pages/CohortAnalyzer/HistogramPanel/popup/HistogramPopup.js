@@ -11,7 +11,7 @@ import {
   useHistogramPopupKmCohortColors,
 } from '../utils/histogramPopupKmDerived';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../histogramConstants';
-import { useCohortAnalyzer } from '../../CohortAnalyzerContext';
+import { useCohortAnalyzer } from '../../context/CohortAnalyzerContext';
 import { HistogramPopupModalHeader } from './HistogramPopupModalHeader';
 import { HistogramPopupModalSurvivalTab } from './HistogramPopupModalSurvivalTab';
 import { HistogramPopupModalVennTab } from './HistogramPopupModalVennTab';
@@ -20,7 +20,7 @@ import {
   defaultVennModalSlotPx,
   defaultModalKmChartHeightPx,
   defaultModalHistogramDatasetChartHeightPx,
-} from '../../cohortAnalyzerViewPercentDefaults';
+} from '../../config/cohortAnalyzerViewPercentDefaults';
 
 const ExpandedChartModal = ({
   activeTab,

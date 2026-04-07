@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { makeStyles } from '@material-ui/core';
-import { ADD_CHART_DATA_TYPES, isAddChartDataTypeOnStrip } from '../cohortAnalyzerChartCatalog';
+import { ADD_CHART_DATA_TYPES, isAddChartDataTypeOnStrip } from '../config/cohortAnalyzerChartCatalog';
 import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../HistogramPanel/chart/HistogramChartTypeIcons';
 
 const useStyles = makeStyles(() => ({

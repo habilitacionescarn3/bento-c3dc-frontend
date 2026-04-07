@@ -7,13 +7,13 @@ import { onCreateNewCohort, onDeleteAllCohort, onDeleteSingleCohort } from "../.
 import { tableConfig, analyzer_tables } from "../../bento/cohortAnalyzerPageData";
 import Stats from '../../components/Stats/GlobalStatsController';
 import ConfirmationModal from "../../components/CohortModal/components/shared/ConfirmationModal";
-import NavigateAwayModal from './navigateAwayModal';
+import NavigateAwayModal from './components/navigateAwayModal';
 import { CohortModalContext } from "../../components/CohortModal/CohortModalContext";
 import CohortModal from "../../components/CohortModal/CohortModal";
 import Alert from '@material-ui/lab/Alert';
 import { useGlobal } from "../../components/Global/GlobalProvider";
 import questionIcon from "../../assets/icons/Question_icon_2.svg";
-import { useStyle } from "./cohortAnalyzerStyling";
+import { useStyle } from './styling/cohortAnalyzerStyling';
 import { CohortAnalyzerTableSection } from "./CohortAnalyzerTableSection/CohortAnalyzerTableSection"
 import {
     handlePopup,
@@ -24,8 +24,8 @@ import {
 import store from "../../store";
 import { updateUploadData, updateUploadMetadata } from "@bento-core/local-find";
 import { CohortSelector } from "./CohortSelector/CohortSelector";
-import { useCohortAnalyzer } from "./CohortAnalyzerContext";
-import { cohortAnalyzerThemeConfig } from './cohortAnalyzerThemeConfig';
+import { useCohortAnalyzer } from './context/CohortAnalyzerContext';
+import { cohortAnalyzerThemeConfig } from './styling/cohortAnalyzerThemeConfig';
 import { useBesidePanelDnD } from './hooks/useBesidePanelDnD';
 import { CohortAnalyzerChartArea } from './components/CohortAnalyzerChartArea';
 import { CohortAnalyzerSummaryView } from './components/CohortAnalyzerSummaryView';

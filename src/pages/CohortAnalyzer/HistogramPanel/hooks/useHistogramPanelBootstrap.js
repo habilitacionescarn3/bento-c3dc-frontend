@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { ADD_CHART_DATA_TYPES } from '../../cohortAnalyzerChartCatalog';
+import { ADD_CHART_DATA_TYPES } from '../../config/cohortAnalyzerChartCatalog';
 import {
   setStripOrder,
   setBesideStripPanelId,

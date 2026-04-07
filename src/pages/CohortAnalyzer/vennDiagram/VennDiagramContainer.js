@@ -10,7 +10,7 @@ import {
 } from '../store/cohortAnalyzerLayoutConstants';
 import CohortAnalyzerHeader from '../components/CohortAnalyzerHeader';
 import ChartVenn from './ChartVenn';
-import { useCohortAnalyzer } from '../CohortAnalyzerContext';
+import { useCohortAnalyzer } from '../context/CohortAnalyzerContext';
 import { ChartResizeHandle } from '../HistogramPanel/HistogramPanel.styled';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../HistogramPanel/histogramConstants';
 import { HistogramChartEmptyState } from '../HistogramPanel/chart/HistogramChartEmptyState';
@@ -19,7 +19,7 @@ import { BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE } from '../HistogramPanel/ut
 import {
   defaultVennOuterPx,
   vennChartSlotDimensionsFromOuterPx,
-} from '../cohortAnalyzerViewPercentDefaults';
+} from '../config/cohortAnalyzerViewPercentDefaults';
 
 const VennDiagramContainer = ({
   classes,

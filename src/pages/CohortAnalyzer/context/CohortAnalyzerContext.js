@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback } from "react";
-import { CohortStateContext } from "../../components/CohortSelectorState/CohortStateContext";
+import { CohortStateContext } from '../../../components/CohortSelectorState/CohortStateContext';
 
 const CohortAnalyzerContext = createContext();
 

@@ -1,4 +1,4 @@
-import { themeConfig } from '../studies/tableConfig/Theme';
+import { themeConfig } from '../../studies/tableConfig/Theme';
 
 /**
  * Table + MUI overrides for Cohort Analyzer data grids (table view).

@@ -7,7 +7,7 @@ import {
   downloadJsonPayload,
   downloadChartAreaAsPng,
   downloadChartAreaAsPdf,
-} from '../cohortAnalyzerDownloadAll';
+} from '../downloads/cohortAnalyzerDownloadAll';
 
 const FORMAT_OPTIONS = [
   { id: 'tsv', label: 'TSV' },
