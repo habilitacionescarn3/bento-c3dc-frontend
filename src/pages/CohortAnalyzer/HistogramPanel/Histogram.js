@@ -218,6 +218,8 @@ const Histogram = ({
   const {
     draggingDataset,
     setDraggingDataset,
+    beginStripChartDrag,
+    endStripChartDrag,
     dragOverDataset,
     setDragOverDataset,
     draggingCardDimensions,
@@ -341,6 +343,7 @@ const Histogram = ({
         survivalSelected={survivalSelected}
         besideDatasetForColumn={besideDatasetForColumn}
         survivalBesideVennTarget={survivalBesideVennTarget}
+        draggingDataset={draggingDataset}
         chartRef={chartRef}
         histogramCardSizes={histogramCardSizes}
         allInputsEmpty={allInputsEmpty}
@@ -409,7 +412,8 @@ const Histogram = ({
             defaultHistogramCardOuterMinHeightPx={defaultHistogramCardOuterMinHeightPx}
             estimateHistogramCardDropSize={estimateHistogramCardDropSize}
             draggingDataset={draggingDataset}
-            setDraggingDataset={setDraggingDataset}
+            beginStripChartDrag={beginStripChartDrag}
+            endStripChartDrag={endStripChartDrag}
             dragOverDataset={dragOverDataset}
             setDragOverDataset={setDragOverDataset}
             draggingCardDimensions={draggingCardDimensions}

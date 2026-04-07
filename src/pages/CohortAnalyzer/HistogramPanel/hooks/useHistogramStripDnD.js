@@ -21,6 +21,8 @@ export function useHistogramStripDnD({
   const [dragOverDataset, setDragOverDataset] = useState(null);
   const [draggingCardDimensions, setDraggingCardDimensions] = useState(null);
   const histogramDragSizeRef = useRef(null);
+  /** Bumps when a drag ends so a pending rAF must not set draggingDataset (avoids killing native DnD). */
+  const stripDragSessionRef = useRef(0);
 
   const captureHistogramDragCardSize = useCallback((event, datasetKey) => {
     const fromTarget = measureDragCardElement(event && event.currentTarget);
@@ -45,6 +47,24 @@ export function useHistogramStripDnD({
     histogramDragSizeRef.current = null;
     setDraggingCardDimensions(null);
   }, []);
+
+  const beginStripChartDrag = useCallback((datasetKey) => {
+    stripDragSessionRef.current += 1;
+    const session = stripDragSessionRef.current;
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        if (stripDragSessionRef.current !== session) return;
+        setDraggingDataset(datasetKey);
+      });
+    });
+  }, []);
+
+  const endStripChartDrag = useCallback(() => {
+    stripDragSessionRef.current += 1;
+    setDraggingDataset(null);
+    setDragOverDataset(null);
+    clearHistogramDragSize();
+  }, [clearHistogramDragSize]);
 
   const handleStripChartDragOver = useCallback(
     (event, targetDataset) => {
@@ -80,9 +100,7 @@ export function useHistogramStripDnD({
           order[j] = tmp;
           dispatch(setTopRowPanelOrder(order));
         }
-        setDraggingDataset(null);
-        setDragOverDataset(null);
-        clearHistogramDragSize();
+        endStripChartDrag();
         return;
       }
       if (!draggingDataset || draggingDataset === targetDataset) return;
@@ -94,16 +112,16 @@ export function useHistogramStripDnD({
       nextOrder.splice(fromIndex, 1);
       nextOrder.splice(insertIndex, 0, draggingDataset);
       dispatch(setStripOrder(nextOrder));
-      setDraggingDataset(null);
-      setDragOverDataset(null);
-      clearHistogramDragSize();
+      endStripChartDrag();
     },
-    [stripOrder, draggingDataset, topRowOrder, dispatch, clearHistogramDragSize],
+    [stripOrder, draggingDataset, topRowOrder, dispatch, endStripChartDrag],
   );
 
   return {
     draggingDataset,
     setDraggingDataset,
+    beginStripChartDrag,
+    endStripChartDrag,
     dragOverDataset,
     setDragOverDataset,
     draggingCardDimensions,

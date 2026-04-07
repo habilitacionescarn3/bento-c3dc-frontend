@@ -13,3 +13,24 @@ export function measureDragCardElement(el) {
 export function requiresCompactSpacing(dataset) {
   return dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
 }
+
+/**
+ * Collapse the strip item being dragged so its slot is freed. Avoid display:none so native
+ * drag + setDragImage stay reliable; drag image is captured in dragstart before this applies.
+ */
+export const HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE = {
+  width: 0,
+  minWidth: 0,
+  maxWidth: 0,
+  flexGrow: 0,
+  flexShrink: 1,
+  flexBasis: 0,
+  opacity: 0,
+  overflow: 'hidden',
+  margin: 0,
+  padding: 0,
+  border: 'none',
+  pointerEvents: 'none',
+  boxShadow: 'none',
+  transition: 'none',
+};

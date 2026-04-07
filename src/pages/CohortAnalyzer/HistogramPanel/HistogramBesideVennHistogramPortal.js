@@ -16,7 +16,7 @@ import {
   encodePanelDragPayload,
   CA_PANEL_DRAG_MIME,
 } from '../store/panelDnD';
-import { requiresCompactSpacing } from './histogramLayoutUtils';
+import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from './histogramLayoutUtils';
 import { HistogramChartEmptyState } from './HistogramChartEmptyState';
 
 export function HistogramBesideVennHistogramPortal({
@@ -26,7 +26,8 @@ export function HistogramBesideVennHistogramPortal({
   chartRef,
   histogramCardSizes,
   allInputsEmpty,
-  setDraggingDataset,
+  beginStripChartDrag,
+  endStripChartDrag,
   setDragOverDataset,
   captureHistogramDragCardSize,
   clearHistogramDragSize,
@@ -49,31 +50,34 @@ export function HistogramBesideVennHistogramPortal({
   c1Name,
   c2Name,
   c3Name,
+  draggingDataset,
 }) {
   if (survivalSelected || !besideDatasetForColumn || survivalBesideVennTarget == null) {
     return null;
   }
 
   const d = besideDatasetForColumn;
+  const isDragSourceHere = draggingDataset === d;
 
   return createPortal(
     <ChartWrapper
       id={`chart-beside-${d}`}
       ref={(el) => { chartRef.current[d] = el; }}
       style={{
-        ...(histogramCardSizes[d] && histogramCardSizes[d].width != null
-          ? {
-            width: histogramCardSizes[d].width,
-            flexShrink: 0,
-            alignSelf: 'flex-start',
-            maxWidth: 'none',
-          }
-          : {}),
+        ...(isDragSourceHere
+          ? HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE
+          : histogramCardSizes[d] && histogramCardSizes[d].width != null
+            ? {
+              width: histogramCardSizes[d].width,
+              flexShrink: 0,
+              alignSelf: 'flex-start',
+              maxWidth: 'none',
+            }
+            : {}),
         cursor: allInputsEmpty ? 'default' : 'grab',
       }}
       draggable={!allInputsEmpty}
       onDragStart={(event) => {
-        setDraggingDataset(d);
         setDragOverDataset(null);
         captureHistogramDragCardSize(event, d);
         const payload = encodePanelDragPayload({ kind: 'histogram', dataset: d });
@@ -84,11 +88,10 @@ export function HistogramBesideVennHistogramPortal({
         if (imgEl) {
           event.dataTransfer.setDragImage(imgEl, 32, 20);
         }
+        beginStripChartDrag(d);
       }}
       onDragEnd={() => {
-        setDraggingDataset(null);
-        setDragOverDataset(null);
-        clearHistogramDragSize();
+        endStripChartDrag();
       }}
     >
       <HeaderSection>

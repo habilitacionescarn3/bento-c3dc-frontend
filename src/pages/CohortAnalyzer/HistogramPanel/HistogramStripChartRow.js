@@ -27,8 +27,9 @@ import {
   encodePanelDragPayload,
   CA_PANEL_DRAG_MIME,
 } from '../store/panelDnD';
-import { requiresCompactSpacing } from './histogramLayoutUtils';
+import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from './histogramLayoutUtils';
 import { HistogramChartEmptyState } from './HistogramChartEmptyState';
+import { HISTOGRAM_STRIP_DROP_SLOT_WIDTH_EXTRA_PX } from './histogramConstants';
 
 export function HistogramStripChartRow({
   dataset,
@@ -44,7 +45,8 @@ export function HistogramStripChartRow({
   defaultHistogramCardOuterMinHeightPx,
   estimateHistogramCardDropSize,
   draggingDataset,
-  setDraggingDataset,
+  beginStripChartDrag,
+  endStripChartDrag,
   dragOverDataset,
   setDragOverDataset,
   draggingCardDimensions,
@@ -101,23 +103,24 @@ export function HistogramStripChartRow({
   const isDropTarget = dragOverDataset === dataset && draggingDataset && draggingDataset !== dataset;
   const showDropSlotBefore = isDropTarget;
   const dropSlotSize = (() => {
+    if (draggingDataset) {
+      const base = estimateHistogramCardDropSize(draggingDataset);
+      return {
+        width: base.width + HISTOGRAM_STRIP_DROP_SLOT_WIDTH_EXTRA_PX,
+        height: base.height,
+      };
+    }
     const fromDrag = draggingCardDimensions || histogramDragSizeRef.current;
     if (fromDrag) {
       return { width: fromDrag.width, height: fromDrag.height };
     }
-    if (!draggingDataset) {
-      return {
-        width: defaultDropSlotWidthPx,
-        height: defaultHistogramCardOuterMinHeightPx(defaultPlotHeightPx),
-      };
-    }
-    return estimateHistogramCardDropSize(draggingDataset);
+    return {
+      width: defaultDropSlotWidthPx,
+      height: defaultHistogramCardOuterMinHeightPx(defaultPlotHeightPx),
+    };
   })();
-  const cardDragOpacity = isDraggedCard
-    ? 0.42
-    : isDragging && !isDraggedCard
-      ? (isDropTarget ? 0.9 : 0.62)
-      : 1;
+  const cardDragOpacity =
+    isDragging && !isDraggedCard ? (isDropTarget ? 0.9 : 0.62) : 1;
   const peerShadowStyle =
     isDragging && !isDraggedCard
       ? {
@@ -150,11 +153,13 @@ export function HistogramStripChartRow({
             minWidth: 0,
             minHeight: 0,
             maxWidth: '100%',
-            border: '2px dashed #679AAA',
-            borderRadius: 10,
-            background: 'rgba(103, 154, 170, 0.12)',
             boxSizing: 'border-box',
             margin: 0,
+            border: 'none',
+            borderRadius: 10,
+            background: 'rgba(103, 154, 170, 0.12)',
+            outline: '2px dashed #679AAA',
+            outlineOffset: 0,
           }}
         />
       )}
@@ -162,15 +167,18 @@ export function HistogramStripChartRow({
         id={`chart-${dataset}`}
         ref={(el) => { chartRef.current[dataset] = el; }}
         style={{
-          ...(chartWrapperStyle || {}),
-          ...peerShadowStyle,
-          ...dropTargetStyle,
-          opacity: cardDragOpacity,
+          ...(isDraggedCard
+            ? HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE
+            : {
+              ...(chartWrapperStyle || {}),
+              ...peerShadowStyle,
+              ...dropTargetStyle,
+              opacity: cardDragOpacity,
+            }),
           cursor: allInputsEmpty ? 'default' : 'grab',
         }}
         draggable={!allInputsEmpty}
         onDragStart={(event) => {
-          setDraggingDataset(dataset);
           setDragOverDataset(null);
           captureHistogramDragCardSize(event, dataset);
           const payload = encodePanelDragPayload({ kind: 'histogram', dataset });
@@ -181,11 +189,10 @@ export function HistogramStripChartRow({
           if (imgEl) {
             event.dataTransfer.setDragImage(imgEl, 32, 20);
           }
+          beginStripChartDrag(dataset);
         }}
         onDragEnd={() => {
-          setDraggingDataset(null);
-          setDragOverDataset(null);
-          clearHistogramDragSize();
+          endStripChartDrag();
         }}
         onDragOver={(e) => handleStripChartDragOver(e, dataset)}
         onDrop={(e) => handleStripChartDrop(e, dataset)}
