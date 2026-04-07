@@ -84,7 +84,7 @@ const CohortItem = ({ cohort, cohortData, selectedCohorts, handleCheckbox, setDe
     );
 };
 
-export const CohortSelector = ({ handleDemoClick }) => {
+export const CohortSelector = ({ handleDemoClick, handleTutorialClick, tutorialButtonLabel }) => {
     //context
     const { state } = useContext(CohortStateContext);
     const {
@@ -106,106 +106,146 @@ export const CohortSelector = ({ handleDemoClick }) => {
     const mainClasses = useMainStyle();
      
     return (
-        <div className={classes.leftSideAnalyzer}>
-            <div className={classes.sideHeader}>
-                <>
-                    <Wrapper>
-                        <CohortSelectionChild>
-                            <span>{"Cohort Selector "}</span>
-                            <span>{" (" + selectedCohorts.length + "/3)"}</span>
-                        </CohortSelectionChild>
-                        <TrashCanIcon
-                            alt="Trashcan"
-                            state={state}
-                            onClick={() => handlePopup("", state, setDeleteInfo, deleteInfo)}
-                            src={trashCanBlack}
-                            width={18}
-                            height={20}
-                        />
-                    </Wrapper>
-                    <InstructionsWrapper>
-                        <Instructions>
-                            {"Select up to three cohorts "}
-                            <br />
-                            {"to view in the Cohort Analyzer"}
-                        </Instructions>
-                    </InstructionsWrapper>
+        <div className={classes.cohortSelectorColumn}>
+            <div className={classes.leftSideAnalyzer}>
+                <div className={classes.sideHeader}>
+                    <>
+                        <Wrapper>
+                            <CohortSelectionChild>
+                                <span>{"Cohort Selector "}</span>
+                                <span>{" (" + selectedCohorts.length + "/3)"}</span>
+                            </CohortSelectionChild>
+                            <TrashCanIcon
+                                alt="Trashcan"
+                                state={state}
+                                onClick={() => handlePopup("", state, setDeleteInfo, deleteInfo)}
+                                src={trashCanBlack}
+                                width={18}
+                                height={20}
+                            />
+                        </Wrapper>
+                        <InstructionsWrapper>
+                            <Instructions>
+                                {"Select up to three cohorts "}
+                                <br />
+                                {"to view in the Cohort Analyzer"}
+                            </Instructions>
+                        </InstructionsWrapper>
 
-                    {handleDemoClick && (() => {
-                        const exampleCohortKeys = getExampleCohortKeys();
-                        const nonExampleCohorts = Object.keys(state).filter(key => !exampleCohortKeys.includes(key));
-                        const isDisabled = nonExampleCohorts.length > 17;
-                        const hasExistingExampleCohorts = exampleCohortKeys.some(key => state[key]);
+                        {handleDemoClick && (() => {
+                            const exampleCohortKeys = getExampleCohortKeys();
+                            const nonExampleCohorts = Object.keys(state).filter(key => !exampleCohortKeys.includes(key));
+                            const isDisabled = nonExampleCohorts.length > 17;
+                            const hasExistingExampleCohorts = exampleCohortKeys.some(key => state[key]);
 
-                        const tooltipText = isDisabled
-                            ? exampleButtonConfig.tooltip.disabled
-                            : hasExistingExampleCohorts
-                                ? exampleButtonConfig.tooltip.replacement
-                                : exampleButtonConfig.tooltip.enabled;
+                            const tooltipText = isDisabled
+                                ? exampleButtonConfig.tooltip.disabled
+                                : hasExistingExampleCohorts
+                                    ? exampleButtonConfig.tooltip.replacement
+                                    : exampleButtonConfig.tooltip.enabled;
 
-                        return (
-                            <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start', paddingLeft: '0px' }}>
-                                <ToolTip
-                                    maxWidth="335px"
-                                    border={'1px solid #598ac5'}
-                                    arrowBorder={'1px solid #598AC5'}
-                                    title={
-                                        <div className={mainClasses.demoTooltipContent}>
-                                            <p>{tooltipText}</p>
-                                        </div>
-                                    }
-                                    placement="top"
-                                    arrow
-                                    interactive
-                                    arrowSize="30px"
-                                >
-                                    <button
-                                        onClick={handleDemoClick}
-                                        disabled={isDisabled}
-                                        className={isDisabled ? mainClasses.demoButtonFaded : mainClasses.demoButton}
+                            return (
+                                <div style={{ marginTop: '16px', display: 'flex', justifyContent: 'flex-start', paddingLeft: '0px' }}>
+                                    <ToolTip
+                                        maxWidth="335px"
+                                        border={'1px solid #598ac5'}
+                                        arrowBorder={'1px solid #598AC5'}
+                                        title={
+                                            <div className={mainClasses.demoTooltipContent}>
+                                                <p>{tooltipText}</p>
+                                            </div>
+                                        }
+                                        placement="top"
+                                        arrow
+                                        interactive
+                                        arrowSize="30px"
                                     >
-                                        {exampleButtonConfig.buttonText}
-                                    </button>
-                                </ToolTip>
-                            </div>
-                        );
-                    })()}
-                </>
-            </div>
-            <div className={classes.sortSection}>
-                <div style={{ display: 'flex', margin: 0, alignItems: 'center', cursor: 'pointer' }}>
-                    <img onClick={() => {
-                        resetSelection(setSelectedCohorts, setNodeIndex, setRowData);
-                    }} alt={"sortIcon"} src={sortIcon} width={14} height={14} style={{ margin: 5 }} role="button" />
-                    <p 
-                        style={{ fontFamily: 'Nunito', fontSize: '11px', color: sortType === 'alphabet' ? '#646464' : '#646464' }} 
-                        onClick={() => {
-                            sortBy("alphabet", cohortList, setCohortList, state);
-                            setSortType("alphabet");
-                        }}> Sort Alphabetically 
-                    </p>
+                                        <button
+                                            onClick={handleDemoClick}
+                                            disabled={isDisabled}
+                                            className={isDisabled ? mainClasses.demoButtonFaded : mainClasses.demoButton}
+                                        >
+                                            {exampleButtonConfig.buttonText}
+                                        </button>
+                                    </ToolTip>
+                                </div>
+                            );
+                        })()}
+                    </>
                 </div>
-                <div onClick={() => {
-                    sortBy("count", cohortList, setCohortList, state);
-                    setSortType("count");
-                }} className={classes.sortCount} style={{ fontFamily: 'Nunito', color: sortType === 'count' ? 'lightgray' : '#646464' }}>
-                    <p style={{ fontSize: 11 }}>Sort by Count</p>
+                <div className={classes.sortSection}>
+                    <div style={{ display: 'flex', margin: 0, alignItems: 'center', cursor: 'pointer' }}>
+                        <img onClick={() => {
+                            resetSelection(setSelectedCohorts, setNodeIndex, setRowData);
+                        }} alt={"sortIcon"} src={sortIcon} width={14} height={14} style={{ margin: 5 }} role="button" />
+                        <p
+                            style={{ fontFamily: 'Nunito', fontSize: '11px', color: sortType === 'alphabet' ? '#646464' : '#646464' }}
+                            onClick={() => {
+                                sortBy("alphabet", cohortList, setCohortList, state);
+                                setSortType("alphabet");
+                            }}> Sort Alphabetically
+                        </p>
+                    </div>
+                    <div onClick={() => {
+                        sortBy("count", cohortList, setCohortList, state);
+                        setSortType("count");
+                    }} className={classes.sortCount} style={{ fontFamily: 'Nunito', color: sortType === 'count' ? 'lightgray' : '#646464' }}>
+                        <p style={{ fontSize: 11 }}>Sort by Count</p>
+                    </div>
+                </div>
+                <div className={classes.leftSideAnalyzerChild}>
+                    {state && (sortType !== "" ? sortByReturn(sortType, Object.keys(state), state, selectedCohorts) : Object.keys(state)).map((cohort) => (
+                        <CohortItem
+                            key={state[cohort].cohortName}
+                            cohort={cohort}
+                            cohortData={state[cohort]}
+                            selectedCohorts={selectedCohorts}
+                            handleCheckbox={handleCheckbox}
+                            setDeleteInfo={setDeleteInfo}
+                            deleteInfo={deleteInfo}
+                            state={state}
+                            classes={classes}
+                        />
+                    ))}
                 </div>
             </div>
-            <div className={classes.leftSideAnalyzerChild}>
-                {state && (sortType !== "" ? sortByReturn(sortType, Object.keys(state), state, selectedCohorts) : Object.keys(state)).map((cohort) => (
-                    <CohortItem
-                        key={state[cohort].cohortName}
-                        cohort={cohort}
-                        cohortData={state[cohort]}
-                        selectedCohorts={selectedCohorts}
-                        handleCheckbox={handleCheckbox}
-                        setDeleteInfo={setDeleteInfo}
-                        deleteInfo={deleteInfo}
-                        state={state}
-                        classes={classes}
-                    />
-                ))}
+            <div className={classes.cohortListFooter}>
+                <button
+                    type="button"
+                    className={classes.cohortListFooterButton}
+                    onClick={() => { if (handleTutorialClick) handleTutorialClick(); }}
+                    aria-label={tutorialButtonLabel || 'Play short tutorial video'}
+                >
+                   
+                   <div style={{ height: 50, width: 50, backgroundColor: 'green' , borderRadius: '50%', position:' relative',  right: '-90%' }}>
+                   <svg
+                        className={classes.cohortTutorialPlayCircle}
+                        width="49"
+                        height="49"
+                        viewBox="0 0 49 49"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                        focusable="false"
+                    >
+                        <circle cx="24.5" cy="24.5" r="24.5" fill="#00B57F" />
+                        <g transform="translate(16.5 15.5)">
+                            <path
+                                d="M15.3125 8.84115L-1.78633e-06 17.6818L-1.01346e-06 0.000469492L15.3125 8.84115Z"
+                                fill="white"
+                            />
+                        </g>
+                    </svg>
+                   </div>
+                    
+                </button>
+
+          
+                 
+                <span className={classes.cohortTutorialSrOnly}>
+                        { 'Play short tutorial video'}
+                    </span>
             </div>
+           
         </div>)
 }

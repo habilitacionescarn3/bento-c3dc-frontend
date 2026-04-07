@@ -15,6 +15,7 @@ import {
   COHORT_ANALYZER_HISTOGRAM_TITLES as titles,
 } from '../store/cohortAnalyzerDefaultPanelRegistry';
 import { HISTOGRAM_CARD_CHROME_HEIGHT } from './histogramConstants';
+import { hasAnyAddableChartCatalogEntry } from '../cohortAnalyzerChartCatalog';
 import {
   defaultHistogramPlotHeightPx,
   defaultHistogramStripDropSlotWidthPx,
@@ -60,6 +61,8 @@ const Histogram = ({
   cohortParticipantState,
   containerRef,
   canvasRef,
+  histogramExportRef,
+  onAllAddableChartsAddedChange,
 }) => {
   const classes = useHistogramPanelMuiStyles();
   const dispatch = useDispatch();
@@ -99,6 +102,7 @@ const Histogram = ({
 
   const {
     graphData,
+    fetchedData,
     viewType,
     setViewType,
     activeTab,
@@ -118,6 +122,22 @@ const Histogram = ({
     activeTab: chartModalActiveTab,
     setActiveTab: setChartModalActiveTab,
   });
+
+  useEffect(() => {
+    if (!histogramExportRef) return;
+    histogramExportRef.current = {
+      getChartExportPayload() {
+        return {
+          graphData,
+          fetchedData,
+          viewType,
+          chartTitles: displayTitles,
+          selectedDatasets,
+        };
+      },
+    };
+  }, [graphData, fetchedData, viewType, displayTitles, selectedDatasets]);
+
   const {
     data: kmPlotData,
     loading: kmLoading,
@@ -172,6 +192,12 @@ const Histogram = ({
     setHistogramCardSizes,
     setSurvivalCardSize,
   });
+
+  useEffect(() => {
+    if (typeof onAllAddableChartsAddedChange !== 'function') return;
+    const anyAddable = hasAnyAddableChartCatalogEntry(stripOrder, selectedDatasets);
+    onAllAddableChartsAddedChange(!anyAddable);
+  }, [stripOrder, selectedDatasets, onAllAddableChartsAddedChange]);
 
   const defaultPlotHeightPx = useMemo(() => defaultHistogramPlotHeightPx(), []);
   const defaultDropSlotWidthPx = useMemo(() => defaultHistogramStripDropSlotWidthPx(), []);

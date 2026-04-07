@@ -1,5 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
+import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
 import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
 import Histogram from '../HistogramPanel/Histogram';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../HistogramPanel/histogramConstants';
@@ -8,6 +9,51 @@ import {
     upsertPanelRegistry,
 } from '../store/cohortAnalyzerLayoutActions';
 import { buildDefaultCohortAnalyzerPanelRegistry } from '../store/cohortAnalyzerDefaultPanelRegistry';
+import { CohortAnalyzerDownloadAllDropdown } from './CohortAnalyzerDownloadAllDropdown';
+
+const ALL_CHARTS_ADDED_TOOLTIP = 'All charts are already added';
+
+function AddChartToolbarButton({
+    classes,
+    hasParticipantData,
+    allAddableChartsAdded,
+    openAddChartInline,
+    ariaLabel,
+}) {
+    const disabled = !hasParticipantData || allAddableChartsAdded;
+    const cursor = disabled ? 'not-allowed' : 'pointer';
+    const showAllAddedTip = hasParticipantData && allAddableChartsAdded;
+    const button = (
+        <button
+            type="button"
+            className={classes.addChartButton}
+            style={{ cursor }}
+            disabled={disabled}
+            onClick={openAddChartInline}
+            aria-label={ariaLabel}
+            title={showAllAddedTip ? ALL_CHARTS_ADDED_TOOLTIP : undefined}
+        >
+            ADD CHART <span aria-hidden>+</span>
+        </button>
+    );
+    if (!showAllAddedTip) {
+        return button;
+    }
+    return (
+        <ToolTip
+            maxWidth="280px"
+            border="1px solid #598ac5"
+            arrowBorder="1px solid #598AC5"
+            title={<div>{ALL_CHARTS_ADDED_TOOLTIP}</div>}
+            placement="top"
+            arrow
+            interactive
+            arrowSize="24px"
+        >
+            <span style={{ display: 'inline-flex' }}>{button}</span>
+        </ToolTip>
+    );
+}
 
 /**
  * Chart summary: toolbar, Venn + survival top row, and histogram strip.
@@ -41,12 +87,25 @@ export function CohortAnalyzerChartArea({
 }) {
     const dispatch = useDispatch();
 
+    const chartSummaryExportRef = useRef(null);
+    const histogramExportRef = useRef(null);
+
     const [expandedChart, setExpandedChart] = useState(null);
     const [chartModalActiveTab, setChartModalActiveTab] = useState('sexAtBirth');
+    const [allAddableChartsAdded, setAllAddableChartsAdded] = useState(false);
 
     const handleExpandVennInChartModal = useCallback(() => {
         setExpandedChart(CA_EXPANDED_CHART_MODAL_TAB_VENN);
         setChartModalActiveTab(CA_EXPANDED_CHART_MODAL_TAB_VENN);
+    }, []);
+
+    const openAddChartInline = useCallback(() => {
+        setInlineAddChartOpen(true);
+        setInlineAddChartNonce((n) => n + 1);
+    }, [setInlineAddChartOpen, setInlineAddChartNonce]);
+
+    const handleAllAddableChartsAddedChange = useCallback((allAdded) => {
+        setAllAddableChartsAdded(Boolean(allAdded));
     }, []);
 
     const participantIds = (index) => {
@@ -59,6 +118,39 @@ export function CohortAnalyzerChartArea({
         const id = selectedCohorts[index];
         return id && state && state[id] ? state[id].cohortName : '';
     };
+
+    const getExportPayload = useCallback(() => {
+        const histRef = histogramExportRef.current;
+        const histogram =
+            histRef && typeof histRef.getChartExportPayload === 'function'
+                ? histRef.getChartExportPayload()
+                : {};
+        const cohortSummaries = selectedCohorts.map((id) => {
+            const entry = state && state[id];
+            return {
+                cohortId: id,
+                cohortName: entry && entry.cohortName ? entry.cohortName : id,
+                participantIds:
+                    entry && Array.isArray(entry.participants)
+                        ? entry.participants.map((item) => (item.id ? item.id : item.participant.id))
+                        : [],
+            };
+        });
+        const nameAt = (index) => {
+            const id = selectedCohorts[index];
+            return id && state && state[id] ? state[id].cohortName : '';
+        };
+        return {
+            exportedAt: new Date().toISOString(),
+            cohortLabels: {
+                c1: nameAt(0),
+                c2: nameAt(1),
+                c3: nameAt(2),
+            },
+            histogram,
+            cohorts: cohortSummaries,
+        };
+    }, [state, selectedCohorts]);
 
     return (
         <>
@@ -81,24 +173,22 @@ export function CohortAnalyzerChartArea({
                     ))}
                 </div>
                 <div className={classes.chartActionButtons}>
-                    <button
-                        type="button"
-                        className={classes.addChartButton}
-                        style={{ cursor: hasParticipantData ? 'pointer' : 'not-allowed' }}
+                    <AddChartToolbarButton
+                        classes={classes}
+                        hasParticipantData={hasParticipantData}
+                        allAddableChartsAdded={allAddableChartsAdded}
+                        openAddChartInline={openAddChartInline}
+                        ariaLabel="Add chart"
+                    />
+                    <CohortAnalyzerDownloadAllDropdown
+                        classes={classes}
                         disabled={!hasParticipantData}
-                        onClick={() => {
-                            setInlineAddChartOpen(true);
-                            setInlineAddChartNonce((n) => n + 1);
-                        }}
-                    >
-                        ADD CHART <span aria-hidden>+</span>
-                    </button>
-                    <button type="button" className={classes.downloadAllButton}>
-                        DOWNLOAD ALL
-                    </button>
+                        chartAreaRef={chartSummaryExportRef}
+                        getExportPayload={getExportPayload}
+                    />
                 </div>
             </div>
-            <div className={classes.chartSummaryMain}>
+            <div className={classes.chartSummaryMain} ref={chartSummaryExportRef}>
                 <div
                     className={classes.vennSurvivalRow}
                     onDragLeave={handleBesideRowDragLeave}
@@ -194,7 +284,18 @@ export function CohortAnalyzerChartArea({
                     cohortParticipantState={state}
                     containerRef={containerRef}
                     canvasRef={canvasRef}
+                    histogramExportRef={histogramExportRef}
+                    onAllAddableChartsAddedChange={handleAllAddableChartsAddedChange}
                 />
+                <div className={classes.chartSummaryHistogramFooter}>
+                    <AddChartToolbarButton
+                        classes={classes}
+                        hasParticipantData={hasParticipantData}
+                        allAddableChartsAdded={allAddableChartsAdded}
+                        openAddChartInline={openAddChartInline}
+                        ariaLabel="Add chart below histograms"
+                    />
+                </div>
             </div>
         </>
     );

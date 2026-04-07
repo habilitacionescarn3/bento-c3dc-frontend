@@ -22,6 +22,7 @@ export function isAddChartDataTypeOnStrip(entry, stripDatasetKeys, selectedDatas
   }
   return false;
 }
+
 export const ADD_CHART_DATA_TYPES = [
  /* { id: 'dbGapAccession', label: 'DbGap Accession', datasetKey: null, available: false },
   { id: 'studyName', label: 'Study Name', datasetKey: null, available: false },
@@ -47,3 +48,15 @@ export const ADD_CHART_DATA_TYPES = [
     skipChartTypeStep: true,
   },
 ];
+
+/**
+ * True if at least one catalog entry can still be added (available + datasetKey + not already on layout).
+ */
+export function hasAnyAddableChartCatalogEntry(stripDatasetKeys, selectedDatasets) {
+  const strip = stripDatasetKeys || [];
+  const sel = Array.isArray(selectedDatasets) ? selectedDatasets : [];
+  return ADD_CHART_DATA_TYPES.some((entry) => {
+    if (!entry.available || !entry.datasetKey) return false;
+    return !isAddChartDataTypeOnStrip(entry, strip, sel);
+  });
+}

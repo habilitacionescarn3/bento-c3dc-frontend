@@ -270,6 +270,7 @@ const graphData = useMemo(() => {
 
   return {
     graphData,
+    fetchedData,
     viewType,
     setViewType,
     activeTab,
