@@ -11,8 +11,12 @@ export const VENN_CHART_LAYOUT_PADDING = {
   bottom: 44,
 };
 
-/** Scale applied to canvas width/height so circles + external labels fit inside the card slot. */
-export const VENN_CANVAS_SIZE_SCALE = 0.001;
+/**
+ * Scale applied to canvas width/height so circles + external labels fit inside the slot.
+ * Inline card uses a smaller canvas; expanded modal can use most of the available area.
+ */
+export const VENN_CANVAS_SIZE_SCALE_NORMAL = 0.001;
+export const VENN_CANVAS_SIZE_SCALE_EXPANDED = 0.1;
 
 /**
  * Max characters of cohort name shown on Venn circles; longer names use `…` (ellipsis).

@@ -456,6 +456,7 @@ export const CohortAnalyzer = () => {
                                 vennBesideDrag={besideDnD.vennBesideDrag}
                                 survivalBesideDrag={besideDnD.survivalBesideDrag}
                                 besidePanelDragging={besideDnD.besidePanelDragging}
+                                besidePanelDraggingRef={besideDnD.besidePanelDraggingRef}
                                 survivalBesideVennEl={survivalBesideVennEl}
                                 setSurvivalBesideVennEl={setSurvivalBesideVennEl}
                                 setSurvivalBesideColumnActive={setSurvivalBesideColumnActive}

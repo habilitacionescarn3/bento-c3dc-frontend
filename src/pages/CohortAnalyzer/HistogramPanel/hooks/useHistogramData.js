@@ -1,7 +1,7 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { gql } from "@apollo/client";
 import { useApolloClient } from "@apollo/client";
-import { barColors } from "./HistogramPanel.styled";
+import { barColors } from '../HistogramPanel.styled';
 export const useHistogramData = ({
   c1 = [],
   c2 = [],

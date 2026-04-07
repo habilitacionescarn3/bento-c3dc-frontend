@@ -1,6 +1,6 @@
 import React from 'react';
-import ChartVenn from '../vennDiagram/ChartVenn';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
+import ChartVenn from '../../vennDiagram/ChartVenn';
+import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 
 export function HistogramPopupModalVennTab({
   vennModalChartAreaRef,
@@ -33,6 +33,7 @@ export function HistogramPopupModalVennTab({
           canvasRef={canvasRef}
           slotWidth={vennModalSlot.slotWidth}
           slotHeight={vennModalSlot.slotHeight}
+          expandedView
         />
       ) : vennModalShowsEmptyState ? (
         <div

@@ -1,9 +1,9 @@
 import styled from 'styled-components';
-import { CA_SURVIVAL_CARD_MIN_HEIGHT } from '../store/cohortAnalyzerLayoutConstants';
+import { CA_SURVIVAL_CARD_MIN_HEIGHT } from '../../store/cohortAnalyzerLayoutConstants';
 import {
   HISTOGRAM_CARD_MIN_WIDTH,
   HISTOGRAM_CARD_SHELL_MIN_VH,
-} from './histogramConstants';
+} from '../histogramConstants';
 
 export const barColors = {
   colorA: '#FAE69C',

@@ -6,9 +6,9 @@ import {
   ModalRadioFieldset,
   ModalRadioGroup,
   ModalNoDataContainer,
-} from './HistogramPanel.styled';
-import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
+} from '../HistogramPanel.styled';
+import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from '../chart/HistogramDatasetChart';
+import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 
 const requiresCompactSpacingModal = (dataset) =>
   dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';

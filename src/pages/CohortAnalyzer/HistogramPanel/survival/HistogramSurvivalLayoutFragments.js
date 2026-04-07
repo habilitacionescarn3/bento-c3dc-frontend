@@ -4,14 +4,14 @@ import {
   FullWidthChartWrapper,
   SurvivalBesideVennCard,
   ChartResizeHandle,
-} from './HistogramPanel.styled';
+} from '../HistogramPanel.styled';
 import { SurvivalAnalysisCardBody } from './SurvivalAnalysisCardBody';
 import {
   CA_SURVIVAL_CARD_MIN_WIDTH as SURVIVAL_CARD_MIN_WIDTH,
   CA_SURVIVAL_CARD_MAX_WIDTH as SURVIVAL_CARD_MAX_WIDTH,
   CA_SURVIVAL_CARD_MIN_HEIGHT as SURVIVAL_CARD_MIN_HEIGHT,
   CA_SURVIVAL_CARD_MAX_HEIGHT as SURVIVAL_CARD_MAX_HEIGHT,
-} from '../store/cohortAnalyzerLayoutConstants';
+} from '../../store/cohortAnalyzerLayoutConstants';
 
 export function HistogramSurvivalBesideVennPortal({
   selectedDatasets,

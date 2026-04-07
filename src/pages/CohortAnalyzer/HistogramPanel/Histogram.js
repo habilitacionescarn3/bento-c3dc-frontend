@@ -1,13 +1,13 @@
 import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
-import { useHistogramData } from './useHistogramData';
-import useKmplot from './useKmplot';
-import useRiskTable from './useRiskTable';
+import { useHistogramData } from './hooks/useHistogramData';
+import useKmplot from './survival/useKmplot';
+import useRiskTable from './survival/useRiskTable';
 import {
   HistogramContainer,
   ChartWrapper,
   CenterContainer,
 } from './HistogramPanel.styled';
-import ExpandedChartModal from './HistogramPopup';
+import ExpandedChartModal from './popup/HistogramPopup';
 import AddChartInlinePanel from '../components/AddChartInlinePanel';
 import { useDispatch, useSelector } from 'react-redux';
 import { patchChartVisuals } from '../store/cohortAnalyzerLayoutActions';
@@ -21,7 +21,7 @@ import {
   defaultHistogramStripDropSlotWidthPx,
   defaultHistogramCardOuterMinHeightPx,
 } from '../cohortAnalyzerViewPercentDefaults';
-import { useHistogramPanelMuiStyles } from './histogramMuiStyles';
+import { useHistogramPanelMuiStyles } from './styles/histogramMuiStyles';
 import {
   useFilteredKmPlotData,
   useKmCohortColors,
@@ -33,12 +33,12 @@ import { useHistogramStripDnD } from './hooks/useHistogramStripDnD';
 import { useHistogramPanelBootstrap } from './hooks/useHistogramPanelBootstrap';
 import { useSurvivalBesideVennCardStyle } from './hooks/useSurvivalBesideVennCardStyle';
 import { useBesideStripHistogramMetrics } from './hooks/useBesideStripHistogramMetrics';
-import { HistogramStripChartRow } from './HistogramStripChartRow';
-import { HistogramBesideVennHistogramPortal } from './HistogramBesideVennHistogramPortal';
+import { HistogramStripChartRow } from './strip/HistogramStripChartRow';
+import { HistogramBesideVennHistogramPortal } from './strip/HistogramBesideVennHistogramPortal';
 import {
   HistogramSurvivalBesideVennPortal,
   SurvivalHistogramInlineLegacy,
-} from './HistogramSurvivalLayoutFragments';
+} from './survival/HistogramSurvivalLayoutFragments';
 
 const Histogram = ({
   c1,
@@ -51,6 +51,7 @@ const Histogram = ({
   onSurvivalBesideColumnActive,
   besideCardDrag,
   besidePanelDragState = null,
+  besidePanelDraggingRef = null,
   inlineAddChartOpen = false,
   onInlineAddChartClose,
   inlineAddChartNonce = 0,
@@ -217,7 +218,6 @@ const Histogram = ({
 
   const {
     draggingDataset,
-    setDraggingDataset,
     beginStripChartDrag,
     endStripChartDrag,
     dragOverDataset,
@@ -234,6 +234,7 @@ const Histogram = ({
     stripOrder,
     topRowOrder,
     dispatch,
+    besidePanelDraggingRef,
   });
 
   const visibleHistogramDatasets = useMemo(
@@ -347,7 +348,8 @@ const Histogram = ({
         chartRef={chartRef}
         histogramCardSizes={histogramCardSizes}
         allInputsEmpty={allInputsEmpty}
-        setDraggingDataset={setDraggingDataset}
+        beginStripChartDrag={beginStripChartDrag}
+        endStripChartDrag={endStripChartDrag}
         setDragOverDataset={setDragOverDataset}
         captureHistogramDragCardSize={captureHistogramDragCardSize}
         clearHistogramDragSize={clearHistogramDragSize}
@@ -382,7 +384,9 @@ const Histogram = ({
       />
       <CenterContainer
         onDragLeave={(event) => {
-          if (!draggingDataset) return;
+          const besideDrag =
+            besidePanelDraggingRef && besidePanelDraggingRef.current;
+          if (!draggingDataset && !besideDrag) return;
           const related = event.relatedTarget;
           if (related && event.currentTarget.contains(related)) return;
           setDragOverDataset(null);
@@ -439,6 +443,7 @@ const Histogram = ({
             c1Name={c1Name}
             c2Name={c2Name}
             c3Name={c3Name}
+            besidePanelDraggingRef={besidePanelDraggingRef}
           />
         ))}
         {inlineAddChartOpen ? (

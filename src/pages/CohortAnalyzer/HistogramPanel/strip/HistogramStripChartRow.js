@@ -1,11 +1,11 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import DownloadIcon from '../../../assets/icons/Download_Histogram_icon.svg';
-import ExpandIcon from '../../../assets/icons/Expand_Histogram_icon.svg';
+import DownloadIcon from '../../../../assets/icons/Download_Histogram_icon.svg';
+import ExpandIcon from '../../../../assets/icons/Expand_Histogram_icon.svg';
 import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
-import questionIcon from '../../../assets/icons/Question_icon_2.svg';
-import histogramChartTitleHandle from '../../../assets/icons/histogramChartTitleHandle.svg';
-import histogramCloseIcon from '../../../assets/icons/closeHistogramChart.svg';
+import questionIcon from '../../../../assets/icons/Question_icon_2.svg';
+import histogramChartTitleHandle from '../../../../assets/icons/histogramChartTitleHandle.svg';
+import histogramCloseIcon from '../../../../assets/icons/closeHistogramChart.svg';
 import {
   ChartWrapper,
   HeaderSection,
@@ -19,17 +19,17 @@ import {
   RadioGroup,
   RadioInput,
   RadioLabel,
-} from './HistogramPanel.styled';
-import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
-import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
-import { patchChartVisuals } from '../store/cohortAnalyzerLayoutActions';
+} from '../HistogramPanel.styled';
+import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from '../chart/HistogramDatasetChart';
+import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../chart/HistogramChartTypeIcons';
+import { patchChartVisuals } from '../../store/cohortAnalyzerLayoutActions';
 import {
   encodePanelDragPayload,
   CA_PANEL_DRAG_MIME,
-} from '../store/panelDnD';
-import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from './histogramLayoutUtils';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
-import { HISTOGRAM_STRIP_DROP_SLOT_WIDTH_EXTRA_PX } from './histogramConstants';
+} from '../../store/panelDnD';
+import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from '../utils/histogramLayoutUtils';
+import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
+import { HISTOGRAM_STRIP_DROP_SLOT_WIDTH_EXTRA_PX } from '../histogramConstants';
 
 export function HistogramStripChartRow({
   dataset,
@@ -72,6 +72,7 @@ export function HistogramStripChartRow({
   c1Name,
   c2Name,
   c3Name,
+  besidePanelDraggingRef,
 }) {
   const dispatch = useDispatch();
 
@@ -98,11 +99,27 @@ export function HistogramStripChartRow({
   const estimatedChartW = cardSize && cardSize.width != null
     ? Math.max(280, cardSize.width - 48)
     : 400;
-  const isDragging = Boolean(draggingDataset);
+  const topRowSnap = besidePanelDraggingRef && besidePanelDraggingRef.current;
+  const topRowStripDrag =
+    topRowSnap &&
+    (topRowSnap.kind === 'venn' || topRowSnap.kind === 'survival');
+  const isDragging = Boolean(draggingDataset) || Boolean(topRowStripDrag);
   const isDraggedCard = draggingDataset === dataset;
-  const isDropTarget = dragOverDataset === dataset && draggingDataset && draggingDataset !== dataset;
+  const isHistogramDropTarget =
+    Boolean(draggingDataset) &&
+    draggingDataset !== dataset &&
+    dragOverDataset === dataset;
+  const isTopRowDropTarget =
+    Boolean(topRowStripDrag) && dragOverDataset === dataset;
+  const isDropTarget = isHistogramDropTarget || isTopRowDropTarget;
   const showDropSlotBefore = isDropTarget;
   const dropSlotSize = (() => {
+    if (topRowStripDrag && topRowSnap && topRowSnap.width && topRowSnap.height) {
+      return {
+        width: topRowSnap.width + HISTOGRAM_STRIP_DROP_SLOT_WIDTH_EXTRA_PX,
+        height: topRowSnap.height,
+      };
+    }
     if (draggingDataset) {
       const base = estimateHistogramCardDropSize(draggingDataset);
       return {

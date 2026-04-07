@@ -4,7 +4,7 @@ import {
   parseDragDataTransfer,
   CA_PANEL_DRAG_MIME,
 } from '../../store/panelDnD';
-import { measureDragCardElement } from '../histogramLayoutUtils';
+import { measureDragCardElement } from '../utils/histogramLayoutUtils';
 
 /**
  * Drag-and-drop for histogram strip ordering and top-row Venn/survival swap drops.
@@ -15,6 +15,7 @@ export function useHistogramStripDnD({
   stripOrder,
   topRowOrder,
   dispatch,
+  besidePanelDraggingRef = null,
 }) {
 
   const [draggingDataset, setDraggingDataset] = useState(null);
@@ -70,9 +71,22 @@ export function useHistogramStripDnD({
     (event, targetDataset) => {
       event.preventDefault();
       const types = Array.from(event.dataTransfer.types || []);
+      const hasPanelMime =
+        types.includes(CA_PANEL_DRAG_MIME) || types.includes('text/plain');
+      const refSnap = besidePanelDraggingRef && besidePanelDraggingRef.current;
+      const topRowStripDrag =
+        refSnap &&
+        (refSnap.kind === 'venn' || refSnap.kind === 'survival');
+
+      if (topRowStripDrag && hasPanelMime) {
+        event.dataTransfer.dropEffect = 'move';
+        setDragOverDataset(targetDataset);
+        return;
+      }
+
       if (
         (!draggingDataset || draggingDataset === targetDataset)
-        && (types.includes(CA_PANEL_DRAG_MIME) || types.includes('text/plain'))
+        && hasPanelMime
       ) {
         event.dataTransfer.dropEffect = 'move';
         return;
@@ -81,7 +95,7 @@ export function useHistogramStripDnD({
       event.dataTransfer.dropEffect = 'move';
       setDragOverDataset(targetDataset);
     },
-    [draggingDataset],
+    [draggingDataset, besidePanelDraggingRef],
   );
 
   const handleStripChartDrop = useCallback(
@@ -100,7 +114,7 @@ export function useHistogramStripDnD({
           order[j] = tmp;
           dispatch(setTopRowPanelOrder(order));
         }
-        endStripChartDrag();
+        setDragOverDataset(null);
         return;
       }
       if (!draggingDataset || draggingDataset === targetDataset) return;

@@ -1,5 +1,4 @@
 /**
- * Histogram / survival / modal styled primitives (split to stay under ~500 lines per file).
+ * Barrel re-export — implementation lives in ./styles/.
  */
-export * from './histogramPanelCore.styled';
-export * from './histogramPanelModalSurvival.styled';
+export * from './styles';

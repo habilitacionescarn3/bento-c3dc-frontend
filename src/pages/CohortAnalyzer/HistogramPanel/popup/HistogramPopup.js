@@ -4,14 +4,14 @@ import {
   ModalChartWrapper,
   ModalContent,
   ModalOverlay,
-} from './HistogramPanel.styled';
-import { createHistogramModalSurvivalDownloads } from './histogramModalSurvivalDownloads';
+} from '../HistogramPanel.styled';
+import { createHistogramModalSurvivalDownloads } from '../utils/histogramModalSurvivalDownloads';
 import {
   useHistogramPopupFilteredKmData,
   useHistogramPopupKmCohortColors,
-} from './histogramPopupKmDerived';
-import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from './histogramConstants';
-import { useCohortAnalyzer } from '../CohortAnalyzerContext';
+} from '../utils/histogramPopupKmDerived';
+import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../histogramConstants';
+import { useCohortAnalyzer } from '../../CohortAnalyzerContext';
 import { HistogramPopupModalHeader } from './HistogramPopupModalHeader';
 import { HistogramPopupModalSurvivalTab } from './HistogramPopupModalSurvivalTab';
 import { HistogramPopupModalVennTab } from './HistogramPopupModalVennTab';
@@ -20,7 +20,7 @@ import {
   defaultVennModalSlotPx,
   defaultModalKmChartHeightPx,
   defaultModalHistogramDatasetChartHeightPx,
-} from '../cohortAnalyzerViewPercentDefaults';
+} from '../../cohortAnalyzerViewPercentDefaults';
 
 const ExpandedChartModal = ({
   activeTab,

@@ -1,5 +1,5 @@
 import { makeStyles } from '@material-ui/core';
-import { HISTOGRAM_CHART_PLOT_MIN_VH } from './histogramConstants';
+import { HISTOGRAM_CHART_PLOT_MIN_VH } from '../histogramConstants';
 
 export const useHistogramPanelMuiStyles = makeStyles({
   cohortNameEllipsis: {

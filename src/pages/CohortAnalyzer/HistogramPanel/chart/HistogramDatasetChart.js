@@ -15,7 +15,7 @@ import {
 } from 'recharts';
 import CustomChartTooltip from './CustomChartTooltip';
 import CustomXAxisTick from './CustomXAxisTick';
-import { barColors } from './HistogramPanel.styled';
+import { barColors } from '../HistogramPanel.styled';
 
 export const CHART_TYPE_KEYS = {
   PIE: 'pie',

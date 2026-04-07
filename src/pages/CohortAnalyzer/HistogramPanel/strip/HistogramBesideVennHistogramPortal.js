@@ -1,23 +1,23 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import DownloadIcon from '../../../assets/icons/Download_Histogram_icon.svg';
-import ExpandIcon from '../../../assets/icons/Expand_Histogram_icon.svg';
-import histogramChartTitleHandle from '../../../assets/icons/histogramChartTitleHandle.svg';
-import histogramCloseIcon from '../../../assets/icons/closeHistogramChart.svg';
+import DownloadIcon from '../../../../assets/icons/Download_Histogram_icon.svg';
+import ExpandIcon from '../../../../assets/icons/Expand_Histogram_icon.svg';
+import histogramChartTitleHandle from '../../../../assets/icons/histogramChartTitleHandle.svg';
+import histogramCloseIcon from '../../../../assets/icons/closeHistogramChart.svg';
 import {
   ChartWrapper,
   HeaderSection,
   ChartTitle,
   ChartActionButtons,
   ChartResizeHandle,
-} from './HistogramPanel.styled';
-import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
+} from '../HistogramPanel.styled';
+import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from '../chart/HistogramDatasetChart';
 import {
   encodePanelDragPayload,
   CA_PANEL_DRAG_MIME,
-} from '../store/panelDnD';
-import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from './histogramLayoutUtils';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
+} from '../../store/panelDnD';
+import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from '../utils/histogramLayoutUtils';
+import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 
 export function HistogramBesideVennHistogramPortal({
   survivalSelected,

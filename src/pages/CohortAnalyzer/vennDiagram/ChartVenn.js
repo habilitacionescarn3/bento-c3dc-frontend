@@ -6,7 +6,8 @@ import {
   DEFAULT_FONT_SIZE_THRESHOLD,
   hexToRgba,
   VENN_CHART_LAYOUT_PADDING,
-  VENN_CANVAS_SIZE_SCALE,
+  VENN_CANVAS_SIZE_SCALE_NORMAL,
+  VENN_CANVAS_SIZE_SCALE_EXPANDED,
   buildVennCohortSetLabel,
 } from "./ChartVennConfig";
 import { chartVennFallbackCanvasDimensionsPx } from "../cohortAnalyzerViewPercentDefaults";
@@ -40,6 +41,8 @@ const ChartVenn = ({
   canvasRef,
   slotWidth,
   slotHeight,
+  /** When true (expanded chart modal), canvas uses VENN_CANVAS_SIZE_SCALE_EXPANDED. */
+  expandedView = false,
 }) => {
   const chartRef = useRef(null);
 
@@ -206,8 +209,11 @@ useEffect(() => {
       maxHeight = Math.max(120, Math.round(slotHeight * 0.92) - 24);
     }
 
-    maxWidth = Math.round(maxWidth * VENN_CANVAS_SIZE_SCALE);
-    maxHeight = Math.round(maxHeight * VENN_CANVAS_SIZE_SCALE);
+    const canvasScale = expandedView
+      ? VENN_CANVAS_SIZE_SCALE_EXPANDED
+      : VENN_CANVAS_SIZE_SCALE_NORMAL;
+    maxWidth = Math.round(maxWidth * canvasScale);
+    maxHeight = Math.round(maxHeight * canvasScale);
 
     canvasRef.current.width = maxWidth;
     canvasRef.current.height = maxHeight;
@@ -220,7 +226,7 @@ useEffect(() => {
   return () => {
     if (chartRef.current) chartRef.current.destroy();
   };
-}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight]);
+}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight, expandedView]);
 
   useEffect(() => {
     let updatedStat = {};

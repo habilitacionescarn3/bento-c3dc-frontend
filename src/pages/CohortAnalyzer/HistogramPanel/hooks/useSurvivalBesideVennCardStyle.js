@@ -4,6 +4,7 @@ import {
   CA_SURVIVAL_CARD_MAX_HEIGHT as SURVIVAL_CARD_MAX_HEIGHT,
 } from '../../store/cohortAnalyzerLayoutConstants';
 import { BESIDE_PEER_DRAG_STYLE } from '../histogramConstants';
+import { BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE } from '../utils/histogramLayoutUtils';
 
 export function useSurvivalBesideVennCardStyle({
   survivalCardSize,
@@ -28,12 +29,7 @@ export function useSurvivalBesideVennCardStyle({
     };
     const drag = {};
     if (besidePanelDragState && besidePanelDragState.kind === 'survival') {
-      Object.assign(drag, {
-        opacity: 0.42,
-        outline: '2px dashed #679AAA',
-        outlineOffset: 2,
-        borderRadius: 10,
-      });
+      Object.assign(drag, BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE);
     }
     if (besidePanelDragState && besidePanelDragState.kind === 'venn') {
       Object.assign(drag, BESIDE_PEER_DRAG_STYLE);

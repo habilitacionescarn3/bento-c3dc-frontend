@@ -34,3 +34,21 @@ export const HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE = {
   boxShadow: 'none',
   transition: 'none',
 };
+
+/** Collapse Venn / survival top-row card while native drag is active (full-width column). */
+export const BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE = {
+  opacity: 0,
+  overflow: 'hidden',
+  pointerEvents: 'none',
+  margin: 0,
+  padding: 0,
+  border: 'none',
+  boxShadow: 'none',
+  transition: 'none',
+  flex: '0 0 auto',
+  minHeight: 0,
+  height: 0,
+  maxHeight: 0,
+  width: '100%',
+  maxWidth: '100%',
+};

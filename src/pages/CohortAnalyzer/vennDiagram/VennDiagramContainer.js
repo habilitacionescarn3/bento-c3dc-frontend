@@ -13,17 +13,13 @@ import ChartVenn from './ChartVenn';
 import { useCohortAnalyzer } from '../CohortAnalyzerContext';
 import { ChartResizeHandle } from '../HistogramPanel/HistogramPanel.styled';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../HistogramPanel/histogramConstants';
-import { HistogramChartEmptyState } from '../HistogramPanel/HistogramChartEmptyState';
+import { HistogramChartEmptyState } from '../HistogramPanel/chart/HistogramChartEmptyState';
+import { BESIDE_PEER_DRAG_STYLE } from '../HistogramPanel/histogramConstants';
+import { BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE } from '../HistogramPanel/utils/histogramLayoutUtils';
 import {
   defaultVennOuterPx,
   vennChartSlotDimensionsFromOuterPx,
 } from '../cohortAnalyzerViewPercentDefaults';
-
-const BESIDE_PEER_DRAG_STYLE = {
-  boxShadow: '0 14px 28px rgba(29, 61, 73, 0.28)',
-  filter: 'brightness(0.96)',
-  transition: 'box-shadow 0.15s ease, filter 0.15s ease, opacity 0.15s ease',
-};
 
 const VennDiagramContainer = ({
   classes,
@@ -237,12 +233,7 @@ const VennDiagramContainer = ({
     maxHeight: 'none',
     alignSelf: 'stretch',
     ...(besidePanelDragState && besidePanelDragState.kind === 'venn'
-      ? {
-        opacity: 0.42,
-        outline: '2px dashed #679AAA',
-        outlineOffset: 2,
-        borderRadius: 10,
-      }
+      ? BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE
       : {}),
     ...(besidePanelDragState && besidePanelDragState.kind === 'survival'
       ? BESIDE_PEER_DRAG_STYLE

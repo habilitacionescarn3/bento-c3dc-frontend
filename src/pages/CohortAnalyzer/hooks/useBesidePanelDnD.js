@@ -22,6 +22,7 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
     const survivalBesideTopRowUsesOrder = survivalBesideFromSelection;
 
     const besidePanelDraggingRef = useRef(null);
+    const besideDragSessionRef = useRef(0);
     const [besidePanelDragging, setBesidePanelDragging] = useState(null);
     const [besideDropTarget, setBesideDropTarget] = useState(null);
 
@@ -35,36 +36,49 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
             }
             : undefined;
 
+    const beginBesidePanelDrag = useCallback((panelId, dims) => {
+        besideDragSessionRef.current += 1;
+        const session = besideDragSessionRef.current;
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                if (besideDragSessionRef.current !== session) return;
+                setBesidePanelDragging({ kind: panelId, width: dims.width, height: dims.height });
+            });
+        });
+    }, []);
+
+    const endBesidePanelDrag = useCallback(() => {
+        besideDragSessionRef.current += 1;
+        besidePanelDraggingRef.current = null;
+        setBesidePanelDragging(null);
+        setBesideDropTarget(null);
+    }, []);
+
     const handleBesidePanelDragStart = useCallback((e, panelId) => {
         const payload = encodePanelDragPayload({ kind: panelId, dataset: null });
         e.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
         e.dataTransfer.setData('text/plain', panelId);
         e.dataTransfer.effectAllowed = 'move';
-        if (typeof document === 'undefined') return;
-        const domId = panelId === 'venn' ? 'cohort-analyzer-venn-card' : 'cohort-analyzer-survival-beside-card';
-        const el = document.getElementById(domId);
-        if (el && typeof el.getBoundingClientRect === 'function') {
-            const r = el.getBoundingClientRect();
-            const dragState = {
-                kind: panelId,
-                width: Math.round(r.width),
-                height: Math.round(r.height),
-            };
-            besidePanelDraggingRef.current = dragState;
-            setBesidePanelDragging(dragState);
-            e.dataTransfer.setDragImage(el, 32, 20);
-        } else {
-            const dragState = { kind: panelId, width: 400, height: 380 };
-            besidePanelDraggingRef.current = dragState;
-            setBesidePanelDragging(dragState);
+        let w = 400;
+        let h = 380;
+        if (typeof document !== 'undefined') {
+            const domId = panelId === 'venn' ? 'cohort-analyzer-venn-card' : 'cohort-analyzer-survival-beside-card';
+            const el = document.getElementById(domId);
+            if (el && typeof el.getBoundingClientRect === 'function') {
+                const r = el.getBoundingClientRect();
+                w = Math.round(r.width);
+                h = Math.round(r.height);
+                e.dataTransfer.setDragImage(el, 32, 20);
+            }
         }
-    }, []);
+        const dragState = { kind: panelId, width: w, height: h };
+        besidePanelDraggingRef.current = dragState;
+        beginBesidePanelDrag(panelId, { width: w, height: h });
+    }, [beginBesidePanelDrag]);
 
     const handleBesidePanelDragEnd = useCallback(() => {
-        besidePanelDraggingRef.current = null;
-        setBesidePanelDragging(null);
-        setBesideDropTarget(null);
-    }, []);
+        endBesidePanelDrag();
+    }, [endBesidePanelDrag]);
 
     const handleBesidePanelDragOver = useCallback((e) => {
         e.preventDefault();
@@ -117,9 +131,7 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
             if (!parsed) return;
 
             if (parsed.kind === 'histogram' && parsed.dataset) {
-                if (!survivalBesideFromSelection) {
-                    promoteHistogramToBesideSlot(parsed.dataset);
-                }
+                promoteHistogramToBesideSlot(parsed.dataset);
                 return;
             }
 
@@ -135,7 +147,7 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
                 dispatch(setTopRowPanelOrder(order));
             }
         },
-        [dispatch, topRowOrder, survivalBesideFromSelection, promoteHistogramToBesideSlot],
+        [dispatch, topRowOrder, promoteHistogramToBesideSlot],
     );
 
     const vennHeaderGrab = (
@@ -183,6 +195,7 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
     return {
         survivalBesideTopRowUsesOrder,
         besidePanelDragging,
+        besidePanelDraggingRef,
         besideDropTarget,
         besideColumnDropTargetStyle,
         handleBesideRowDragLeave,

@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { kmplotColors } from './histogramPanelCore.styled';
+import { kmplotColors } from '../styles/histogramPanelCore.styled';
 
 /** KM series filtered to selected cohort arms (expanded chart modal). */
 export function useHistogramPopupFilteredKmData(kmPlotData, c1, c2, c3) {

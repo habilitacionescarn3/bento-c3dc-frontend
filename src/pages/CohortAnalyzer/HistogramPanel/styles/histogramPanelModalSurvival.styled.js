@@ -28,15 +28,25 @@ export const ModalContent = styled.div`
   box-sizing: border-box;
 `;
 
+/** Same box as chart-type / download icons so the header action row aligns on one baseline. */
+const MODAL_HEADER_ICON_CONTROL_PX = 32;
+
 export const CloseButton = styled.button`
   background: none;
   border: none;
   font-size: 22px;
   line-height: 1;
-  padding: 4px 6px;
+  padding: 0;
+  width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  height: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
   color: #666;
   flex-shrink: 0;
+  margin: 0px;
+  box-sizing: border-box;
   &:hover {
     color: #333;
   }
@@ -75,12 +85,16 @@ export const Tab = styled.button`
   border-bottom: ${(props) => (props.active ? '2px solid #3A7587' : 'none')};
 `;
 
-/** Chart type selector (pie / vertical bar / horizontal bar / line) */
+/**
+ * Chart type selector (pie / vertical bar / horizontal bar / line).
+ * Strip cards use negative trailing margin to sit closer to the next icon; the expanded modal
+ * header should not, or the chart-type→download gap looks smaller than download→close (same flex gap).
+ */
 export const ChartTypeDropdownRoot = styled.div`
   position: relative;
   display: inline-flex;
   align-items: center;
-  margin-right: -6px;
+  margin-right: ${(p) => (p.$compactTrailingGap !== false ? '-6px' : '0')};
 `;
 
 export const ChartTypeDropdownPanel = styled.div`
@@ -124,8 +138,8 @@ export const ChartTypeTriggerButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  height: ${MODAL_HEADER_ICON_CONTROL_PX}px;
   padding: 0;
   border: none;
   border-radius: 6px;
@@ -149,6 +163,7 @@ export const DownloadDropdown = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+  z-index: 1;
 `;
 
 export const DownloadDropdownMenu = styled.div`
@@ -166,6 +181,7 @@ export const DownloadDropdownMenu = styled.div`
   padding-left: 8px;
   padding-top: 4px;
   padding-bottom: 4px;
+  pointer-events: auto;
 `;
 
 export const DownloadDropdownItem = styled.div`
@@ -315,19 +331,32 @@ export const ModalActionButtons = styled.div`
   flex-wrap: nowrap;
   align-items: center;
   justify-content: flex-end;
-  gap: 6px;
+  gap: 2px;
 `;
 
+/** Stacks download control + dropdown anchor in one 32px cell so flex gap to close isn’t widened. */
 export const DownloadButtonWrapper = styled.div`
-  margin-right: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative;
+  display: inline-grid;
+  grid-template: ${MODAL_HEADER_ICON_CONTROL_PX}px / ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  place-items: stretch;
+  flex-shrink: 0;
+  & > * {
+    grid-area: 1 / 1;
+  }
 `;
 
 export const DownloadButton = styled.span`
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  height: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  flex-shrink: 0;
+  box-sizing: border-box;
   cursor: pointer;
-  margin-top: 5px;
 `;
 
 export const DownloadIconImage = styled.img`

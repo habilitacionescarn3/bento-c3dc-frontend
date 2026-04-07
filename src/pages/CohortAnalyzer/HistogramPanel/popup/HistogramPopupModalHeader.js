@@ -16,12 +16,12 @@ import {
   ChartTypeDropdownPanel,
   ChartTypeOption,
   ChartTypeTriggerButton,
-} from './HistogramPanel.styled';
-import DownloadIcon from '../../../assets/icons/Download_Histogram_icon.svg';
-import DownloadIconBorderless from '../../../assets/icons/download-icon-borderless.svg';
-import { ChartTypeIcon, CHART_TYPE_OPTIONS } from './HistogramChartTypeIcons';
-import { DEFAULT_CHART_TYPE } from './HistogramDatasetChart';
-import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from './histogramConstants';
+} from '../HistogramPanel.styled';
+import DownloadIcon from '../../../../assets/icons/Download_Histogram_icon.svg';
+import DownloadIconBorderless from '../../../../assets/icons/download-icon-borderless.svg';
+import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../chart/HistogramChartTypeIcons';
+import { DEFAULT_CHART_TYPE } from '../chart/HistogramDatasetChart';
+import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../histogramConstants';
 
 export function HistogramPopupModalHeader({
   activeTab,
@@ -78,16 +78,6 @@ export function HistogramPopupModalHeader({
       <ModalActionButtons>
         {activeTab === 'survivalAnalysis' ? (
           <DownloadButtonWrapper>
-            <DownloadButton
-              onClick={() => !survivalModalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
-              style={{
-                opacity: survivalModalHasNoDisplayData ? 0.45 : 1,
-                cursor: survivalModalHasNoDisplayData ? 'not-allowed' : 'pointer',
-                pointerEvents: survivalModalHasNoDisplayData ? 'none' : 'auto',
-              }}
-            >
-              <DownloadIconImage src={DownloadIcon} alt="download" />
-            </DownloadButton>
             <DownloadDropdown ref={dropdownRef}>
               {showDownloadDropdown && !survivalModalHasNoDisplayData && (
                 <DownloadDropdownMenu>
@@ -106,6 +96,16 @@ export function HistogramPopupModalHeader({
                 </DownloadDropdownMenu>
               )}
             </DownloadDropdown>
+            <DownloadButton
+              onClick={() => !survivalModalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
+              style={{
+                opacity: survivalModalHasNoDisplayData ? 0.45 : 1,
+                cursor: survivalModalHasNoDisplayData ? 'not-allowed' : 'pointer',
+                pointerEvents: survivalModalHasNoDisplayData ? 'none' : 'auto',
+              }}
+            >
+              <DownloadIconImage src={DownloadIcon} alt="download" />
+            </DownloadButton>
           </DownloadButtonWrapper>
         ) : activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN ? (
           <DownloadButton
@@ -120,7 +120,7 @@ export function HistogramPopupModalHeader({
           </DownloadButton>
         ) : (
           <>
-            <ChartTypeDropdownRoot ref={chartTypeMenuRef}>
+            <ChartTypeDropdownRoot ref={chartTypeMenuRef} $compactTrailingGap={false}>
               <ChartTypeTriggerButton
                 type="button"
                 aria-haspopup="listbox"

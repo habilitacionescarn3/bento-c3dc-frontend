@@ -6,8 +6,8 @@ import {
   SurvivalAnalysisModalContent,
   KmChartModalWrapper,
   RiskTableModalWrapper,
-} from './HistogramPanel.styled';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
+} from '../HistogramPanel.styled';
+import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 
 export function HistogramPopupModalSurvivalTab({
   survivalModalHasNoDisplayData,

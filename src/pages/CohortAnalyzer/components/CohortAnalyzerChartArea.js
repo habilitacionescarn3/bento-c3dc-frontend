@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
 import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
-import Histogram from '../HistogramPanel/Histogram';
+import Histogram from '../HistogramPanel';
 import { CA_EXPANDED_CHART_MODAL_TAB_VENN } from '../HistogramPanel/histogramConstants';
 import {
     resetCohortAnalyzerLayout,
@@ -10,6 +10,7 @@ import {
 } from '../store/cohortAnalyzerLayoutActions';
 import { buildDefaultCohortAnalyzerPanelRegistry } from '../store/cohortAnalyzerDefaultPanelRegistry';
 import { CohortAnalyzerDownloadAllDropdown } from './CohortAnalyzerDownloadAllDropdown';
+import { BESIDE_PEER_DRAG_STYLE } from '../HistogramPanel/histogramConstants';
 
 const ALL_CHARTS_ADDED_TOOLTIP = 'All charts are already added';
 
@@ -76,6 +77,7 @@ export function CohortAnalyzerChartArea({
     vennBesideDrag,
     survivalBesideDrag,
     besidePanelDragging,
+    besidePanelDraggingRef,
     survivalBesideVennEl,
     setSurvivalBesideVennEl,
     setSurvivalBesideColumnActive,
@@ -117,6 +119,48 @@ export function CohortAnalyzerChartArea({
     const cohortName = (index) => {
         const id = selectedCohorts[index];
         return id && state && state[id] ? state[id].cohortName : '';
+    };
+
+    const vennColumnDragStyle = {
+        ...(besidePanelDragging && besidePanelDragging.kind === 'survival'
+            ? BESIDE_PEER_DRAG_STYLE
+            : {}),
+    };
+    const survivalColumnDragStyle = {
+        ...(besidePanelDragging && besidePanelDragging.kind === 'venn'
+            ? BESIDE_PEER_DRAG_STYLE
+            : {}),
+    };
+
+    const renderBesideColumnDropPreview = (columnId) => {
+        if (
+            besideDropTarget !== columnId
+            || !besidePanelDragging
+            || besidePanelDragging.kind === columnId
+        ) {
+            return null;
+        }
+        const h = besidePanelDragging.height;
+        return (
+            <div
+                aria-hidden
+                style={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    boxSizing: 'border-box',
+                    minHeight: h,
+                    height: h,
+                    maxHeight: h,
+                    flexShrink: 0,
+                    alignSelf: 'stretch',
+                    borderRadius: 10,
+                    background: 'rgba(103, 154, 170, 0.12)',
+                    outline: '2px dashed #679AAA',
+                    outlineOffset: 0,
+                    marginBottom: 10,
+                }}
+            />
+        );
     };
 
     const getExportPayload = useCallback(() => {
@@ -197,10 +241,14 @@ export function CohortAnalyzerChartArea({
                         <>
                             <div
                                 className={classes.vennColumn}
-                                style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
+                                style={{
+                                    ...vennColumnDragStyle,
+                                    ...(besideDropTarget === 'venn' ? besideColumnDropTargetStyle || {} : {}),
+                                }}
                                 onDragOver={handleBesideColumnDragOver('venn')}
                                 onDrop={handleBesidePanelDrop('venn')}
                             >
+                                {renderBesideColumnDropPreview('venn')}
                                 <div className={classes.rightSideAnalyzerInnerContainer}>
                                     <div className={classes.rightSideAnalyzerHeader2} />
                                     <VennDiagramContainer
@@ -218,11 +266,16 @@ export function CohortAnalyzerChartArea({
                             </div>
                             <div
                                 className={classes.survivalBesideVennColumn}
-                                style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
+                                style={{
+                                    ...survivalColumnDragStyle,
+                                    ...(besideDropTarget === 'survival' ? besideColumnDropTargetStyle || {} : {}),
+                                }}
                                 ref={setSurvivalBesideVennEl}
                                 onDragOver={handleBesideColumnDragOver('survival')}
                                 onDrop={handleBesidePanelDrop('survival')}
-                            />
+                            >
+                                {renderBesideColumnDropPreview('survival')}
+                            </div>
                         </>
                     ) : (
                         topRowOrder.map((panel) => (
@@ -230,10 +283,14 @@ export function CohortAnalyzerChartArea({
                                 <div
                                     key="venn"
                                     className={classes.vennColumn}
-                                    style={besideDropTarget === 'venn' ? besideColumnDropTargetStyle : undefined}
+                                    style={{
+                                        ...vennColumnDragStyle,
+                                        ...(besideDropTarget === 'venn' ? besideColumnDropTargetStyle || {} : {}),
+                                    }}
                                     onDragOver={handleBesideColumnDragOver('venn')}
                                     onDrop={handleBesidePanelDrop('venn')}
                                 >
+                                    {renderBesideColumnDropPreview('venn')}
                                     <div className={classes.rightSideAnalyzerInnerContainer}>
                                         <div className={classes.rightSideAnalyzerHeader2} />
                                         <VennDiagramContainer
@@ -254,11 +311,16 @@ export function CohortAnalyzerChartArea({
                                 <div
                                     key="survival"
                                     className={classes.survivalBesideVennColumn}
-                                    style={besideDropTarget === 'survival' ? besideColumnDropTargetStyle : undefined}
+                                    style={{
+                                        ...survivalColumnDragStyle,
+                                        ...(besideDropTarget === 'survival' ? besideColumnDropTargetStyle || {} : {}),
+                                    }}
                                     ref={setSurvivalBesideVennEl}
                                     onDragOver={handleBesideColumnDragOver('survival')}
                                     onDrop={handleBesidePanelDrop('survival')}
-                                />
+                                >
+                                    {renderBesideColumnDropPreview('survival')}
+                                </div>
                             )
                         ))
                     )}
@@ -268,6 +330,7 @@ export function CohortAnalyzerChartArea({
                     onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
                     besideCardDrag={survivalBesideDrag}
                     besidePanelDragState={besidePanelDragging}
+                    besidePanelDraggingRef={besidePanelDraggingRef}
                     inlineAddChartOpen={inlineAddChartOpen}
                     onInlineAddChartClose={() => setInlineAddChartOpen(false)}
                     inlineAddChartNonce={inlineAddChartNonce}

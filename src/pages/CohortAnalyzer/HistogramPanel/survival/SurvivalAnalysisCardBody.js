@@ -2,12 +2,12 @@ import React from 'react';
 import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
 import { KaplanMeierChart } from '@bento-core/kmplot';
 import RiskTable from '@bento-core/risk-table';
-import ExpandIcon from '../../../assets/icons/Expand_Histogram_icon.svg';
-import DownloadIcon from '../../../assets/icons/Download_Histogram_icon.svg';
-import DownloadIconBorderless from '../../../assets/icons/download-icon-borderless.svg';
-import questionIcon from '../../../assets/icons/Question_icon_2.svg';
-import histogramChartTitleHandle from '../../../assets/icons/histogramChartTitleHandle.svg';
-import histogramCloseIcon from '../../../assets/icons/closeHistogramChart.svg';
+import ExpandIcon from '../../../../assets/icons/Expand_Histogram_icon.svg';
+import DownloadIcon from '../../../../assets/icons/Download_Histogram_icon.svg';
+import DownloadIconBorderless from '../../../../assets/icons/download-icon-borderless.svg';
+import questionIcon from '../../../../assets/icons/Question_icon_2.svg';
+import histogramChartTitleHandle from '../../../../assets/icons/histogramChartTitleHandle.svg';
+import histogramCloseIcon from '../../../../assets/icons/closeHistogramChart.svg';
 import {
   SurvivalAnalysisHeader,
   SurvivalAnalysisContainer,
@@ -20,17 +20,17 @@ import {
   DownloadDropdown,
   DownloadDropdownMenu,
   DownloadDropdownItem,
-} from './HistogramPanel.styled';
+} from '../HistogramPanel.styled';
 import {
   CA_SURVIVAL_CARD_MIN_HEIGHT as SURVIVAL_CARD_MIN_HEIGHT,
   CA_SURVIVAL_CARD_MAX_HEIGHT as SURVIVAL_CARD_MAX_HEIGHT,
-} from '../store/cohortAnalyzerLayoutConstants';
+} from '../../store/cohortAnalyzerLayoutConstants';
 import {
   downloadKaplanMeierChart,
   downloadRiskTable,
   downloadSurvivalCombined,
-} from './histogramSurvivalDownloads';
-import { HistogramChartEmptyState } from './HistogramChartEmptyState';
+} from '../utils/histogramSurvivalDownloads';
+import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 
 /**
  * Survival analysis card: header actions, KM plot, and risk table (inline or beside Venn).

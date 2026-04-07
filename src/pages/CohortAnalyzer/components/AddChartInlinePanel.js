@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { makeStyles } from '@material-ui/core';
 import { ADD_CHART_DATA_TYPES, isAddChartDataTypeOnStrip } from '../cohortAnalyzerChartCatalog';
-import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../HistogramPanel/HistogramChartTypeIcons';
+import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../HistogramPanel/chart/HistogramChartTypeIcons';
 
 const useStyles = makeStyles(() => ({
   root: {
