@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
 import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
@@ -91,6 +91,7 @@ export function CohortAnalyzerChartArea({
 
     const chartSummaryExportRef = useRef(null);
     const histogramExportRef = useRef(null);
+    const addChartScrollAnchorRef = useRef(null);
 
     const [expandedChart, setExpandedChart] = useState(null);
     const [chartModalActiveTab, setChartModalActiveTab] = useState('sexAtBirth');
@@ -105,6 +106,30 @@ export function CohortAnalyzerChartArea({
         setInlineAddChartOpen(true);
         setInlineAddChartNonce((n) => n + 1);
     }, [setInlineAddChartOpen, setInlineAddChartNonce]);
+
+    /** After opening the inline add panel, scroll so the histogram strip / footer is in view. */
+    useEffect(() => {
+        if (!inlineAddChartOpen || inlineAddChartNonce === 0) return undefined;
+        let cancelled = false;
+        const scrollToAddChart = () => {
+            if (cancelled) return;
+            const el = addChartScrollAnchorRef.current;
+            if (el) {
+                el.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'end',
+                    inline: 'nearest',
+                });
+            }
+        };
+        const id1 = window.requestAnimationFrame(() => {
+            window.requestAnimationFrame(scrollToAddChart);
+        });
+        return () => {
+            cancelled = true;
+            window.cancelAnimationFrame(id1);
+        };
+    }, [inlineAddChartOpen, inlineAddChartNonce]);
 
     const handleAllAddableChartsAddedChange = useCallback((allAdded) => {
         setAllAddableChartsAdded(Boolean(allAdded));
@@ -350,7 +375,10 @@ export function CohortAnalyzerChartArea({
                     histogramExportRef={histogramExportRef}
                     onAllAddableChartsAddedChange={handleAllAddableChartsAddedChange}
                 />
-                <div className={classes.chartSummaryHistogramFooter}>
+                <div
+                    ref={addChartScrollAnchorRef}
+                    className={classes.chartSummaryHistogramFooter}
+                >
                     <AddChartToolbarButton
                         classes={classes}
                         hasParticipantData={hasParticipantData}

@@ -13,9 +13,12 @@ export const VENN_CHART_LAYOUT_PADDING = {
 
 /**
  * Scale applied to canvas width/height so circles + external labels fit inside the slot.
- * Inline card uses a smaller canvas; expanded modal can use most of the available area.
+ * Inline card: three cohorts vs two use different scales (two-circle layout needs its own tuning).
+ * Expanded modal uses VENN_CANVAS_SIZE_SCALE_EXPANDED regardless of cohort count.
  */
 export const VENN_CANVAS_SIZE_SCALE_NORMAL = 0.001;
+/** Inline card when exactly two cohorts are selected (two-set Venn). */
+export const VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS = 0.1;
 export const VENN_CANVAS_SIZE_SCALE_EXPANDED = 0.1;
 
 /**

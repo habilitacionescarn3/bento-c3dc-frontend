@@ -209,43 +209,7 @@ export const CohortSelector = ({ handleDemoClick, handleTutorialClick, tutorialB
                     ))}
                 </div>
             </div>
-            <div className={classes.cohortListFooter}>
-                <button
-                    type="button"
-                    className={classes.cohortListFooterButton}
-                    onClick={() => { if (handleTutorialClick) handleTutorialClick(); }}
-                    aria-label={tutorialButtonLabel || 'Play short tutorial video'}
-                >
-                   
-                   <div style={{ height: 50, width: 50, backgroundColor: 'green' , borderRadius: '50%', position:' relative',  right: '-90%' }}>
-                   <svg
-                        className={classes.cohortTutorialPlayCircle}
-                        width="49"
-                        height="49"
-                        viewBox="0 0 49 49"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        aria-hidden="true"
-                        focusable="false"
-                    >
-                        <circle cx="24.5" cy="24.5" r="24.5" fill="#00B57F" />
-                        <g transform="translate(16.5 15.5)">
-                            <path
-                                d="M15.3125 8.84115L-1.78633e-06 17.6818L-1.01346e-06 0.000469492L15.3125 8.84115Z"
-                                fill="white"
-                            />
-                        </g>
-                    </svg>
-                   </div>
-                    
-                </button>
-
           
-                 
-                <span className={classes.cohortTutorialSrOnly}>
-                        { 'Play short tutorial video'}
-                    </span>
-            </div>
            
         </div>)
 }

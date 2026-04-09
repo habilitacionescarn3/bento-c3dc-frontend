@@ -32,8 +32,11 @@ import { CohortAnalyzerSummaryView } from './components/CohortAnalyzerSummaryVie
 import { getJoinedCohortData } from "./CohortAnalyzerUtil/CohortDataTransform";
 import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortData";
 import { exportToCCDIHub } from "../../components/CohortModal/utils";
+import { useUserGuide } from '../inventory/sideBar/UserGuideContext';
+import { USER_GUIDE_SECTION_ANALYZING_COHORTS } from '../inventory/sideBar/userGuideConstants';
 
 export const CohortAnalyzer = () => {
+    const { openUserGuide } = useUserGuide();
     const topRowOrder = useSelector((s) => s.cohortAnalyzerLayout.topRowOrder);
 
     const [activeView, setActiveView] = useState("chart");
@@ -428,15 +431,23 @@ export const CohortAnalyzer = () => {
                             {alert.message}
                         </Alert>
                     )}
-                    <div className={classes.rightSideAnalyzerHeader} style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div className={classes.rightSideAnalyzerHeader}>
                         <h1>Cohort Analyzer</h1>
-                        <button className={classes.readmeButton}>README</button>
                     </div>
 
                     <CohortAnalyzerSummaryView
                         classes={classes}
                         activeView={activeView}
                         setActiveView={setActiveView}
+                        summaryTrailingActions={(
+                            <button
+                                type="button"
+                                className={classes.readmeButton}
+                                onClick={() => openUserGuide(USER_GUIDE_SECTION_ANALYZING_COHORTS)}
+                            >
+                                README
+                            </button>
+                        )}
                         chartPanel={(
                             <CohortAnalyzerChartArea
                                 classes={classes}

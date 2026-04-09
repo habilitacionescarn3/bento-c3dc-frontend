@@ -7,6 +7,7 @@ import {
   hexToRgba,
   VENN_CHART_LAYOUT_PADDING,
   VENN_CANVAS_SIZE_SCALE_NORMAL,
+  VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS,
   VENN_CANVAS_SIZE_SCALE_EXPANDED,
   buildVennCohortSetLabel,
 } from "./ChartVennConfig";
@@ -41,7 +42,10 @@ const ChartVenn = ({
   canvasRef,
   slotWidth,
   slotHeight,
-  /** When true (expanded chart modal), canvas uses VENN_CANVAS_SIZE_SCALE_EXPANDED. */
+  /**
+   * When true (expanded chart modal), canvas uses VENN_CANVAS_SIZE_SCALE_EXPANDED.
+   * When false, two cohorts use VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS; three use VENN_CANVAS_SIZE_SCALE_NORMAL.
+   */
   expandedView = false,
 }) => {
   const chartRef = useRef(null);
@@ -209,9 +213,12 @@ useEffect(() => {
       maxHeight = Math.max(120, Math.round(slotHeight * 0.92) - 24);
     }
 
+    const vennCohortCount = cohortData.filter((c) => c && c.cohortName).length;
     const canvasScale = expandedView
       ? VENN_CANVAS_SIZE_SCALE_EXPANDED
-      : VENN_CANVAS_SIZE_SCALE_NORMAL;
+      : vennCohortCount === 2
+        ? VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS
+        : VENN_CANVAS_SIZE_SCALE_NORMAL;
     maxWidth = Math.round(maxWidth * canvasScale);
     maxHeight = Math.round(maxHeight * canvasScale);
 

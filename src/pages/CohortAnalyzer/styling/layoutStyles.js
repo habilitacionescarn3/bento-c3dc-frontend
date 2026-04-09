@@ -175,7 +175,6 @@ export const cohortAnalyzerLayoutStyles = (theme) => ({
     minHeight: 600,
     borderRadius: '35px',
     border: '4px solid #4E8191',
-    paddingBottom: 30,
     margin: 100,
     marginLeft: 33,
     marginRight: 33,
@@ -191,7 +190,7 @@ export const cohortAnalyzerLayoutStyles = (theme) => ({
     [theme.breakpoints.down('lg')]: {
       alignItems: 'flex-start',
       overflowY: 'scroll',
-      padding: '0 0 24px 0',
+      padding: '0 0 0 0',
       height: '100%',
       minWidth: '0',
     },
