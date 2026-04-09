@@ -233,7 +233,14 @@ const VennDiagramContainer = ({
     maxHeight: 'none',
     alignSelf: 'stretch',
     ...(besidePanelDragState && besidePanelDragState.kind === 'venn'
-      ? BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE
+      ? {
+        ...BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE,
+        width: besidePanelDragState.width,
+        height: besidePanelDragState.height,
+        minHeight: besidePanelDragState.height,
+        maxHeight: besidePanelDragState.height,
+        flex: '0 0 auto',
+      }
       : {}),
     ...(besidePanelDragState && besidePanelDragState.kind === 'survival'
       ? BESIDE_PEER_DRAG_STYLE

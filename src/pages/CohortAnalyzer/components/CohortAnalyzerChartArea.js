@@ -78,6 +78,7 @@ export function CohortAnalyzerChartArea({
     survivalBesideDrag,
     besidePanelDragging,
     besidePanelDraggingRef,
+    endBesidePanelDrag,
     survivalBesideVennEl,
     setSurvivalBesideVennEl,
     setSurvivalBesideColumnActive,
@@ -183,6 +184,7 @@ export function CohortAnalyzerChartArea({
                     outline: '2px dashed #679AAA',
                     outlineOffset: 0,
                     marginBottom: 10,
+                    pointerEvents: 'none',
                 }}
             />
         );
@@ -258,52 +260,17 @@ export function CohortAnalyzerChartArea({
                 </div>
             </div>
             <div className={classes.chartSummaryMain} ref={chartSummaryExportRef}>
-                <div
-                    className={classes.vennSurvivalRow}
-                    onDragLeave={handleBesideRowDragLeave}
-                >
-                    {!survivalBesideTopRowUsesOrder ? (
-                        <>
-                            <div
-                                className={classes.vennColumn}
-                                style={{
-                                    ...vennColumnDragStyle,
-                                    ...(besideDropTarget === 'venn' ? besideColumnDropTargetStyle || {} : {}),
-                                }}
-                                onDragOver={handleBesideColumnDragOver('venn')}
-                                onDrop={handleBesidePanelDrop('venn')}
-                            >
-                                {renderBesideColumnDropPreview('venn')}
-                                <div className={classes.rightSideAnalyzerInnerContainer}>
-                                    <div className={classes.rightSideAnalyzerHeader2} />
-                                    <VennDiagramContainer
-                                        state={state}
-                                        containerRef={containerRef}
-                                        canvasRef={canvasRef}
-                                        classes={classes}
-                                        headerPrefix={vennHeaderGrab}
-                                        besidePanelDragState={besidePanelDragging}
-                                        chartModalOpen={expandedChart != null}
-                                        chartModalActiveTab={chartModalActiveTab}
-                                        onExpandVenn={handleExpandVennInChartModal}
-                                    />
-                                </div>
-                            </div>
-                            <div
-                                className={classes.survivalBesideVennColumn}
-                                style={{
-                                    ...survivalColumnDragStyle,
-                                    ...(besideDropTarget === 'survival' ? besideColumnDropTargetStyle || {} : {}),
-                                }}
-                                ref={setSurvivalBesideVennEl}
-                                onDragOver={handleBesideColumnDragOver('survival')}
-                                onDrop={handleBesidePanelDrop('survival')}
-                            >
-                                {renderBesideColumnDropPreview('survival')}
-                            </div>
-                        </>
-                    ) : (
-                        topRowOrder.map((panel) => (
+                {topRowOrder.length > 0 && (
+                    <div
+                        className={classes.vennSurvivalRow}
+                        onDragLeave={handleBesideRowDragLeave}
+                        style={
+                            besidePanelDragging
+                                ? { flexWrap: 'nowrap', alignContent: 'flex-start' }
+                                : undefined
+                        }
+                    >
+                        {topRowOrder.map((panel) => (
                             panel === 'venn' ? (
                                 <div
                                     key="venn"
@@ -324,7 +291,7 @@ export function CohortAnalyzerChartArea({
                                             canvasRef={canvasRef}
                                             classes={classes}
                                             headerPrefix={vennHeaderGrab}
-                                            besideCardDrag={vennBesideDrag}
+                                            besideCardDrag={survivalBesideTopRowUsesOrder ? vennBesideDrag : undefined}
                                             besidePanelDragState={besidePanelDragging}
                                             chartModalOpen={expandedChart != null}
                                             chartModalActiveTab={chartModalActiveTab}
@@ -347,9 +314,9 @@ export function CohortAnalyzerChartArea({
                                     {renderBesideColumnDropPreview('survival')}
                                 </div>
                             )
-                        ))
-                    )}
-                </div>
+                        ))}
+                    </div>
+                )}
                 <Histogram
                     survivalBesideVennTarget={survivalBesideVennEl}
                     onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
@@ -372,9 +339,13 @@ export function CohortAnalyzerChartArea({
                     cohortParticipantState={state}
                     containerRef={containerRef}
                     canvasRef={canvasRef}
-                    histogramExportRef={histogramExportRef}
-                    onAllAddableChartsAddedChange={handleAllAddableChartsAddedChange}
-                />
+                                histogramExportRef={histogramExportRef}
+                                onAllAddableChartsAddedChange={handleAllAddableChartsAddedChange}
+                                onTopRowStripDropComplete={endBesidePanelDrag}
+                                vennHeaderGrab={vennHeaderGrab}
+                                vennBesideDrag={vennBesideDrag}
+                                onExpandVenn={handleExpandVennInChartModal}
+                            />
                 <div
                     ref={addChartScrollAnchorRef}
                     className={classes.chartSummaryHistogramFooter}

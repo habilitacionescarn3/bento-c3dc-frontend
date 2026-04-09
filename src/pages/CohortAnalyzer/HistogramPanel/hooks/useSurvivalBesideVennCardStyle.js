@@ -29,10 +29,18 @@ export function useSurvivalBesideVennCardStyle({
     };
     const drag = {};
     if (besidePanelDragState && besidePanelDragState.kind === 'survival') {
-      Object.assign(drag, BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE);
+      const { width: dw, height: dh } = besidePanelDragState;
+      Object.assign(drag, BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE, {
+        width: dw,
+        height: dh,
+        minHeight: dh,
+        maxHeight: dh,
+        flex: '0 0 auto',
+      });
     }
     if (besidePanelDragState && besidePanelDragState.kind === 'venn') {
-      Object.assign(drag, BESIDE_PEER_DRAG_STYLE);
+      // Let pointer events reach the survival column wrapper so Venn → survival drop works.
+      Object.assign(drag, BESIDE_PEER_DRAG_STYLE, { pointerEvents: 'none' });
     }
     return { ...base, ...drag };
   }, [survivalCardSize, besideCardDrag, allInputsEmpty, besidePanelDragState]);

@@ -183,10 +183,30 @@ export function useHistogramPanelBootstrap({
 
   useEffect(() => {
     const visibleDatasets = selectedDatasets.filter((dataset) => dataset !== 'survivalAnalysis');
+    const hasTopRowTokensInStrip = stripOrder.some(
+      (id) => id === 'venn' || id === 'survivalAnalysis',
+    );
+
     if (stripOrder.length === 0 && visibleDatasets.length > 0) {
-      dispatch(setStripOrder([...visibleDatasets]));
+      let initial = [...visibleDatasets];
+      if (besideStripPanelId != null && visibleDatasets.includes(besideStripPanelId)) {
+        initial = [
+          besideStripPanelId,
+          ...visibleDatasets.filter((d) => d !== besideStripPanelId),
+        ];
+      }
+      dispatch(setStripOrder(initial));
       return;
     }
+
+    if (hasTopRowTokensInStrip) {
+      const missing = visibleDatasets.filter((dataset) => !stripOrder.includes(dataset));
+      if (missing.length > 0) {
+        dispatch(setStripOrder([...stripOrder, ...missing]));
+      }
+      return;
+    }
+
     const prevVisible = stripOrder.filter((dataset) => visibleDatasets.includes(dataset));
     const missing = visibleDatasets.filter((dataset) => !prevVisible.includes(dataset));
     const next = [...prevVisible, ...missing];
@@ -196,7 +216,7 @@ export function useHistogramPanelBootstrap({
     if (!unchanged) {
       dispatch(setStripOrder(next));
     }
-  }, [selectedDatasets, stripOrder, dispatch]);
+  }, [selectedDatasets, stripOrder, besideStripPanelId, dispatch]);
 
   const survivalSelected = selectedDatasets.includes('survivalAnalysis');
 

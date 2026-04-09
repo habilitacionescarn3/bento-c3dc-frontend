@@ -3,6 +3,10 @@
 export const CA_LAYOUT_SET_TOP_ROW_ORDER = 'cohortAnalyzerLayout/SET_TOP_ROW_ORDER';
 export const CA_LAYOUT_SET_STRIP_ORDER = 'cohortAnalyzerLayout/SET_STRIP_ORDER';
 export const CA_LAYOUT_SET_BESIDE_STRIP_PANEL = 'cohortAnalyzerLayout/SET_BESIDE_STRIP_PANEL';
+/** Atomically set `stripOrder` + `besideStripPanelId` (one reducer tick; avoids sync effects fighting). */
+export const CA_LAYOUT_PROMOTE_BESIDE_STRIP = 'cohortAnalyzerLayout/PROMOTE_BESIDE_STRIP';
+/** Move `venn` or `survival` out of `topRowOrder` into `stripOrder` before a target id. */
+export const CA_LAYOUT_MOVE_TOP_ROW_INTO_STRIP = 'cohortAnalyzerLayout/MOVE_TOP_ROW_INTO_STRIP';
 export const CA_LAYOUT_PATCH_VISIBILITY = 'cohortAnalyzerLayout/PATCH_VISIBILITY';
 export const CA_LAYOUT_SET_PANEL_SIZE = 'cohortAnalyzerLayout/SET_PANEL_SIZE';
 export const CA_LAYOUT_SET_PANEL_SIZE_FOR_ID = 'cohortAnalyzerLayout/SET_PANEL_SIZE_FOR_ID';

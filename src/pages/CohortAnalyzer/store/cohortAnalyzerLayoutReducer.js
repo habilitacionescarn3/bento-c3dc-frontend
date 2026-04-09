@@ -2,6 +2,8 @@ import {
   CA_LAYOUT_SET_TOP_ROW_ORDER,
   CA_LAYOUT_SET_STRIP_ORDER,
   CA_LAYOUT_SET_BESIDE_STRIP_PANEL,
+  CA_LAYOUT_PROMOTE_BESIDE_STRIP,
+  CA_LAYOUT_MOVE_TOP_ROW_INTO_STRIP,
   CA_LAYOUT_PATCH_VISIBILITY,
   CA_LAYOUT_SET_PANEL_SIZE,
   CA_LAYOUT_SET_PANEL_SIZE_FOR_ID,
@@ -12,6 +14,10 @@ import {
   CA_LAYOUT_HYDRATE,
   CA_LAYOUT_RESET,
 } from './cohortAnalyzerLayoutActionTypes';
+import {
+  filterTopRowOrderAfterMove,
+  insertTopRowPanelIntoStripOrder,
+} from './topRowStripOrder';
 import {
   CA_SURVIVAL_CARD_MIN_WIDTH,
   CA_SURVIVAL_CARD_MAX_WIDTH,
@@ -173,6 +179,27 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
 
     case CA_LAYOUT_SET_BESIDE_STRIP_PANEL:
       return { ...state, besideStripPanelId: action.payload };
+
+    case CA_LAYOUT_PROMOTE_BESIDE_STRIP: {
+      const { stripOrder: nextStrip, besideStripPanelId: nextBeside } = action.payload || {};
+      if (!Array.isArray(nextStrip) || typeof nextBeside !== 'string' || !nextBeside) {
+        return state;
+      }
+      return { ...state, stripOrder: nextStrip, besideStripPanelId: nextBeside };
+    }
+
+    case CA_LAYOUT_MOVE_TOP_ROW_INTO_STRIP: {
+      const { panel, insertBeforeDataset } = action.payload || {};
+      if (panel !== 'venn' && panel !== 'survival') return state;
+      if (!state.topRowOrder || !state.topRowOrder.includes(panel)) return state;
+      const nextStrip = insertTopRowPanelIntoStripOrder(
+        state.stripOrder,
+        panel,
+        insertBeforeDataset,
+      );
+      const nextTop = filterTopRowOrderAfterMove(state.topRowOrder, panel);
+      return { ...state, topRowOrder: nextTop, stripOrder: nextStrip };
+    }
 
     case CA_LAYOUT_PATCH_VISIBILITY:
       return {

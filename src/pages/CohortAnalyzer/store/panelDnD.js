@@ -36,11 +36,40 @@ export function parseDragDataTransfer(dataTransfer) {
   const fromMime = decodePanelDragPayload(json);
   if (fromMime) return fromMime;
   const plain = dataTransfer.getData('text/plain');
-  if (plain && ['venn', 'survival'].includes(plain)) {
-    return { kind: plain, dataset: null };
+  const trimmed = plain && typeof plain === 'string' ? plain.trim() : '';
+  if (trimmed && ['venn', 'survival'].includes(trimmed)) {
+    return { kind: trimmed, dataset: null };
   }
   if (plain && plain.length > 0 && !plain.includes('{')) {
     return { kind: 'histogram', dataset: plain };
+  }
+  return null;
+}
+
+/**
+ * Prefer on `drop`: some browsers only expose payload reliably after drop; try every listed type.
+ */
+export function parseDragDataTransferForDrop(dataTransfer) {
+  if (!dataTransfer) return null;
+  const direct = parseDragDataTransfer(dataTransfer);
+  if (direct) return direct;
+  const types = dataTransfer.types ? Array.from(dataTransfer.types) : [];
+  for (let i = 0; i < types.length; i += 1) {
+    const t = types[i];
+    if (!t || t === 'Files') continue;
+    let raw;
+    try {
+      raw = dataTransfer.getData(t);
+    } catch (e) {
+      continue;
+    }
+    if (!raw || typeof raw !== 'string') continue;
+    const fromMime = decodePanelDragPayload(raw);
+    if (fromMime) return fromMime;
+    const tr = raw.trim();
+    if (tr && ['venn', 'survival'].includes(tr)) {
+      return { kind: tr, dataset: null };
+    }
   }
   return null;
 }

@@ -6,7 +6,13 @@ import {
   HistogramContainer,
   ChartWrapper,
   CenterContainer,
+  ChartResizeHandle,
 } from './HistogramPanel.styled';
+import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
+import {
+  encodePanelDragPayload,
+  CA_PANEL_DRAG_MIME,
+} from '../store/panelDnD';
 import ExpandedChartModal from './popup/HistogramPopup';
 import AddChartInlinePanel from '../components/AddChartInlinePanel';
 import { useDispatch, useSelector } from 'react-redux';
@@ -20,7 +26,9 @@ import {
   defaultHistogramPlotHeightPx,
   defaultHistogramStripDropSlotWidthPx,
   defaultHistogramCardOuterMinHeightPx,
+  defaultVennOuterPx,
 } from '../config/cohortAnalyzerViewPercentDefaults';
+import { clampSurvivalPanelSize } from '../store/cohortAnalyzerLayoutReducer';
 import { useHistogramPanelMuiStyles } from './styles/histogramMuiStyles';
 import {
   useFilteredKmPlotData,
@@ -39,6 +47,7 @@ import {
   HistogramSurvivalBesideVennPortal,
   SurvivalHistogramInlineLegacy,
 } from './survival/HistogramSurvivalLayoutFragments';
+import { SurvivalAnalysisCardBody } from './survival/SurvivalAnalysisCardBody';
 
 const Histogram = ({
   c1,
@@ -64,6 +73,11 @@ const Histogram = ({
   canvasRef,
   histogramExportRef,
   onAllAddableChartsAddedChange,
+  /** Clears Venn/survival drag state after drop on histogram strip (from useBesidePanelDnD). */
+  onTopRowStripDropComplete,
+  vennHeaderGrab = null,
+  vennBesideDrag = null,
+  onExpandVenn,
 }) => {
   const classes = useHistogramPanelMuiStyles();
   const dispatch = useDispatch();
@@ -216,6 +230,11 @@ const Histogram = ({
     };
   }, [histogramCardSizes, defaultPlotHeightPx, defaultDropSlotWidthPx]);
 
+  const visibleHistogramDatasets = useMemo(
+    () => selectedDatasets.filter((d) => d !== 'survivalAnalysis'),
+    [selectedDatasets],
+  );
+
   const {
     draggingDataset,
     beginStripChartDrag,
@@ -232,18 +251,18 @@ const Histogram = ({
     chartRef,
     estimateHistogramCardDropSize,
     stripOrder,
-    topRowOrder,
     dispatch,
     besidePanelDraggingRef,
+    onTopRowDroppedOnStrip: onTopRowStripDropComplete,
   });
 
-  const visibleHistogramDatasets = useMemo(
-    () => selectedDatasets.filter((d) => d !== 'survivalAnalysis'),
-    [selectedDatasets],
-  );
-
   const orderedVisibleHistograms = useMemo(() => {
-    const order = stripOrder.filter((d) => visibleHistogramDatasets.includes(d));
+    const order = stripOrder.filter(
+      (d) =>
+        d !== 'venn' &&
+        d !== 'survivalAnalysis' &&
+        visibleHistogramDatasets.includes(d),
+    );
     const missing = visibleHistogramDatasets.filter((d) => !order.includes(d));
     return [...order, ...missing];
   }, [stripOrder, visibleHistogramDatasets]);
@@ -261,6 +280,50 @@ const Histogram = ({
     if (!besideDatasetForColumn) return orderedVisibleHistograms;
     return orderedVisibleHistograms.filter((d) => d !== besideDatasetForColumn);
   }, [orderedVisibleHistograms, besideDatasetForColumn]);
+
+  /** Full strip layout: histogram keys plus `venn` / `survivalAnalysis` when moved from the top row. */
+  const stripRenderOrder = useMemo(() => {
+    return stripOrder.filter((id) => {
+      if (id === 'venn') return true;
+      if (id === 'survivalAnalysis') return survivalSelected;
+      if (besideDatasetForColumn && id === besideDatasetForColumn) return false;
+      return mainHistogramRowOrder.includes(id);
+    });
+  }, [stripOrder, survivalSelected, besideDatasetForColumn, mainHistogramRowOrder]);
+
+  const reduxVennSize = layoutSizes.venn;
+
+  /** Strip `ChartWrapper` defaults to 1/3 row width — pin to Redux / drag snapshot size for top-row panels. */
+  const stripVennChartWrapperStyle = useMemo(() => {
+    const box = reduxVennSize != null ? reduxVennSize : defaultVennOuterPx();
+    const w = box.width;
+    const h = box.height;
+    return {
+      width: w,
+      minWidth: w,
+      height: h,
+      minHeight: h,
+      maxWidth: 'none',
+      flex: '0 0 auto',
+      alignSelf: 'flex-start',
+      boxSizing: 'border-box',
+    };
+  }, [reduxVennSize]);
+
+  const stripSurvivalChartWrapperStyle = useMemo(() => {
+    const raw = survivalCardSize || reduxSurvivalSize;
+    const box = clampSurvivalPanelSize(raw && typeof raw === 'object' ? raw : {});
+    return {
+      width: box.width,
+      minWidth: box.width,
+      height: box.height,
+      minHeight: box.height,
+      maxWidth: 'none',
+      flex: '0 0 auto',
+      alignSelf: 'flex-start',
+      boxSizing: 'border-box',
+    };
+  }, [survivalCardSize, reduxSurvivalSize]);
 
   useEffect(() => {
     if (!onSurvivalBesideColumnActive) return;
@@ -399,8 +462,90 @@ const Histogram = ({
           survivalAnalysisBodyProps={survivalAnalysisBodyProps}
           allInputsEmpty={allInputsEmpty}
           handleSurvivalCardResizeStart={handleSurvivalCardResizeStart}
+          stripOrder={stripOrder}
+          topRowOrder={topRowOrder}
         />
-        {mainHistogramRowOrder.map((dataset) => (
+        {stripRenderOrder.map((panelId) => {
+          if (panelId === 'venn') {
+            return (
+              <ChartWrapper
+                key="strip-venn"
+                id="cohort-analyzer-venn-card"
+                data-ca-histogram-strip-dataset="venn"
+                ref={(el) => {
+                  chartRef.current.venn = el;
+                }}
+                style={{
+                  ...stripVennChartWrapperStyle,
+                  cursor: allInputsEmpty ? 'default' : 'grab',
+                }}
+                draggable={Boolean(vennBesideDrag && vennBesideDrag.draggable)}
+                onDragStart={vennBesideDrag && vennBesideDrag.onDragStart ? vennBesideDrag.onDragStart : undefined}
+                onDragEnd={vennBesideDrag && vennBesideDrag.onDragEnd ? vennBesideDrag.onDragEnd : undefined}
+                onDragOver={(e) => handleStripChartDragOver(e, 'venn')}
+                onDrop={(e) => handleStripChartDrop(e, 'venn')}
+              >
+                <VennDiagramContainer
+                  state={cohortParticipantState}
+                  containerRef={containerRef}
+                  canvasRef={canvasRef}
+                  classes={classes}
+                  headerPrefix={vennHeaderGrab}
+                  besideCardDrag={vennBesideDrag}
+                  besidePanelDragState={besidePanelDragState}
+                  chartModalOpen={chartModalExpandedChart != null}
+                  chartModalActiveTab={chartModalActiveTab}
+                  onExpandVenn={onExpandVenn}
+                />
+              </ChartWrapper>
+            );
+          }
+          if (panelId === 'survivalAnalysis') {
+            const ds = 'survivalAnalysis';
+            return (
+              <ChartWrapper
+                key="strip-survival"
+                id="cohort-analyzer-survival-beside-card"
+                data-ca-histogram-strip-dataset={ds}
+                ref={(el) => {
+                  chartRef.current[ds] = el;
+                }}
+                style={{
+                  ...stripSurvivalChartWrapperStyle,
+                  cursor: allInputsEmpty ? 'default' : 'grab',
+                }}
+                draggable={!allInputsEmpty}
+                onDragStart={(event) => {
+                  setDragOverDataset(null);
+                  captureHistogramDragCardSize(event, ds);
+                  const payload = encodePanelDragPayload({ kind: 'histogram', dataset: ds });
+                  event.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
+                  event.dataTransfer.setData('text/plain', ds);
+                  event.dataTransfer.effectAllowed = 'move';
+                  const imgEl = event.currentTarget || chartRef.current[ds];
+                  if (imgEl) {
+                    event.dataTransfer.setDragImage(imgEl, 32, 20);
+                  }
+                  beginStripChartDrag(ds);
+                }}
+                onDragEnd={() => {
+                  endStripChartDrag();
+                }}
+                onDragOver={(e) => handleStripChartDragOver(e, ds)}
+                onDrop={(e) => handleStripChartDrop(e, ds)}
+              >
+                <SurvivalAnalysisCardBody {...survivalAnalysisBodyProps} besideVenn={false} />
+                <ChartResizeHandle
+                  aria-label="Resize survival analysis card"
+                  title="Drag to resize card"
+                  onMouseDown={handleSurvivalCardResizeStart}
+                  style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
+                />
+              </ChartWrapper>
+            );
+          }
+          const dataset = panelId;
+          return (
           <HistogramStripChartRow
             key={dataset}
             dataset={dataset}
@@ -445,7 +590,8 @@ const Histogram = ({
             c3Name={c3Name}
             besidePanelDraggingRef={besidePanelDraggingRef}
           />
-        ))}
+          );
+        })}
         {inlineAddChartOpen ? (
           <ChartWrapper
             id="chart-inline-add"

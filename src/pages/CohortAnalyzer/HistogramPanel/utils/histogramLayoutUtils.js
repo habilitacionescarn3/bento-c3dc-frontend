@@ -35,9 +35,14 @@ export const HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE = {
   transition: 'none',
 };
 
-/** Collapse Venn / survival top-row card while native drag is active (full-width column). */
+/**
+ * Hide the native drag source while keeping its footprint so `vennSurvivalRow` does not
+ * reflow (`flex-wrap: wrap`) into a stacked layout. Merge with explicit `width` / `height`
+ * from the drag session (`besidePanelDragState`).
+ */
 export const BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE = {
   opacity: 0,
+  visibility: 'hidden',
   overflow: 'hidden',
   pointerEvents: 'none',
   margin: 0,
@@ -45,10 +50,5 @@ export const BESIDE_TOP_ROW_DRAG_SOURCE_COLLAPSED_STYLE = {
   border: 'none',
   boxShadow: 'none',
   transition: 'none',
-  flex: '0 0 auto',
-  minHeight: 0,
-  height: 0,
-  maxHeight: 0,
-  width: '100%',
-  maxWidth: '100%',
+  flexShrink: 0,
 };

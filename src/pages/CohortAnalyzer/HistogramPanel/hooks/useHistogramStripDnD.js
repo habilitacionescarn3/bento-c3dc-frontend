@@ -1,10 +1,30 @@
 import { useCallback, useRef, useState } from 'react';
-import { setStripOrder, setTopRowPanelOrder } from '../../store/cohortAnalyzerLayoutActions';
 import {
-  parseDragDataTransfer,
+  setStripOrder,
+  moveTopRowPanelIntoStrip,
+  setPanelSize,
+} from '../../store/cohortAnalyzerLayoutActions';
+import {
+  parseDragDataTransferForDrop,
   CA_PANEL_DRAG_MIME,
 } from '../../store/panelDnD';
 import { measureDragCardElement } from '../utils/histogramLayoutUtils';
+
+/**
+ * While a Venn/survival drag is active, `dataTransfer` may parse as a histogram (plain-text
+ * collision). Prefer the in-flight ref from drag start over a bogus histogram payload.
+ */
+function parseTopRowStripDragPayload(dataTransfer, besidePanelDraggingRef) {
+  const snap = besidePanelDraggingRef && besidePanelDraggingRef.current;
+  if (snap && (snap.kind === 'venn' || snap.kind === 'survival')) {
+    const parsed = parseDragDataTransferForDrop(dataTransfer);
+    if (parsed && (parsed.kind === 'venn' || parsed.kind === 'survival')) {
+      return parsed;
+    }
+    return { kind: snap.kind, dataset: null };
+  }
+  return parseDragDataTransferForDrop(dataTransfer);
+}
 
 /**
  * Drag-and-drop for histogram strip ordering and top-row Venn/survival swap drops.
@@ -13,9 +33,10 @@ export function useHistogramStripDnD({
   chartRef,
   estimateHistogramCardDropSize,
   stripOrder,
-  topRowOrder,
   dispatch,
   besidePanelDraggingRef = null,
+  /** Invoked after Venn/survival is dropped on a histogram card (clears beside-row drag UI). */
+  onTopRowDroppedOnStrip = null,
 }) {
 
   const [draggingDataset, setDraggingDataset] = useState(null);
@@ -78,7 +99,8 @@ export function useHistogramStripDnD({
         refSnap &&
         (refSnap.kind === 'venn' || refSnap.kind === 'survival');
 
-      if (topRowStripDrag && hasPanelMime) {
+      // Do not require MIME in `types` — some UAs omit custom types during dragover even when drop works.
+      if (topRowStripDrag) {
         event.dataTransfer.dropEffect = 'move';
         setDragOverDataset(targetDataset);
         return;
@@ -101,20 +123,40 @@ export function useHistogramStripDnD({
   const handleStripChartDrop = useCallback(
     (event, targetDataset) => {
       event.preventDefault();
-      const parsed = parseDragDataTransfer(event.dataTransfer);
+      const parsed = parseTopRowStripDragPayload(event.dataTransfer, besidePanelDraggingRef);
       if (parsed && (parsed.kind === 'venn' || parsed.kind === 'survival')) {
-        const from = parsed.kind;
-        const order = [...topRowOrder];
-        const i = order.indexOf(from);
-        const other = from === 'venn' ? 'survival' : 'venn';
-        const j = order.indexOf(other);
-        if (i >= 0 && j >= 0) {
-          const tmp = order[i];
-          order[i] = order[j];
-          order[j] = tmp;
-          dispatch(setTopRowPanelOrder(order));
+        if (!targetDataset) {
+          setDragOverDataset(null);
+          if (typeof onTopRowDroppedOnStrip === 'function') {
+            onTopRowDroppedOnStrip();
+          }
+          return;
         }
+        const snap = besidePanelDraggingRef && besidePanelDraggingRef.current;
+        if (
+          snap
+          && (snap.kind === 'venn' || snap.kind === 'survival')
+          && snap.width != null
+          && snap.height != null
+        ) {
+          const w = Math.round(snap.width);
+          const h = Math.round(snap.height);
+          if (parsed.kind === 'venn') {
+            dispatch(setPanelSize({ panel: 'venn', size: { width: w, height: h } }));
+          } else {
+            dispatch(setPanelSize({ panel: 'survival', size: { width: w, height: h } }));
+          }
+        }
+        dispatch(
+          moveTopRowPanelIntoStrip({
+            panel: parsed.kind === 'venn' ? 'venn' : 'survival',
+            insertBeforeDataset: targetDataset,
+          }),
+        );
         setDragOverDataset(null);
+        if (typeof onTopRowDroppedOnStrip === 'function') {
+          onTopRowDroppedOnStrip();
+        }
         return;
       }
       if (!draggingDataset || draggingDataset === targetDataset) return;
@@ -128,7 +170,14 @@ export function useHistogramStripDnD({
       dispatch(setStripOrder(nextOrder));
       endStripChartDrag();
     },
-    [stripOrder, draggingDataset, topRowOrder, dispatch, endStripChartDrag],
+    [
+      stripOrder,
+      draggingDataset,
+      dispatch,
+      endStripChartDrag,
+      onTopRowDroppedOnStrip,
+      besidePanelDraggingRef,
+    ],
   );
 
   return {

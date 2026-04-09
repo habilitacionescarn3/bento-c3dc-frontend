@@ -97,7 +97,11 @@ export function SurvivalAnalysisCardBody({
           <span
             role="button"
             tabIndex={0}
-            aria-label={canBesideReorder ? 'Drag to swap position with Venn diagram' : 'Chart reorder handle'}
+            aria-label={
+              canBesideReorder
+                ? 'Drag to swap with Venn diagram or drop on a histogram card below to show it beside this row'
+                : 'Chart reorder handle'
+            }
             onKeyDown={(event) => {
               if (event.key === 'Enter' || event.key === ' ') event.preventDefault();
             }}
@@ -108,7 +112,11 @@ export function SurvivalAnalysisCardBody({
               cursor: survivalHasNoDisplayData ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
               opacity: survivalHasNoDisplayData ? 0.45 : 1,
             }}
-            title={canBesideReorder ? 'Drag to swap with Venn diagram' : undefined}
+            title={
+              canBesideReorder
+                ? 'Drag to swap with Venn or drop on a histogram card to link it beside this row'
+                : undefined
+            }
           >
             <img
               src={histogramChartTitleHandle}

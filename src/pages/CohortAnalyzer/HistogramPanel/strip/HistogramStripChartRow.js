@@ -160,6 +160,7 @@ export function HistogramStripChartRow({
       {showDropSlotBefore && (
         <div
           aria-hidden
+          data-ca-histogram-strip-dataset={dataset}
           onDragOver={(e) => handleStripChartDragOver(e, dataset)}
           onDrop={(e) => handleStripChartDrop(e, dataset)}
           style={{
@@ -182,6 +183,7 @@ export function HistogramStripChartRow({
       )}
       <ChartWrapper
         id={`chart-${dataset}`}
+        data-ca-histogram-strip-dataset={dataset}
         ref={(el) => { chartRef.current[dataset] = el; }}
         style={{
           ...(isDraggedCard

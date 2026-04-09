@@ -53,8 +53,15 @@ export function SurvivalHistogramInlineLegacy({
   survivalAnalysisBodyProps,
   allInputsEmpty,
   handleSurvivalCardResizeStart,
+  stripOrder = [],
+  topRowOrder = ['venn', 'survival'],
 }) {
-  if (!selectedDatasets.includes('survivalAnalysis') || survivalBesideVennTarget !== undefined) {
+  if (
+    !selectedDatasets.includes('survivalAnalysis')
+    || survivalBesideVennTarget !== undefined
+    || stripOrder.includes('survivalAnalysis')
+    || !topRowOrder.includes('survival')
+  ) {
     return null;
   }
 

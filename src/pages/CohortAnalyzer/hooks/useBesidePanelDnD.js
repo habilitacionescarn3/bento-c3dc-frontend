@@ -1,7 +1,8 @@
 import React, { useRef, useState, useCallback } from 'react';
 import histogramChartTitleHandle from '../../../assets/icons/histogramChartTitleHandle.svg';
 import { useDispatch, useSelector } from 'react-redux';
-import { setTopRowPanelOrder, setBesideStripPanelId, setStripOrder } from '../store/cohortAnalyzerLayoutActions';
+import { setTopRowPanelOrder, promoteBesideStripLayout } from '../store/cohortAnalyzerLayoutActions';
+import { buildStripOrderPromotingBeside } from '../store/besideStripPromotion';
 import {
     encodePanelDragPayload,
     parseDragDataTransfer,
@@ -108,17 +109,10 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
 
     const promoteHistogramToBesideSlot = useCallback(
         (dataset) => {
-            if (!dataset || dataset === 'survivalAnalysis') return;
-            const order = [...stripOrder];
-            if (order.length > 0) {
-                const idx = order.indexOf(dataset);
-                if (idx >= 0) {
-                    order.splice(idx, 1);
-                    order.unshift(dataset);
-                    dispatch(setStripOrder(order));
-                }
-            }
-            dispatch(setBesideStripPanelId(dataset));
+            const mergedVisible = Array.from(new Set([...stripOrder, dataset]));
+            const order = buildStripOrderPromotingBeside(stripOrder, mergedVisible, dataset);
+            if (!order) return;
+            dispatch(promoteBesideStripLayout({ stripOrder: order, besideStripPanelId: dataset }));
         },
         [dispatch, stripOrder],
     );
@@ -153,7 +147,11 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
     const vennHeaderGrab = (
         <span
             aria-hidden={!panelDragHandlesEnabled}
-            title={panelDragHandlesEnabled ? 'Drag to swap position with survival chart' : undefined}
+            title={
+              panelDragHandlesEnabled
+                ? 'Drag to swap with survival chart or drop on a histogram card to link it beside this row'
+                : undefined
+            }
             style={{
                 display: 'inline-flex',
                 alignItems: 'center',
@@ -205,5 +203,7 @@ export function useBesidePanelDnD(panelDragHandlesEnabled) {
         vennHeaderGrab,
         vennBesideDrag,
         survivalBesideDrag,
+        /** Call after a top-row (Venn/survival) drag is dropped on the histogram strip so ghost state clears. */
+        endBesidePanelDrag,
     };
 }

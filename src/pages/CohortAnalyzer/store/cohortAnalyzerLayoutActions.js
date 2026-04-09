@@ -2,6 +2,8 @@ import {
   CA_LAYOUT_SET_TOP_ROW_ORDER,
   CA_LAYOUT_SET_STRIP_ORDER,
   CA_LAYOUT_SET_BESIDE_STRIP_PANEL,
+  CA_LAYOUT_PROMOTE_BESIDE_STRIP,
+  CA_LAYOUT_MOVE_TOP_ROW_INTO_STRIP,
   CA_LAYOUT_PATCH_VISIBILITY,
   CA_LAYOUT_SET_PANEL_SIZE,
   CA_LAYOUT_SET_PANEL_SIZE_FOR_ID,
@@ -32,6 +34,19 @@ export const setHistogramQueueOrder = setStripOrder;
 /** @param {string|null} panelId */
 export function setBesideStripPanelId(panelId) {
   return { type: CA_LAYOUT_SET_BESIDE_STRIP_PANEL, payload: panelId };
+}
+
+/** @param {{ stripOrder: string[], besideStripPanelId: string }} payload */
+export function promoteBesideStripLayout(payload) {
+  return { type: CA_LAYOUT_PROMOTE_BESIDE_STRIP, payload };
+}
+
+/**
+ * @param {{ panel: 'venn'|'survival', insertBeforeDataset: string }} payload
+ *        insertBeforeDataset — strip id to insert before (histogram key or `venn` / `survivalAnalysis`).
+ */
+export function moveTopRowPanelIntoStrip(payload) {
+  return { type: CA_LAYOUT_MOVE_TOP_ROW_INTO_STRIP, payload };
 }
 
 /** @deprecated use setBesideStripPanelId */
