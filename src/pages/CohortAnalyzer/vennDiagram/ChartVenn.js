@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { VennDiagramChart, extractSets } from "chartjs-chart-venn";
 import {
   baseColorArray,
@@ -9,6 +9,8 @@ import {
   VENN_CANVAS_SIZE_SCALE_NORMAL,
   VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS,
   VENN_CANVAS_SIZE_SCALE_EXPANDED,
+  VENN_CANVAS_SIZE_SCALE_BIG_SCREEN,
+  VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH,
   buildVennCohortSetLabel,
 } from "./ChartVennConfig";
 import { chartVennFallbackCanvasDimensionsPx } from '../config/cohortAnalyzerViewPercentDefaults';
@@ -44,14 +46,50 @@ const ChartVenn = ({
   slotHeight,
   /**
    * When true (expanded chart modal), canvas uses VENN_CANVAS_SIZE_SCALE_EXPANDED.
-   * When false, two cohorts use VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS; three use VENN_CANVAS_SIZE_SCALE_NORMAL.
+   * When false, scale follows cohort count; at viewport ≥ VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH,
+   * inline uses VENN_CANVAS_SIZE_SCALE_BIG_SCREEN instead.
    */
   expandedView = false,
 }) => {
   const chartRef = useRef(null);
+  /** Observed chart plot box — keeps canvas in sync when the parent card is resized. */
+  const chartAreaRef = useRef(null);
+  const [observedPlotSize, setObservedPlotSize] = useState({ width: 0, height: 0 });
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    (typeof window !== 'undefined' ? window.innerWidth : 0),
+  );
 
   const [baseSets, setBaseSets] = useState([]);
   const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = chartAreaRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (width < 1 || height < 1) return;
+      const w = Math.round(width);
+      const h = Math.round(height);
+      setObservedPlotSize((prev) => {
+        if (prev.width === w && prev.height === h) return prev;
+        return { width: w, height: h };
+      });
+    };
+
+    measure();
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   
   const handleChartClick = (event) => {
     const elementsAtEvent = chartRef.current.getElementsAtEventForMode(
@@ -206,19 +244,30 @@ useEffect(() => {
   
   if (canvasRef.current && containerRef.current && data && config && config.type) {
     const fallback = chartVennFallbackCanvasDimensionsPx(cohortData.length);
+    const slotW =
+      observedPlotSize.width > 0 ? observedPlotSize.width : slotWidth;
+    const slotH =
+      observedPlotSize.height > 0 ? observedPlotSize.height : slotHeight;
+
     let maxWidth = fallback.width;
     let maxHeight = fallback.height;
-    if (slotWidth != null && slotHeight != null) {
-      maxWidth = Math.max(220, Math.round(slotWidth * 0.96) - 16);
-      maxHeight = Math.max(120, Math.round(slotHeight * 0.92) - 24);
+    if (slotW != null && slotH != null) {
+      maxWidth = Math.max(220, Math.round(slotW * 0.96) - 16);
+      maxHeight = Math.max(120, Math.round(slotH * 0.92) - 24);
     }
 
     const vennCohortCount = cohortData.filter((c) => c && c.cohortName).length;
-    const canvasScale = expandedView
-      ? VENN_CANVAS_SIZE_SCALE_EXPANDED
-      : vennCohortCount === 2
-        ? VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS
-        : VENN_CANVAS_SIZE_SCALE_NORMAL;
+    const isBigScreen = viewportWidth >= VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH;
+    let canvasScale;
+    if (expandedView) {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_EXPANDED;
+    } else if (isBigScreen) {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_BIG_SCREEN;
+    } else if (vennCohortCount === 2) {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS;
+    } else {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_NORMAL;
+    }
     maxWidth = Math.round(maxWidth * canvasScale);
     maxHeight = Math.round(maxHeight * canvasScale);
 
@@ -233,7 +282,7 @@ useEffect(() => {
   return () => {
     if (chartRef.current) chartRef.current.destroy();
   };
-}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight, expandedView]);
+}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight, expandedView, observedPlotSize, viewportWidth]);
 
   useEffect(() => {
     let updatedStat = {};
@@ -266,9 +315,22 @@ useEffect(() => {
         height: '100%',
         minHeight: 0,
         boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <div className="chart-container">
+      <div
+        ref={chartAreaRef}
+        className="chart-container"
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
         <canvas ref={canvasRef} id="canvas" />
       </div>
     </div>

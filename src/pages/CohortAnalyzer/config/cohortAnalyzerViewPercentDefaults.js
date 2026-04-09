@@ -13,7 +13,7 @@
  * Histogram — histogramMuiStyles.js: chartPlotArea height/minHeight 240
  * Histogram — HistogramPanel.styled ChartWrapper: min-width 320px, min-height 261px
  *
- * Venn — cohortAnalyzerLayoutConstants: CA_VENN_OUTER_MIN/MAX (400–2000 × 280–900)
+ * Venn — default outer height: 550px if viewport ≥1900px else 400px (see defaultVennOuterHeightPx); width from viewport %
  * Venn — VennDiagramContainer: VENN_OUTER_DEFAULT MIN_W × SURVIVAL_MIN_H; header reserve 138;
  *   chartSlot max(240,w-24), max(140,h-138)
  * Venn — ChartVenn: default canvas 680×180 / 720×340; slot margins 48/72
@@ -37,6 +37,7 @@ const VIEWPORT_CAP_H = 1100;
 /** Percent of capped inner width/height (see functions below). */
 export const CA_VIEW_PCT = {
   vennOuterWidth: 26,
+  /** Legacy catalog value; default Venn outer height uses {@link defaultVennOuterHeightPx}. */
   vennOuterHeight: 40,
   histogramPlotHeight: 22,
   histogramDropSlotWidth: 17,
@@ -56,6 +57,25 @@ export const CA_VENN_HEADER_CHROME_PCT = 28;
 /** % of outer width for diagram slot (horizontal padding implied). */
 export const CA_VENN_SLOT_WIDTH_PCT = 92;
 
+/** Viewport width (px) at or above which default Venn outer height is {@link DEFAULT_VENN_OUTER_HEIGHT_BIG_SCREEN_PX}. */
+export const VENN_DEFAULT_OUTER_HEIGHT_VIEWPORT_BREAKPOINT_PX = 1800;
+
+/** Default Venn card outer height on viewports ≥ {@link VENN_DEFAULT_OUTER_HEIGHT_VIEWPORT_BREAKPOINT_PX}. */
+export const DEFAULT_VENN_OUTER_HEIGHT_BIG_SCREEN_PX = 550;
+
+/** Default Venn card outer height on narrower viewports. */
+export const DEFAULT_VENN_OUTER_HEIGHT_COMPACT_PX = 370;
+
+/** Resolved default Venn outer height (px) from viewport; SSR uses compact. Clamped in {@link defaultVennOuterPx}. */
+export function defaultVennOuterHeightPx() {
+  if (typeof window === 'undefined') {
+    return DEFAULT_VENN_OUTER_HEIGHT_COMPACT_PX;
+  }
+  return window.innerWidth >= VENN_DEFAULT_OUTER_HEIGHT_VIEWPORT_BREAKPOINT_PX
+    ? DEFAULT_VENN_OUTER_HEIGHT_BIG_SCREEN_PX
+    : DEFAULT_VENN_OUTER_HEIGHT_COMPACT_PX;
+}
+
 function capW() {
   if (typeof window === 'undefined') return VIEWPORT_CAP_W;
   return Math.min(window.innerWidth, VIEWPORT_CAP_W);
@@ -67,14 +87,17 @@ function capH() {
 }
 
 export function defaultVennOuterPx() {
+  const height = Math.min(
+    CA_VENN_OUTER_MAX_H,
+    Math.max(CA_VENN_OUTER_MIN_H, defaultVennOuterHeightPx()),
+  );
   if (typeof window === 'undefined') {
-    return { width: CA_VENN_OUTER_MIN_W, height: CA_VENN_OUTER_MIN_H };
+    return { width: CA_VENN_OUTER_MIN_W, height };
   }
   const w = Math.round((capW() * CA_VIEW_PCT.vennOuterWidth) / 100);
-  const h = Math.round((capH() * CA_VIEW_PCT.vennOuterHeight) / 100);
   return {
     width: Math.min(CA_VENN_OUTER_MAX_W, Math.max(CA_VENN_OUTER_MIN_W, w)),
-    height: Math.min(CA_VENN_OUTER_MAX_H, Math.max(CA_VENN_OUTER_MIN_H, h)),
+    height,
   };
 }
 

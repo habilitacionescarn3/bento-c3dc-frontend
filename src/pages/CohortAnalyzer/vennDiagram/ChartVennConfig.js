@@ -15,11 +15,18 @@ export const VENN_CHART_LAYOUT_PADDING = {
  * Scale applied to canvas width/height so circles + external labels fit inside the slot.
  * Inline card: three cohorts vs two use different scales (two-circle layout needs its own tuning).
  * Expanded modal uses VENN_CANVAS_SIZE_SCALE_EXPANDED regardless of cohort count.
+ * At {@link VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH}+, inline uses {@link VENN_CANVAS_SIZE_SCALE_BIG_SCREEN}.
  */
-export const VENN_CANVAS_SIZE_SCALE_NORMAL = 0.001;
+/** Inline card with three cohorts — was 0.001 (effectively zero); scale to slot so resize is visible. */
+export const VENN_CANVAS_SIZE_SCALE_NORMAL = 0.92;
 /** Inline card when exactly two cohorts are selected (two-set Venn). */
-export const VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS = 0.1;
-export const VENN_CANVAS_SIZE_SCALE_EXPANDED = 0.1;
+export const VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS = 0.92;
+/** Expanded modal — match slot similarly to inline. */
+export const VENN_CANVAS_SIZE_SCALE_EXPANDED = 0.95;
+/** Viewport width (px) at or above which inline Venn uses {@link VENN_CANVAS_SIZE_SCALE_BIG_SCREEN}. */
+export const VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH = 1800;
+/** Inline Venn on very wide viewports — use a bit more of the slot; labels have more room. */
+export const VENN_CANVAS_SIZE_SCALE_BIG_SCREEN = 0.95;
 
 /**
  * Max characters of cohort name shown on Venn circles; longer names use `…` (ellipsis).
