@@ -1,6 +1,7 @@
 import {
   CA_SURVIVAL_CARD_MIN_WIDTH,
   CA_SURVIVAL_CARD_MIN_HEIGHT,
+  CA_TOP_ROW_GAP_PX,
 } from '../store/cohortAnalyzerLayoutConstants';
 
 /** Chart summary view: Venn row, tabs, controls, category cards, table area. */
@@ -26,7 +27,7 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     flexWrap: 'wrap',
     alignItems: 'flex-start',
     alignContent: 'flex-start',
-    gap: 26,
+    gap: CA_TOP_ROW_GAP_PX,
     width: '100%',
     minWidth: 0,
     overflowX: 'visible',
@@ -34,7 +35,7 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     [theme.breakpoints.down('md')]: {
       flexDirection: 'column',
       flexWrap: 'nowrap',
-      gap: 20,
+      gap: CA_TOP_ROW_GAP_PX,
     },
   },
   vennColumn: {

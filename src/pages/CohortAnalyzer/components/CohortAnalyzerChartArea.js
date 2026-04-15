@@ -73,8 +73,6 @@ export function CohortAnalyzerChartArea({
     handleBesideRowDragLeave,
     handleBesideColumnDragOver,
     handleBesidePanelDrop,
-    vennHeaderGrab,
-    vennBesideDrag,
     survivalBesideDrag,
     besidePanelDragging,
     besidePanelDraggingRef,
@@ -290,8 +288,7 @@ export function CohortAnalyzerChartArea({
                                             containerRef={containerRef}
                                             canvasRef={canvasRef}
                                             classes={classes}
-                                            headerPrefix={vennHeaderGrab}
-                                            besideCardDrag={survivalBesideTopRowUsesOrder ? vennBesideDrag : undefined}
+                                            besideCardDrag={undefined}
                                             besidePanelDragState={besidePanelDragging}
                                             chartModalOpen={expandedChart != null}
                                             chartModalActiveTab={chartModalActiveTab}
@@ -342,8 +339,6 @@ export function CohortAnalyzerChartArea({
                                 histogramExportRef={histogramExportRef}
                                 onAllAddableChartsAddedChange={handleAllAddableChartsAddedChange}
                                 onTopRowStripDropComplete={endBesidePanelDrag}
-                                vennHeaderGrab={vennHeaderGrab}
-                                vennBesideDrag={vennBesideDrag}
                                 onExpandVenn={handleExpandVennInChartModal}
                             />
                 <div

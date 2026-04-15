@@ -56,7 +56,9 @@ export function HistogramPopupModalHeader({
         >
           Venn Diagram
         </Tab>
-        {Object.keys(data).map((dataset) => (
+        {Object.keys(data || {})
+          .filter((dataset) => dataset !== 'survivalAnalysis')
+          .map((dataset) => (
           <Tab
             key={dataset}
             active={activeTab === dataset}

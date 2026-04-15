@@ -141,9 +141,9 @@ export function HistogramStripChartRow({
   const peerShadowStyle =
     isDragging && !isDraggedCard
       ? {
-        boxShadow: '0 14px 28px rgba(29, 61, 73, 0.28)',
+        boxShadow: 'none',
         filter: 'brightness(0.96)',
-        transition: 'opacity 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease',
+        transition: 'opacity 0.15s ease, filter 0.15s ease',
       }
       : {};
   const dropTargetStyle =

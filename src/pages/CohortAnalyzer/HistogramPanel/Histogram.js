@@ -75,8 +75,6 @@ const Histogram = ({
   onAllAddableChartsAddedChange,
   /** Clears Venn/survival drag state after drop on histogram strip (from useBesidePanelDnD). */
   onTopRowStripDropComplete,
-  vennHeaderGrab = null,
-  vennBesideDrag = null,
   onExpandVenn,
 }) => {
   const classes = useHistogramPanelMuiStyles();
@@ -352,6 +350,21 @@ const Histogram = ({
     defaultPlotHeightPx,
   });
 
+  /** Match beside-column histogram shell to survival overall card (width × height). */
+  const besidePeerShellBox = useMemo(() => {
+    if (!besideDatasetForColumn) return null;
+    const raw = survivalCardSize || reduxSurvivalSize;
+    return clampSurvivalPanelSize(raw && typeof raw === 'object' ? raw : {});
+  }, [besideDatasetForColumn, survivalCardSize, reduxSurvivalSize]);
+
+  const besideColumnPlotHeightPx = useMemo(() => {
+    if (!besidePeerShellBox || besidePeerShellBox.height == null) {
+      return besideStripPlotHeight;
+    }
+    const inner = besidePeerShellBox.height - HISTOGRAM_CARD_CHROME_HEIGHT;
+    return Math.max(120, Math.round(inner));
+  }, [besidePeerShellBox, besideStripPlotHeight]);
+
   const handleMouseEnter = (entry) => {
     cellHover.current = entry;
   };
@@ -423,6 +436,8 @@ const Histogram = ({
         chartVisualByPanelId={chartVisualByPanelId}
         besideHistogramBarSums={besideHistogramBarSums}
         besideStripPlotHeight={besideStripPlotHeight}
+        besidePeerShellBox={besidePeerShellBox}
+        besideColumnPlotHeightPx={besideColumnPlotHeightPx}
         cellHover={cellHover}
         handleMouseEnter={handleMouseEnter}
         handleMouseLeave={handleMouseLeave}
@@ -477,11 +492,9 @@ const Histogram = ({
                 }}
                 style={{
                   ...stripVennChartWrapperStyle,
-                  cursor: allInputsEmpty ? 'default' : 'grab',
+                  cursor: 'default',
                 }}
-                draggable={Boolean(vennBesideDrag && vennBesideDrag.draggable)}
-                onDragStart={vennBesideDrag && vennBesideDrag.onDragStart ? vennBesideDrag.onDragStart : undefined}
-                onDragEnd={vennBesideDrag && vennBesideDrag.onDragEnd ? vennBesideDrag.onDragEnd : undefined}
+                draggable={false}
                 onDragOver={(e) => handleStripChartDragOver(e, 'venn')}
                 onDrop={(e) => handleStripChartDrop(e, 'venn')}
               >
@@ -490,8 +503,7 @@ const Histogram = ({
                   containerRef={containerRef}
                   canvasRef={canvasRef}
                   classes={classes}
-                  headerPrefix={vennHeaderGrab}
-                  besideCardDrag={vennBesideDrag}
+                  besideCardDrag={undefined}
                   besidePanelDragState={besidePanelDragState}
                   chartModalOpen={chartModalExpandedChart != null}
                   chartModalActiveTab={chartModalActiveTab}

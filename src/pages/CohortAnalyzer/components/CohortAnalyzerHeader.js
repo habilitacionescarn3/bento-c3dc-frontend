@@ -43,7 +43,6 @@ const CohortAnalyzerHeader = ({
   handleDownload,
   onExpandVenn,
   classes,
-  headerPrefix,
 }) => {
   const cohortsReady = selectedCohorts.length > 0;
   const rowOpacity = cohortsReady ? 1 : 0.55;
@@ -52,7 +51,7 @@ const CohortAnalyzerHeader = ({
     <>
       <div className={classes.vennToolbarRow}>
         <div className={classes.vennToolbarLeading}>
-          {headerPrefix}
+          
           <h2 className={classes.vennToolbarTitle}>Venn Diagram</h2>
         </div>
         <div className={classes.vennToolbarSpacer} aria-hidden />

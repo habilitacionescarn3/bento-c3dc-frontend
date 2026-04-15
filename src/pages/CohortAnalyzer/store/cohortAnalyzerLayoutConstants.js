@@ -14,7 +14,7 @@ export const CA_PANEL_KIND = {
 };
 
 /** Gap between Venn and survival columns (`vennSurvivalRow` flex gap). */
-export const CA_TOP_ROW_GAP_PX = 26;
+export const CA_TOP_ROW_GAP_PX = 12;
 
 /** Venn card outer size bounds (matches VennDiagramContainer). */
 export const CA_VENN_OUTER_MIN_W = 400;

@@ -38,6 +38,9 @@ export function HistogramBesideVennHistogramPortal({
   chartVisualByPanelId,
   besideHistogramBarSums,
   besideStripPlotHeight,
+  /** Same outer size as survival strip / top-row survival card when shown beside Venn. */
+  besidePeerShellBox = null,
+  besideColumnPlotHeightPx,
   cellHover,
   handleMouseEnter,
   handleMouseLeave,
@@ -58,6 +61,10 @@ export function HistogramBesideVennHistogramPortal({
 
   const d = besideDatasetForColumn;
   const isDragSourceHere = draggingDataset === d;
+  const plotHeightPx =
+    besidePeerShellBox && besideColumnPlotHeightPx != null
+      ? besideColumnPlotHeightPx
+      : besideStripPlotHeight;
 
   return createPortal(
     <ChartWrapper
@@ -66,14 +73,25 @@ export function HistogramBesideVennHistogramPortal({
       style={{
         ...(isDragSourceHere
           ? HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE
-          : histogramCardSizes[d] && histogramCardSizes[d].width != null
+          : besidePeerShellBox && besidePeerShellBox.width != null && besidePeerShellBox.height != null
             ? {
-              width: histogramCardSizes[d].width,
+              width: besidePeerShellBox.width,
+              minWidth: besidePeerShellBox.width,
+              height: besidePeerShellBox.height,
+              minHeight: besidePeerShellBox.height,
               flexShrink: 0,
               alignSelf: 'flex-start',
               maxWidth: 'none',
+              boxSizing: 'border-box',
             }
-            : {}),
+            : histogramCardSizes[d] && histogramCardSizes[d].width != null
+              ? {
+                width: histogramCardSizes[d].width,
+                flexShrink: 0,
+                alignSelf: 'flex-start',
+                maxWidth: 'none',
+              }
+              : {}),
         cursor: allInputsEmpty ? 'default' : 'grab',
       }}
       draggable={!allInputsEmpty}
@@ -143,8 +161,8 @@ export function HistogramBesideVennHistogramPortal({
           <div
             className={classes.chartPlotArea}
             style={{
-              minHeight: besideStripPlotHeight,
-              height: besideStripPlotHeight,
+              minHeight: plotHeightPx,
+              height: plotHeightPx,
             }}
           >
             <HistogramDatasetChart
@@ -155,12 +173,14 @@ export function HistogramBesideVennHistogramPortal({
               valueB={besideHistogramBarSums.valueB}
               valueC={besideHistogramBarSums.valueC}
               compact={requiresCompactSpacing(d)}
-              height={besideStripPlotHeight}
+              height={plotHeightPx}
               width="100%"
               estimatedChartWidth={
-                histogramCardSizes[d] && histogramCardSizes[d].width != null
-                  ? Math.max(280, histogramCardSizes[d].width - 48)
-                  : 400
+                besidePeerShellBox && besidePeerShellBox.width != null
+                  ? Math.max(280, besidePeerShellBox.width - 48)
+                  : histogramCardSizes[d] && histogramCardSizes[d].width != null
+                    ? Math.max(280, histogramCardSizes[d].width - 48)
+                    : 400
               }
               cellHover={cellHover}
               handleMouseEnter={handleMouseEnter}
@@ -175,8 +195,8 @@ export function HistogramBesideVennHistogramPortal({
           <div
             style={{
               width: '100%',
-              minHeight: besideStripPlotHeight,
-              height: besideStripPlotHeight,
+              minHeight: plotHeightPx,
+              height: plotHeightPx,
               display: 'flex',
               justifyContent: 'center',
               alignItems: 'center',

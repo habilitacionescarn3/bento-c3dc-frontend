@@ -7,7 +7,7 @@ const tooltipStyles = {
     padding: '10px',
     border: '1px solid #ccc',
     borderRadius: '4px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    boxShadow: 'none',
     textAlign: 'center'
   },
   text: {

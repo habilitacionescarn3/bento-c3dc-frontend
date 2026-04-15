@@ -1,7 +1,7 @@
 export const BESIDE_PEER_DRAG_STYLE = {
-  boxShadow: '0 14px 28px rgba(29, 61, 73, 0.28)',
+  boxShadow: 'none',
   filter: 'brightness(0.96)',
-  transition: 'box-shadow 0.15s ease, filter 0.15s ease, opacity 0.15s ease',
+  transition: 'filter 0.15s ease, opacity 0.15s ease',
 };
 
 /** SSR/tests fallback; in browser use `defaultHistogramPlotHeightPx()` from cohortAnalyzerViewPercentDefaults. */

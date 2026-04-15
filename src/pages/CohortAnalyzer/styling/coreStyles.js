@@ -19,7 +19,7 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     backgroundColor: 'white',
     border: '1px solid #679AAA',
     borderRadius: '10px',
-    boxShadow: '0 8px 18px rgba(29, 61, 73, 0.16)',
+    boxShadow: 'none',
     flex: 1,
     display: 'flex',
     minHeight: 350,
@@ -100,9 +100,6 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: 0,
-    },
-    '& .cohort-analyzer-venn-resize::after': {
-      borderBottomColor: '#5C5C5C',
     },
   },
   vennToolbarRow: {
@@ -280,7 +277,7 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     padding: '10px',
     border: '1px solid #ccc',
     borderRadius: '4px',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+    boxShadow: 'none',
   },
   chartTooltipText: {
     margin: 0,

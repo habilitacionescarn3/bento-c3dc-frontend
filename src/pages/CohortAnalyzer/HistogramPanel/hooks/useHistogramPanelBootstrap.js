@@ -96,7 +96,12 @@ export function useHistogramPanelBootstrap({
           }),
         );
         setSelectedDatasets((prev) => (prev.includes(datasetKey) ? prev : [...prev, datasetKey]));
-        setActiveTab(datasetKey);
+        // Keep focus on a histogram tab — do not jump to survival (it stays last in expanded modal tabs).
+        setActiveTab((tab) => {
+          if (tab && tab !== 'survivalAnalysis') return tab;
+          const histo = selectedDatasets.filter((d) => d !== 'survivalAnalysis');
+          return histo.length > 0 ? histo[histo.length - 1] : 'sexAtBirth';
+        });
         if (typeof onInlineAddChartClose === 'function') {
           onInlineAddChartClose();
         }

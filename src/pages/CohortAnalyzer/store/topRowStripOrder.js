@@ -15,6 +15,11 @@ export function insertTopRowPanelIntoStripOrder(stripOrder, panel, insertBeforeD
       ? 'venn'
       : 'survivalAnalysis';
   let next = [...(stripOrder || [])].filter((id) => id !== token);
+  // Survival always docks at the end of the histogram strip (not before the first card).
+  if (token === 'survivalAnalysis') {
+    next.push(token);
+    return next;
+  }
   let idx = next.length;
   if (insertBeforeDataset && next.includes(insertBeforeDataset)) {
     idx = next.indexOf(insertBeforeDataset);

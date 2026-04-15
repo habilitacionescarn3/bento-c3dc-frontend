@@ -110,11 +110,11 @@ export const ChartWrapper = styled.div`
   flex-wrap: nowrap;
   align-items: stretch;
   border-radius: 10px;
-  box-shadow: 0 8px 18px rgba(29, 61, 73, 0.16);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: none;
+  transition: none;
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(29, 61, 73, 0.2);
+    transform: none;
+    box-shadow: none;
   }
   @media (max-width: 1500px) {
     width: calc((100% - 14px) / 2);
@@ -181,11 +181,11 @@ export const SurvivalBesideVennCard = styled.div`
   border: 1px solid #b8c7cc;
   background: #ffffff;
   border-radius: 10px;
-  box-shadow: 0 8px 18px rgba(29, 61, 73, 0.16);
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  box-shadow: none;
+  transition: none;
   &:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 10px 20px rgba(29, 61, 73, 0.2);
+    transform: none;
+    box-shadow: none;
   }
 `;
 
