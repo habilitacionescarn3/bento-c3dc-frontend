@@ -390,6 +390,7 @@ const Histogram = ({
     setSurvivalCardSize,
     dispatch,
     defaultPlotHeightPx,
+    besideHistogramDataset: besideDatasetForColumn,
   });
 
   const survivalAnalysisBodyProps = {
@@ -450,6 +451,10 @@ const Histogram = ({
         c1Name={c1Name}
         c2Name={c2Name}
         c3Name={c3Name}
+        chartTypeMenuDataset={chartTypeMenuDataset}
+        setChartTypeMenuDataset={setChartTypeMenuDataset}
+        chartTypeMenuRef={chartTypeMenuRef}
+        setChartVisualForPanel={(panelId, type) => dispatch(patchChartVisuals({ [panelId]: type }))}
       />
       <HistogramSurvivalBesideVennPortal
         selectedDatasets={selectedDatasets}

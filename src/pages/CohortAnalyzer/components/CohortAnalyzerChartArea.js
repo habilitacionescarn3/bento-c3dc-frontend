@@ -22,13 +22,11 @@ function AddChartToolbarButton({
     ariaLabel,
 }) {
     const disabled = !hasParticipantData || allAddableChartsAdded;
-    const cursor = disabled ? 'not-allowed' : 'pointer';
     const showAllAddedTip = hasParticipantData && allAddableChartsAdded;
     const button = (
         <button
             type="button"
             className={classes.addChartButton}
-            style={{ cursor }}
             disabled={disabled}
             onClick={openAddChartInline}
             aria-label={ariaLabel}

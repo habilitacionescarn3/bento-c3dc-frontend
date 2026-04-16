@@ -7,14 +7,20 @@ import {
   CA_SURVIVAL_CARD_MAX_HEIGHT as SURVIVAL_CARD_MAX_HEIGHT,
 } from '../../store/cohortAnalyzerLayoutConstants';
 import {
+  HISTOGRAM_CARD_CHROME_HEIGHT,
   HISTOGRAM_CARD_MIN_WIDTH,
   HISTOGRAM_CARD_MAX_WIDTH,
   HISTOGRAM_PLOT_MIN_HEIGHT,
   HISTOGRAM_PLOT_MAX_HEIGHT,
 } from '../histogramConstants';
+import { clampSurvivalPanelSize } from '../../store/cohortAnalyzerLayoutReducer';
 
 /**
  * Drag-to-resize handlers for histogram strip cards and survival card.
+ *
+ * When {@link besideHistogramDataset} matches, the docked-beside-Venn shell is driven by
+ * survival dimensions ({@link HistogramBesideVennHistogramPortal}); we mirror the drag into
+ * survival size so the grip stays effective after flex wrap / column layout changes.
  */
 export function useHistogramResizeHandlers({
   allInputsEmpty,
@@ -24,12 +30,16 @@ export function useHistogramResizeHandlers({
   setSurvivalCardSize,
   dispatch,
   defaultPlotHeightPx,
+  besideHistogramDataset = null,
 }) {
   const handleHistogramCardResizeStart = useCallback((e, dataset) => {
     if (allInputsEmpty) return;
     e.preventDefault();
     e.stopPropagation();
-    const card = e.currentTarget.parentElement;
+    const card =
+      (typeof e.currentTarget.closest === 'function'
+        && e.currentTarget.closest('[data-ca-histogram-strip-dataset]'))
+      || e.currentTarget.parentElement;
     if (!card) return;
     const rect = card.getBoundingClientRect();
     const current = histogramCardSizes[dataset];
@@ -42,6 +52,9 @@ export function useHistogramResizeHandlers({
     const startY = e.clientY;
 
     document.body.style.userSelect = 'none';
+
+    const syncSurvivalShell =
+      besideHistogramDataset != null && dataset === besideHistogramDataset;
 
     let lastW;
     let lastPh;
@@ -58,6 +71,12 @@ export function useHistogramResizeHandlers({
         ...prev,
         [dataset]: { width: w, plotHeight: ph },
       }));
+      if (syncSurvivalShell) {
+        const outerH = ph + HISTOGRAM_CARD_CHROME_HEIGHT;
+        setSurvivalCardSize((prev) =>
+          clampSurvivalPanelSize({ ...(prev || {}), width: w, height: outerH }),
+        );
+      }
     };
 
     const onUp = () => {
@@ -70,6 +89,15 @@ export function useHistogramResizeHandlers({
           dataset,
           size: { width: lastW, plotHeight: lastPh },
         }));
+        if (syncSurvivalShell) {
+          const outerH = lastPh + HISTOGRAM_CARD_CHROME_HEIGHT;
+          dispatch(
+            setPanelSize({
+              panel: 'survival',
+              size: clampSurvivalPanelSize({ width: lastW, height: outerH }),
+            }),
+          );
+        }
       }
     };
 
@@ -79,8 +107,10 @@ export function useHistogramResizeHandlers({
     allInputsEmpty,
     histogramCardSizes,
     setHistogramCardSizes,
+    setSurvivalCardSize,
     dispatch,
     defaultPlotHeightPx,
+    besideHistogramDataset,
   ]);
 
   const handleSurvivalCardResizeStart = useCallback((e, options = {}) => {

@@ -95,7 +95,11 @@ export function CohortAnalyzerDownloadAllDropdown({
         aria-expanded={open}
         onClick={() => !disabled && setOpen((o) => !o)}
       >
-        <span>DOWNLOAD ALL</span>
+        <span className={classes.downloadAllTriggerLabel}>
+          DOWNLOAD ALL
+          <br />
+          IMAGES
+        </span>
         <span className={classes.downloadAllChevron} aria-hidden>
           {open ? '▲' : '▼'}
         </span>

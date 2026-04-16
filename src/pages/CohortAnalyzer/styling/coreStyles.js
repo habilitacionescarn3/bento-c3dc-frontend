@@ -126,6 +126,7 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     fontSize: 18,
     lineHeight: 1.2,
     color: '#18677A',
+    paddingLeft: 5,
     margin: 0,
     flexShrink: 0,
   },

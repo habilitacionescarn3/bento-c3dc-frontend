@@ -62,8 +62,13 @@ export const ChartTitle = styled.h2`
   margin-left: 3px;
   flex: 1;
   min-width: 0;
-  line-height: 1.3;
-  align-self: center;
+  line-height: 1.25;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  row-gap: 2px;
   &.empty {
     opacity: 0.3;
   }

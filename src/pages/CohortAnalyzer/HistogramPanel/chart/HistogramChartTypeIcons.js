@@ -44,11 +44,28 @@ export function ChartTypeIcon({ type, size = 20 }) {
 
       );
     case CHART_TYPE_KEYS.HORIZONTAL_BAR:
+      // Same asset as vertical bar, rotated 90° (horizontal bar chart affordance).
       return (
-        <svg width={s} height={s} viewBox="0 0 20 20" fill="none" aria-hidden>
-          <path d="M4 5H14M4 10H10M4 15H16" stroke={stroke} strokeWidth="1.5" strokeLinecap="round" />
-          <path d="M3 4V16" stroke={stroke} strokeWidth="1.2" strokeLinecap="round" />
-        </svg>
+        <span
+          style={{
+            display: 'inline-flex',
+            width: s,
+            height: s,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          aria-hidden
+        >
+          <span
+            style={{
+              display: 'inline-flex',
+              transform: 'rotate(90deg)',
+              transformOrigin: 'center center',
+            }}
+          >
+            <ChartTypeIcon type={CHART_TYPE_KEYS.VERTICAL_BAR} size={s} />
+          </span>
+        </span>
       );
     case CHART_TYPE_KEYS.LINE:
       return (

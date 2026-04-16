@@ -3,6 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { ADD_CHART_DATA_TYPES } from '../../config/cohortAnalyzerChartCatalog';
 import {
   setStripOrder,
+  setTopRowOrder,
   setBesideStripPanelId,
   setSurvivalBesideFromSelection,
   upsertPanelRegistry,
@@ -39,6 +40,7 @@ export function useHistogramPanelBootstrap({
 }) {
   const dispatch = useDispatch();
   const stripOrder = useSelector((state) => state.cohortAnalyzerLayout.stripOrder);
+  const topRowOrder = useSelector((state) => state.cohortAnalyzerLayout.topRowOrder);
   const besideStripPanelId = useSelector((state) => state.cohortAnalyzerLayout.besideStripPanelId);
 
   const [inlineAddStep, setInlineAddStep] = useState(1);
@@ -95,6 +97,14 @@ export function useHistogramPanelBootstrap({
             },
           }),
         );
+        // Show survival only in the lower histogram strip (last), not beside Venn in the upper row.
+        const stripWithoutSurvival = stripOrder.filter((id) => id !== 'survivalAnalysis');
+        dispatch(setStripOrder([...stripWithoutSurvival, 'survivalAnalysis']));
+        let nextTopRow = (topRowOrder || []).filter((p) => p !== 'survival');
+        if (nextTopRow.length === 0) {
+          nextTopRow = ['venn'];
+        }
+        dispatch(setTopRowOrder(nextTopRow));
         setSelectedDatasets((prev) => (prev.includes(datasetKey) ? prev : [...prev, datasetKey]));
         // Keep focus on a histogram tab — do not jump to survival (it stays last in expanded modal tabs).
         setActiveTab((tab) => {
@@ -137,6 +147,7 @@ export function useHistogramPanelBootstrap({
       selectedDatasets,
       dispatch,
       stripOrder,
+      topRowOrder,
       onInlineAddChartClose,
       setSelectedDatasets,
       setActiveTab,
@@ -207,7 +218,15 @@ export function useHistogramPanelBootstrap({
     if (hasTopRowTokensInStrip) {
       const missing = visibleDatasets.filter((dataset) => !stripOrder.includes(dataset));
       if (missing.length > 0) {
-        dispatch(setStripOrder([...stripOrder, ...missing]));
+        const survivalInStrip =
+          stripOrder.includes('survivalAnalysis')
+          && selectedDatasets.includes('survivalAnalysis');
+        if (survivalInStrip) {
+          const core = stripOrder.filter((id) => id !== 'survivalAnalysis');
+          dispatch(setStripOrder([...core, ...missing, 'survivalAnalysis']));
+        } else {
+          dispatch(setStripOrder([...stripOrder, ...missing]));
+        }
       }
       return;
     }

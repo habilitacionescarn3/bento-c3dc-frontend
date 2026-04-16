@@ -54,7 +54,7 @@ export function HistogramPopupModalHeader({
           active={activeTab === CA_EXPANDED_CHART_MODAL_TAB_VENN}
           onClick={() => setActiveTab(CA_EXPANDED_CHART_MODAL_TAB_VENN)}
         >
-          Venn Diagram
+          Venn Diagrams
         </Tab>
         {Object.keys(data || {})
           .filter((dataset) => dataset !== 'survivalAnalysis')

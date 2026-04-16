@@ -228,7 +228,8 @@ export function HistogramStripChartRow({
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
-                marginRight: 6,
+                justifyContent: 'center',
+                flexShrink: 0,
                 cursor: allInputsEmpty ? 'not-allowed' : 'grab',
                 opacity: allInputsEmpty ? 0.45 : 1,
               }}
@@ -259,7 +260,12 @@ export function HistogramStripChartRow({
                 interactive
                 arrowSize="30px"
               >
-                <img alt="Question Icon" src={questionIcon} width={10} style={{ border: '0px', top: -3, left: 3, position: 'relative' }} />
+                <img
+                  alt="Question Icon"
+                  src={questionIcon}
+                  width={10}
+                  style={{ border: '0px', display: 'block', flexShrink: 0, marginLeft: 3 }}
+                />
               </ToolTip>
             )}
           </ChartTitle>

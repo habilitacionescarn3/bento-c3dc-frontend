@@ -90,10 +90,7 @@ export function SurvivalAnalysisCardBody({
   return (
     <>
       <SurvivalAnalysisHeader>
-        <ChartTitle
-          className={survivalHasNoDisplayData ? 'empty' : ''}
-          style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}
-        >
+        <ChartTitle className={survivalHasNoDisplayData ? 'empty' : ''}>
           <span
             role="button"
             tabIndex={0}
@@ -108,7 +105,8 @@ export function SurvivalAnalysisCardBody({
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              marginRight: 6,
+              justifyContent: 'center',
+              flexShrink: 0,
               cursor: survivalHasNoDisplayData ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
               opacity: survivalHasNoDisplayData ? 0.45 : 1,
             }}
@@ -149,7 +147,7 @@ export function SurvivalAnalysisCardBody({
               alt=""
               src={questionIcon}
               width={10}
-              style={{ border: '0px', top: -3, position: 'relative', marginLeft: 3 }}
+              style={{ border: '0px', display: 'block', flexShrink: 0, marginLeft: 3 }}
             />
           </ToolTip>
         </ChartTitle>

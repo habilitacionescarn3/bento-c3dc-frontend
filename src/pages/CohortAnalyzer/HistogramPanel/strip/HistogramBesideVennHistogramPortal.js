@@ -10,8 +10,13 @@ import {
   ChartTitle,
   ChartActionButtons,
   ChartResizeHandle,
+  ChartTypeDropdownRoot,
+  ChartTypeDropdownPanel,
+  ChartTypeOption,
+  ChartTypeTriggerButton,
 } from '../HistogramPanel.styled';
 import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from '../chart/HistogramDatasetChart';
+import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../chart/HistogramChartTypeIcons';
 import {
   encodePanelDragPayload,
   CA_PANEL_DRAG_MIME,
@@ -54,6 +59,10 @@ export function HistogramBesideVennHistogramPortal({
   c2Name,
   c3Name,
   draggingDataset,
+  chartTypeMenuDataset,
+  setChartTypeMenuDataset,
+  chartTypeMenuRef,
+  setChartVisualForPanel,
 }) {
   if (survivalSelected || !besideDatasetForColumn || survivalBesideVennTarget == null) {
     return null;
@@ -69,6 +78,7 @@ export function HistogramBesideVennHistogramPortal({
   return createPortal(
     <ChartWrapper
       id={`chart-beside-${d}`}
+      data-ca-histogram-strip-dataset={d}
       ref={(el) => { chartRef.current[d] = el; }}
       style={{
         ...(isDragSourceHere
@@ -118,7 +128,14 @@ export function HistogramBesideVennHistogramPortal({
             role="button"
             tabIndex={0}
             aria-label={`Drag ${getChartTitle(d) || 'chart'}`}
-            style={{ display: 'inline-flex', alignItems: 'center', marginRight: 9, cursor: allInputsEmpty ? 'not-allowed' : 'grab', opacity: allInputsEmpty ? 0.45 : 1 }}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              cursor: allInputsEmpty ? 'not-allowed' : 'grab',
+              opacity: allInputsEmpty ? 0.45 : 1,
+            }}
           >
             <img
               src={histogramChartTitleHandle}
@@ -132,6 +149,45 @@ export function HistogramBesideVennHistogramPortal({
           {getChartTitle(d)}
         </ChartTitle>
         <ChartActionButtons>
+          <ChartTypeDropdownRoot
+            ref={chartTypeMenuDataset === d ? chartTypeMenuRef : undefined}
+          >
+            <ChartTypeTriggerButton
+              type="button"
+              disabled={allInputsEmpty}
+              aria-haspopup="listbox"
+              aria-expanded={chartTypeMenuDataset === d}
+              aria-label="Chart type"
+              onClick={() => {
+                if (allInputsEmpty) return;
+                setChartTypeMenuDataset((prev) => (prev === d ? null : d));
+              }}
+            >
+              <ChartTypeIcon
+                type={chartVisualByPanelId[d] || DEFAULT_CHART_TYPE}
+                size={22}
+              />
+            </ChartTypeTriggerButton>
+            {chartTypeMenuDataset === d && !allInputsEmpty && (
+              <ChartTypeDropdownPanel role="listbox" aria-label="Choose chart type">
+                {CHART_TYPE_OPTIONS.map(({ type, label }) => (
+                  <ChartTypeOption
+                    key={type}
+                    type="button"
+                    $active={(chartVisualByPanelId[d] || DEFAULT_CHART_TYPE) === type}
+                    aria-label={label}
+                    aria-selected={(chartVisualByPanelId[d] || DEFAULT_CHART_TYPE) === type}
+                    onClick={() => {
+                      setChartVisualForPanel(d, type);
+                      setChartTypeMenuDataset(null);
+                    }}
+                  >
+                    <ChartTypeIcon type={type} size={20} />
+                  </ChartTypeOption>
+                ))}
+              </ChartTypeDropdownPanel>
+            )}
+          </ChartTypeDropdownRoot>
           <span style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }} onClick={() => { if (!allInputsEmpty) { setExpandedChart(d); setActiveTab(d); } }}>
             <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
           </span>

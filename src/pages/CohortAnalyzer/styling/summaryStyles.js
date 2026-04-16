@@ -32,6 +32,8 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     minWidth: 0,
     overflowX: 'visible',
     overflowY: 'visible',
+    position: 'relative',
+    zIndex: 2,
     [theme.breakpoints.down('md')]: {
       flexDirection: 'column',
       flexWrap: 'nowrap',
@@ -55,6 +57,8 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     flexDirection: 'column',
     alignItems: 'stretch',
     alignSelf: 'stretch',
+    overflow: 'visible',
+    position: 'relative',
   },
   rightSideAnalyzerInnerContainer: {
     display: 'flex',
@@ -91,7 +95,7 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     border: '1px solid #2A4951',
     borderRadius: 4,
     fontFamily: 'Poppins',
-    fontSize: 11,
+    fontSize: 12,
     fontWeight: 600,
     height: 41,
     minWidth: 174,
@@ -229,12 +233,16 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     fontSize: 12,
     height: 41,
     minWidth: 174,
-    cursor: 'default',
+    cursor: 'pointer',
     '& span': {
       fontSize: 16,
       marginLeft: 8,
       position: 'relative',
       top: 1,
+    },
+    '&:disabled': {
+      opacity: 0.45,
+      cursor: 'not-allowed',
     },
   },
   downloadAllButton: {
@@ -269,8 +277,9 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     background: '#4A5560',
     color: '#FFFFFF',
     fontFamily: 'Poppins',
-    fontWeight: 700,
-    fontSize: 11,
+    fontWeight: 600,
+    fontSize: 12,
+    textAlign: 'left',
     letterSpacing: '0.04em',
     cursor: 'pointer',
     textTransform: 'uppercase',
@@ -278,6 +287,11 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
       opacity: 0.45,
       cursor: 'not-allowed',
     },
+  },
+  /** Tight two-line label: default line-height stacks lines with too much gap after <br />. */
+  downloadAllTriggerLabel: {
+    display: 'block',
+    lineHeight: 1.04,
   },
   downloadAllChevron: {
     fontSize: 10,
