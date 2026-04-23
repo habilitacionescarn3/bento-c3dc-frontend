@@ -633,6 +633,7 @@ const Histogram = ({
                 selectedCatalogId={inlineSelectedCatalogId}
                 setSelectedCatalogId={setInlineSelectedCatalogId}
                 onCompleteWithChartType={finalizeInlineAddChart}
+                onClose={onInlineAddChartClose}
                 existingStripKeys={stripOrder}
                 selectedDatasets={selectedDatasets}
               />

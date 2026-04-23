@@ -56,21 +56,16 @@ const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handle
             icon={questionIcon}
           >
             <div className={classes.leftAlignedText}>
-            BUILD IN EXPLORE <br></br> DASHBOARD
+              BUILD IN
+              <br />
+                EXPLORE
+             
+              DASHBOARD
             </div>
           </ButtonWithTooltip>
 
 
-          <ButtonWithTooltip
-            className={canHub ? classes.exploreButton : classes.exploreButtonFaded}
-            disabled={!canHub}
-            onClick={onHub}
-            tooltip={exploreCCDIHubTooltip}
-            icon={questionIcon}
-          >
-            EXPLORE IN CCDI HUB
-            <img alt="link out" src={linkoutIcon} height={13} width={13} />
-          </ButtonWithTooltip>
+          
         </div>
       </div>
 

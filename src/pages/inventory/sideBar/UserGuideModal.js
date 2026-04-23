@@ -10,6 +10,9 @@ import AnalyzingCohortsSection from './ExploreUserGuide/AnalyzingCohortsSection'
 import FullGuideSection from './ExploreUserGuide/FullGuideSection';
 import ContactUsSection from './ExploreUserGuide/ContactUsSection';
 
+/** Extra space above the target heading when scrolling (larger = less scroll / section sits lower in view). */
+const USER_GUIDE_SECTION_SCROLL_OFFSET_PX = 70;
+
 export const USER_GUIDE_TITLE_LIST = [
   'Overview',
   'Finding Participants, Studies, Samples, and Files',
@@ -52,7 +55,7 @@ function UserGuideModal({ classes, open, onClose, pendingSectionId }) {
       const element = document.getElementById(pendingSectionId);
       if (contentElement && element) {
         contentElement.scrollTo({
-          top: element.offsetTop - 40,
+          top: element.offsetTop - USER_GUIDE_SECTION_SCROLL_OFFSET_PX,
           behavior: 'smooth',
         });
       }
@@ -67,7 +70,7 @@ function UserGuideModal({ classes, open, onClose, pendingSectionId }) {
     const element = document.getElementById(id);
     if (contentElement && element) {
       contentElement.scrollTo({
-        top: element.offsetTop - 40,
+        top: element.offsetTop - USER_GUIDE_SECTION_SCROLL_OFFSET_PX,
         behavior: 'smooth',
       });
     }

@@ -28,13 +28,13 @@ export const ModalContent = styled.div`
   box-sizing: border-box;
 `;
 
-/** Same box as chart-type / download icons so the header action row aligns on one baseline. */
-const MODAL_HEADER_ICON_CONTROL_PX = 32;
+/** Shared hit target for chart-type, download, and close so flex gap reads evenly between items. */
+const MODAL_HEADER_ICON_CONTROL_PX = 38;
 
 export const CloseButton = styled.button`
   background: none;
   border: none;
-  font-size: 22px;
+  font-size: 44px;
   line-height: 1;
   padding: 0;
   width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
@@ -56,6 +56,11 @@ export const ModalChartWrapper = styled.div`
   width: 100%;
   height: calc(100% - 56px);
   margin-top: 0px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 0;
 `;
 
 export const TabContainer = styled.div`
@@ -81,8 +86,9 @@ export const Tab = styled.button`
   line-height: 1.25;
   white-space: nowrap;
   flex: 0 0 auto;
+  font-weight: ${(props) => (props.active ? '600' : '400')};
   color: ${(props) => (props.active ? '#3A7587' : '#666')};
-  border-bottom: ${(props) => (props.active ? '2px solid #3A7587' : 'none')};
+  border-bottom: ${(props) => (props.active ? '5px solid #3A7587' : 'none')};
 `;
 
 /**
@@ -111,15 +117,15 @@ export const ChartTypeDropdownPanel = styled.div`
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  min-width: 41px;
+  min-width: 48px;
 `;
 
 export const ChartTypeOption = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  height: ${MODAL_HEADER_ICON_CONTROL_PX}px;
   padding: 0;
   border: none;
   border-radius: 6px;
@@ -135,11 +141,14 @@ export const ChartTypeOption = styled.button`
 `;
 
 export const ChartTypeTriggerButton = styled.button`
-  display: flex;
+  display: inline-flex;
+  box-sizing: border-box;
   align-items: center;
   justify-content: center;
-  width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
-  height: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  min-width: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  min-height: ${MODAL_HEADER_ICON_CONTROL_PX}px;
+  width: max-content;
+  height: max-content;
   padding: 0;
   border: none;
   border-radius: 6px;
@@ -267,7 +276,12 @@ export const RiskTableWrapperBesideVenn = styled(RiskTableWrapper)`
 
 export const SurvivalAnalysisModalContainer = styled.div`
   width: 100%;
+  max-width: min(1100px, 100%);
   height: 100%;
+  flex: 1;
+  min-height: 0;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 48px);
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -320,7 +334,7 @@ export const ModalHeaderContainer = styled.div`
   width: 100%;
   padding: 0 10px 0 4px;
   box-sizing: border-box;
-  min-height: 48px;
+  min-height: 50px;
   border-bottom: 1px solid #E0E0E0;
   border-top-left-radius: 8px;
 `;
@@ -334,7 +348,7 @@ export const ModalActionButtons = styled.div`
   gap: 2px;
 `;
 
-/** Stacks download control + dropdown anchor in one 32px cell so flex gap to close isn’t widened. */
+/** Stacks download control + dropdown anchor in one fixed-size cell so flex gap to close isn’t widened. */
 export const DownloadButtonWrapper = styled.div`
   position: relative;
   display: inline-grid;
@@ -360,8 +374,8 @@ export const DownloadButton = styled.span`
 `;
 
 export const DownloadIconImage = styled.img`
-  width: 19px;
-  height: 19px;
+  width: 28px;
+  height: 28px;
   display: block;
 `;
 
@@ -370,24 +384,65 @@ export const DownloadIconSmall = styled.img`
   height: 12px;
 `;
 
+/** Histogram expanded tab: full-width header (radios); use {@link ModalHistogramChartInset} for padded graph. */
 export const ModalChartContainer = styled.div`
   display: flex;
-  flex-direction: row;
+  flex-direction: column;
+  width: 100%;
   height: 100%;
-  align-items: center;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
   justify-content: flex-start;
+`;
+
+/** Horizontal inset + max-width for the expanded histogram plot only (not # / % radios). */
+export const ModalHistogramChartInset = styled.div`
+  width: 100%;
+  max-width: min(1100px, 100%);
+  margin-left: auto;
+  margin-right: auto;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0 clamp(20px, 4vw, 48px);
+  box-sizing: border-box;
 `;
 
 export const ModalRadioFieldset = styled.fieldset`
   border: none;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 0;
+  margin: 0;
 `;
 
 export const ModalRadioGroup = styled(RadioGroup)`
-  height: 100px;
-  width: 180px;
-  margin-top: 20px;
+  width: 100%;
+  margin: 26px 0 12px 6px;
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+`;
+
+/** Venn expanded tab: matches histogram chart / survival horizontal inset + max-width centering. */
+export const ModalVennTabRoot = styled.div`
+  width: 100%;
+  max-width: min(1100px, 100%);
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  margin: 0 auto;
+  padding: 0 clamp(20px, 4vw, 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: auto;
+  box-sizing: border-box;
 `;
 
 export const ModalNoDataContainer = styled.div`

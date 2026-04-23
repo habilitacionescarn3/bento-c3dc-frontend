@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { makeStyles } from '@material-ui/core';
 import { ADD_CHART_DATA_TYPES, isAddChartDataTypeOnStrip } from '../config/cohortAnalyzerChartCatalog';
-import { ChartTypeIcon, CHART_TYPE_OPTIONS } from '../HistogramPanel/chart/HistogramChartTypeIcons';
+import { ChartTypeSelectIcon, CHART_TYPE_OPTIONS } from '../HistogramPanel/chart/HistogramChartTypeIcons';
 
 const useStyles = makeStyles(() => ({
   root: {
@@ -12,12 +12,35 @@ const useStyles = makeStyles(() => ({
     minHeight: 0,
     width: '100%',
   },
+  headerRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+    margin: '0 0 8px',
+  },
   header: {
     fontFamily: 'Poppins, sans-serif',
     fontSize: 14,
     fontWeight: 500,
     color: '#5C5C5C',
-    margin: '0 0 8px',
+    margin: 0,
+  },
+  closeButton: {
+    flexShrink: 0,
+    margin: 0,
+    padding: '2px 6px',
+    border: 'none',
+    borderRadius: 4,
+    background: 'transparent',
+    cursor: 'pointer',
+    fontFamily: 'Poppins, sans-serif',
+    fontSize: 18,
+    lineHeight: 1,
+    color: '#5C5C5C',
+    '&:hover': {
+      background: 'rgba(0, 0, 0, 0.06)',
+    },
   },
   divider: {
     height: 1,
@@ -46,12 +69,46 @@ const useStyles = makeStyles(() => ({
       borderBottom: 'none',
     },
   },
+  /** Unavailable / not wired — entire row reads as disabled. */
   listItemDisabled: {
     cursor: 'not-allowed',
     color: '#9E9E9E',
     opacity: 0.5,
     filter: 'grayscale(1)',
     pointerEvents: 'none',
+  },
+  /** Addable in catalog but already on layout — only the primary label is muted; status text stays readable. */
+  listItemAlreadyOnCard: {
+    cursor: 'not-allowed',
+    pointerEvents: 'none',
+  },
+  primaryBlock: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: 10,
+    minWidth: 0,
+    flex: 1,
+  },
+  primaryBlockMuted: {
+    color: '#9E9E9E',
+    opacity: 0.75,
+  },
+  radioOuterMuted: {
+    borderColor: '#CFCFCF',
+    filter: 'grayscale(0.6)',
+  },
+  statusHintLegible: {
+    marginLeft: 'auto',
+    fontSize: 11,
+    lineHeight: 1.3,
+    color: '#1C2B33',
+    fontWeight: 500,
+    flexShrink: 0,
+  },
+  statusHintDim: {
+    marginLeft: 'auto',
+    fontSize: 10,
+    color: '#9E9E9E',
   },
   radioOuter: {
     width: 16,
@@ -122,6 +179,7 @@ const AddChartInlinePanel = ({
   selectedCatalogId,
   setSelectedCatalogId,
   onCompleteWithChartType,
+  onClose,
   existingStripKeys = [],
   selectedDatasets = [],
 }) => {
@@ -131,6 +189,20 @@ const AddChartInlinePanel = ({
     () => ADD_CHART_DATA_TYPES.find((e) => e.id === selectedCatalogId),
     [selectedCatalogId],
   );
+
+  const sortedAddChartDataTypes = useMemo(() => {
+    const indexed = ADD_CHART_DATA_TYPES.map((entry, index) => ({ entry, index }));
+    indexed.sort((a, b) => {
+      const aOn = isAddChartDataTypeOnStrip(a.entry, existingStripKeys, selectedDatasets);
+      const bOn = isAddChartDataTypeOnStrip(b.entry, existingStripKeys, selectedDatasets);
+      const aAddable = a.entry.available && a.entry.datasetKey && !aOn;
+      const bAddable = b.entry.available && b.entry.datasetKey && !bOn;
+      if (aAddable && !bAddable) return -1;
+      if (!aAddable && bAddable) return 1;
+      return a.index - b.index;
+    });
+    return indexed.map(({ entry }) => entry);
+  }, [existingStripKeys, selectedDatasets]);
 
   const handlePickDataType = (entry) => {
     if (!entry.available || !entry.datasetKey) return;
@@ -145,16 +217,34 @@ const AddChartInlinePanel = ({
 
   return (
     <div className={classes.root}>
-      <p className={classes.header}>
-        {step === 1 ? 'Choose one:' : 'Choose chart type:'}
-      </p>
+      <div className={classes.headerRow}>
+        <p className={classes.header}>
+          {step === 1 ? 'Choose one:' : 'Choose chart type:'}
+        </p>
+        {typeof onClose === 'function' ? (
+          <button
+            type="button"
+            className={classes.closeButton}
+            onClick={onClose}
+            aria-label="Close"
+          >
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0.177734" y="0.926758" width="1.06064" height="11.6671" transform="rotate(-45 0.177734 0.926758)" fill="#5C5C5C" stroke="#5C5C5C" stroke-width="0.25" />
+              <rect x="8.42773" y="0.176758" width="1.06064" height="11.6671" transform="rotate(45 8.42773 0.176758)" fill="#5C5C5C" stroke="#5C5C5C" stroke-width="0.25" />
+            </svg>
+
+          </button>
+        ) : null}
+      </div>
       <div className={classes.divider} />
 
       {step === 1 && (
         <ul className={classes.list} role="listbox" aria-label="Chart data types">
-          {ADD_CHART_DATA_TYPES.map((entry) => {
+          {sortedAddChartDataTypes.map((entry) => {
             const onStrip = isAddChartDataTypeOnStrip(entry, existingStripKeys, selectedDatasets);
-            const disabled = !entry.available || !entry.datasetKey || onStrip;
+            const isFullyDisabled = !entry.available || !entry.datasetKey;
+            const disabled = isFullyDisabled || onStrip;
+            const isAlreadyOnCard = onStrip && !isFullyDisabled;
             const selected = selectedCatalogId === entry.id;
             const disabledHint = (() => {
               if (!disabled) return null;
@@ -174,7 +264,11 @@ const AddChartInlinePanel = ({
                 role="option"
                 aria-selected={selected}
                 aria-disabled={disabled}
-                className={`${classes.listItem} ${disabled ? classes.listItemDisabled : ''}`}
+                className={[
+                  classes.listItem,
+                  isFullyDisabled ? classes.listItemDisabled : '',
+                  isAlreadyOnCard ? classes.listItemAlreadyOnCard : '',
+                ].filter(Boolean).join(' ')}
                 onClick={() => !disabled && handlePickDataType(entry)}
                 onKeyDown={(ev) => {
                   if (disabled) return;
@@ -186,14 +280,27 @@ const AddChartInlinePanel = ({
                 tabIndex={disabled ? -1 : 0}
               >
                 <span
-                  className={`${classes.radioOuter} ${selected ? classes.radioOuterSelected : ''}`}
-                  aria-hidden
+                  className={[
+                    classes.primaryBlock,
+                    isAlreadyOnCard ? classes.primaryBlockMuted : '',
+                  ].filter(Boolean).join(' ')}
                 >
-                  {selected ? <span className={classes.radioInner} /> : null}
+                  <span
+                    className={[
+                      classes.radioOuter,
+                      selected ? classes.radioOuterSelected : '',
+                      isAlreadyOnCard ? classes.radioOuterMuted : '',
+                    ].filter(Boolean).join(' ')}
+                    aria-hidden
+                  >
+                    {selected ? <span className={classes.radioInner} /> : null}
+                  </span>
+                  <span>{entry.label}</span>
                 </span>
-                <span>{entry.label}</span>
                 {disabledHint ? (
-                  <span style={{ marginLeft: 'auto', fontSize: 10, color: '#9E9E9E' }}>
+                  <span
+                    className={isAlreadyOnCard ? classes.statusHintLegible : classes.statusHintDim}
+                  >
                     {disabledHint}
                   </span>
                 ) : null}
@@ -228,7 +335,7 @@ const AddChartInlinePanel = ({
                   }
                 }}
               >
-                <ChartTypeIcon type={type} size={40} />
+                <ChartTypeSelectIcon type={type} size={40} />
                 <div className={classes.chartLabel}>{label}</div>
               </div>
             ))}

@@ -3,6 +3,7 @@ import {
   RadioInput,
   RadioLabel,
   ModalChartContainer,
+  ModalHistogramChartInset,
   ModalRadioFieldset,
   ModalRadioGroup,
   ModalNoDataContainer,
@@ -60,40 +61,42 @@ export function HistogramPopupModalHistogramTab({
           </RadioLabel>
         </ModalRadioGroup>
       </ModalRadioFieldset>
-      {Array.isArray(data[activeTab]) && data[activeTab].length > 0 ? (
-        <div
-          id={`expanded-chart-${activeTab}`}
-          style={{
-            width: '100%',
-            height: modalHistogramDatasetChartHeight,
-            minHeight: modalHistogramDatasetChartHeight,
-          }}
-        >
-          <HistogramDatasetChart
-            rows={data[activeTab]}
-            viewType={viewType[activeTab]}
-            chartType={chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE}
-            valueA={valueA}
-            valueB={valueB}
-            valueC={valueC}
-            compact={requiresCompactSpacingModal(activeTab)}
-            height={modalHistogramDatasetChartHeight}
-            width="100%"
-            estimatedChartWidth={800}
-            cellHover={cellHover}
-            handleMouseEnter={handleMouseEnter}
-            handleMouseLeave={handleMouseLeave}
-            xAxisHeight={80}
-            c1Name={c1Name || 'Cohort A'}
-            c2Name={c2Name || 'Cohort B'}
-            c3Name={c3Name || 'Cohort C'}
-          />
-        </div>
-      ) : (
-        <ModalNoDataContainer>
-          <HistogramChartEmptyState />
-        </ModalNoDataContainer>
-      )}
+      <ModalHistogramChartInset>
+        {Array.isArray(data[activeTab]) && data[activeTab].length > 0 ? (
+          <div
+            id={`expanded-chart-${activeTab}`}
+            style={{
+              width: '100%',
+              height: modalHistogramDatasetChartHeight,
+              minHeight: modalHistogramDatasetChartHeight,
+            }}
+          >
+            <HistogramDatasetChart
+              rows={data[activeTab]}
+              viewType={viewType[activeTab]}
+              chartType={chartVisualByPanelId[activeTab] || DEFAULT_CHART_TYPE}
+              valueA={valueA}
+              valueB={valueB}
+              valueC={valueC}
+              compact={requiresCompactSpacingModal(activeTab)}
+              height={modalHistogramDatasetChartHeight}
+              width="100%"
+              estimatedChartWidth={800}
+              cellHover={cellHover}
+              handleMouseEnter={handleMouseEnter}
+              handleMouseLeave={handleMouseLeave}
+              xAxisHeight={80}
+              c1Name={c1Name || 'Cohort A'}
+              c2Name={c2Name || 'Cohort B'}
+              c3Name={c3Name || 'Cohort C'}
+            />
+          </div>
+        ) : (
+          <ModalNoDataContainer>
+            <HistogramChartEmptyState />
+          </ModalNoDataContainer>
+        )}
+      </ModalHistogramChartInset>
     </ModalChartContainer>
   );
 }

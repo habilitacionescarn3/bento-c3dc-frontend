@@ -1,6 +1,7 @@
 import React from 'react';
 import ChartVenn from '../../vennDiagram/ChartVenn';
 import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
+import { ModalVennTabRoot } from '../HistogramPanel.styled';
 
 export function HistogramPopupModalVennTab({
   vennModalChartAreaRef,
@@ -12,20 +13,7 @@ export function HistogramPopupModalVennTab({
   vennModalShowsEmptyState,
 }) {
   return (
-    <div
-      ref={vennModalChartAreaRef}
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 0,
-        overflow: 'auto',
-        boxSizing: 'border-box',
-      }}
-    >
+    <ModalVennTabRoot ref={vennModalChartAreaRef}>
       {vennModalShowsChart ? (
         <ChartVenn
           {...chartVennModalProps}
@@ -50,6 +38,6 @@ export function HistogramPopupModalVennTab({
           <HistogramChartEmptyState />
         </div>
       ) : null}
-    </div>
+    </ModalVennTabRoot>
   );
 }

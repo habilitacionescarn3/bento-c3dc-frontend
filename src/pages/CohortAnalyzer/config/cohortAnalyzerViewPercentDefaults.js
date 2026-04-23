@@ -9,7 +9,7 @@
  * Histogram — Histogram.js:
  *   Drop slot fallbacks 320×261; plot default HISTOGRAM_CHART_PLOT_HEIGHT
  * Histogram — HistogramPopup.js:
- *   MODAL_DATASET_CHART_HEIGHT 420; chartHeight useState(350); vennModalSlot 920×520
+ *   Modal histogram height from defaultModalHistogramDatasetChartHeightPx(); chartHeight useState(350); vennModalSlot 920×520
  * Histogram — histogramMuiStyles.js: chartPlotArea height/minHeight 240
  * Histogram — HistogramPanel.styled ChartWrapper: min-width 320px, min-height 261px
  *
@@ -44,7 +44,8 @@ export const CA_VIEW_PCT = {
   vennModalSlotWidth: 48,
   vennModalSlotHeight: 48,
   modalKmChartHeight: 34,
-  modalHistogramDatasetHeight: 42,
+  /** Expanded histogram modal: taller plot area (viewport %, see defaultModalHistogramDatasetChartHeightPx). */
+  modalHistogramDatasetHeight: 62,
   vennCanvasFallbackWidth2: 32,
   vennCanvasFallbackWidth3: 36,
   vennCanvasFallbackHeight2: 17,
@@ -145,7 +146,7 @@ export function defaultModalHistogramDatasetChartHeightPx() {
   if (typeof window === 'undefined') {
     return Math.round((VIEWPORT_CAP_H * CA_VIEW_PCT.modalHistogramDatasetHeight) / 100);
   }
-  return Math.max(320, Math.round((capH() * CA_VIEW_PCT.modalHistogramDatasetHeight) / 100));
+  return Math.max(460, Math.round((capH() * CA_VIEW_PCT.modalHistogramDatasetHeight) / 100));
 }
 
 export function vennChartSlotDimensionsFromOuterPx(outerW, outerH) {
