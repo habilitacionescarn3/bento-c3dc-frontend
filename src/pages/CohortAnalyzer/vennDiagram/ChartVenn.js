@@ -338,7 +338,8 @@ useEffect(() => {
           alignItems: 'center',
           minHeight: '100%',
           justifyContent: 'center',
-          padding: 0
+          padding: 0,
+          overflow: 'visible',
         }}
       >
         <canvas ref={canvasRef} id="canvas" />

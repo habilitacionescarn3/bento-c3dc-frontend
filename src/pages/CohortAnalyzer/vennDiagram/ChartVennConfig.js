@@ -3,7 +3,10 @@
 // This threshold was determined based on observed data visualization needs, such as overlapping numbers when numbers are above 999.
 export const DEFAULT_FONT_SIZE_THRESHOLD = 999;
 
-/** Extra space around the Venn plot so cohort labels are not clipped (Chart.js layout padding). */
+/**
+ * Extra space around the Venn plot (Chart.js layout padding).
+ * Cohort label overflow is handled in {@link vennCohortLabelFitPlugin} (y clamp), not by inflating padding.
+ */
 export const VENN_CHART_LAYOUT_PADDING = {
   left: 60,
   right: 60,
@@ -215,6 +218,12 @@ export const vennCohortLabelFitPlugin = {
         y0 = vy - blockH;
       } else {
         y0 = vy - blockH / 2;
+      }
+      const chartH = chart.height;
+      // Keep the full label block on-canvas: tall multiline text would otherwise have y0 < 0
+      y0 = Math.max(0, y0);
+      if (Number.isFinite(chartH) && blockH > 0) {
+        y0 = Math.min(y0, Math.max(0, chartH - blockH - 1));
       }
       for (let li = 0; li < bestLines.length; li += 1) {
         ctx.fillText(bestLines[li], vx, y0 + li * lineH);
