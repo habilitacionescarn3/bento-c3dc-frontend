@@ -111,13 +111,27 @@ export const ChartTypeDropdownPanel = styled.div`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  padding: 6px 4px;
+  gap: 2px;
+  padding: 3px 2px;
   background: #ffffff;
   border: 1px solid #e0e0e0;
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  min-width: 48px;
+  min-width: 41px;
+  box-sizing: border-box;
+  ${(p) =>
+    p.$heightPx != null
+      ? `
+    height: ${p.$heightPx}px;
+    align-items: stretch;
+    & > button {
+      flex: 1 1 0;
+      min-height: 0;
+      width: 100%;
+      height: auto;
+    }
+  `
+      : ''}
 `;
 
 export const ChartTypeOption = styled.button`

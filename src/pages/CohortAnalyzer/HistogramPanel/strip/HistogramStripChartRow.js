@@ -291,7 +291,11 @@ export function HistogramStripChartRow({
                 />
               </ChartTypeTriggerButton>
               {chartTypeMenuDataset === dataset && !allInputsEmpty && (
-                <ChartTypeDropdownPanel role="listbox" aria-label="Choose chart type">
+                <ChartTypeDropdownPanel
+                  $heightPx={137}
+                  role="listbox"
+                  aria-label="Choose chart type"
+                >
                   {CHART_TYPE_OPTIONS.map(({ type, label }) => (
                     <ChartTypeOption
                       key={type}

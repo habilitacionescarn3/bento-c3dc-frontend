@@ -130,27 +130,27 @@ export const ChartWrapper = styled.div`
   }
 `;
 
-/** Bottom-right grip: black triangle + larger hit target for diagonal resize */
+/** Bottom-right grip: black triangle + hit target for diagonal resize */
 export const ChartResizeHandle = styled.div`
   position: absolute;
   right: 0;
   bottom: 0;
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
   cursor: nwse-resize;
   z-index: 6;
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
   box-sizing: border-box;
-  padding: 0 3px 3px 0;
+  padding: 0 6px 6px 0;
   &::after {
     content: '';
     display: block;
     width: 0;
     height: 0;
-    border-left: 12px solid transparent;
-    border-bottom: 12px solid #000000;
+    border-left: 16px solid transparent;
+    border-bottom: 16px solid #000000;
   }
 `;
 

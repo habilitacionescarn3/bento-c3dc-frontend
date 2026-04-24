@@ -14,8 +14,8 @@
  * Histogram — HistogramPanel.styled ChartWrapper: min-width 320px, min-height 261px
  *
  * Venn — default outer height: 550px if viewport ≥1900px else 400px (see defaultVennOuterHeightPx); width from viewport %
- * Venn — VennDiagramContainer: VENN_OUTER_DEFAULT MIN_W × SURVIVAL_MIN_H; header reserve 138;
- *   chartSlot max(240,w-24), max(140,h-138)
+ * Venn — VennDiagramContainer: VENN_OUTER_DEFAULT MIN_W × SURVIVAL_MIN_H; header % reserve;
+ *   chartSlot from outer × CA_VENN_SLOT_WIDTH_PCT, height outer − header reserve
  * Venn — ChartVenn: default canvas 680×180 / 720×340; slot margins 48/72
  */
 
@@ -36,7 +36,7 @@ const VIEWPORT_CAP_H = 1100;
 
 /** Percent of capped inner width/height (see functions below). */
 export const CA_VIEW_PCT = {
-  vennOuterWidth: 26,
+  vennOuterWidth: 30,
   /** Legacy catalog value; default Venn outer height uses {@link defaultVennOuterHeightPx}. */
   vennOuterHeight: 40,
   histogramPlotHeight: 22,
@@ -46,26 +46,26 @@ export const CA_VIEW_PCT = {
   modalKmChartHeight: 34,
   /** Expanded histogram modal: taller plot area (viewport %, see defaultModalHistogramDatasetChartHeightPx). */
   modalHistogramDatasetHeight: 62,
-  vennCanvasFallbackWidth2: 32,
-  vennCanvasFallbackWidth3: 36,
-  vennCanvasFallbackHeight2: 17,
-  vennCanvasFallbackHeight3: 30,
+  vennCanvasFallbackWidth2: 36,
+  vennCanvasFallbackWidth3: 40,
+  vennCanvasFallbackHeight2: 20,
+  vennCanvasFallbackHeight3: 34,
 };
 
 /** % of Venn card outer height for toolbar/chrome above diagram slot. */
 export const CA_VENN_HEADER_CHROME_PCT = 28;
 
 /** % of outer width for diagram slot (horizontal padding implied). */
-export const CA_VENN_SLOT_WIDTH_PCT = 92;
+export const CA_VENN_SLOT_WIDTH_PCT = 96;
 
 /** Viewport width (px) at or above which default Venn outer height is {@link DEFAULT_VENN_OUTER_HEIGHT_BIG_SCREEN_PX}. */
 export const VENN_DEFAULT_OUTER_HEIGHT_VIEWPORT_BREAKPOINT_PX = 1800;
 
 /** Default Venn card outer height on viewports ≥ {@link VENN_DEFAULT_OUTER_HEIGHT_VIEWPORT_BREAKPOINT_PX}. */
-export const DEFAULT_VENN_OUTER_HEIGHT_BIG_SCREEN_PX = 550;
+export const DEFAULT_VENN_OUTER_HEIGHT_BIG_SCREEN_PX = 580;
 
 /** Default Venn card outer height on narrower viewports. */
-export const DEFAULT_VENN_OUTER_HEIGHT_COMPACT_PX = 370;
+export const DEFAULT_VENN_OUTER_HEIGHT_COMPACT_PX = 400;
 
 /** Resolved default Venn outer height (px) from viewport; SSR uses compact. Clamped in {@link defaultVennOuterPx}. */
 export function defaultVennOuterHeightPx() {

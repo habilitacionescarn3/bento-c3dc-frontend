@@ -12,6 +12,7 @@ import {
   VENN_CANVAS_SIZE_SCALE_BIG_SCREEN,
   VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH,
   buildVennCohortSetLabel,
+  vennCohortLabelFitPlugin,
 } from "./ChartVennConfig";
 import { chartVennFallbackCanvasDimensionsPx } from '../config/cohortAnalyzerViewPercentDefaults';
 
@@ -169,6 +170,11 @@ if(data){
         },
       ],
     },
+    /**
+     * Custom cohort labels (multiline + shrink) — chartjs-chart-venn only draws a single
+     * fillText; we hide y tick labels and render in {@link vennCohortLabelFitPlugin}.
+     */
+    plugins: [vennCohortLabelFitPlugin],
     options: {
       onClick: handleChartClick,
       layout: {
@@ -187,6 +193,8 @@ if(data){
         },
         y: {
             ticks: {
+                /* Font options still feed vennCohortLabelFitPlugin; display false skips built-in one-line labels. */
+                display: false,
                 font: {
                     family: 'Nunito',
                     size: 16,
@@ -252,8 +260,8 @@ useEffect(() => {
     let maxWidth = fallback.width;
     let maxHeight = fallback.height;
     if (slotW != null && slotH != null) {
-      maxWidth = Math.max(220, Math.round(slotW * 0.96) - 16);
-      maxHeight = Math.max(120, Math.round(slotH * 0.92) - 24);
+      maxWidth = Math.max(220, Math.round(slotW * 0.99) - 6);
+      maxHeight = Math.max(120, Math.round(slotH * 0.98) - 8);
     }
 
     const vennCohortCount = cohortData.filter((c) => c && c.cohortName).length;

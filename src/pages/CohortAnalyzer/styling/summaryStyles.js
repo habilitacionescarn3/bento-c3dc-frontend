@@ -2,6 +2,7 @@ import {
   CA_SURVIVAL_CARD_MIN_WIDTH,
   CA_SURVIVAL_CARD_MIN_HEIGHT,
   CA_TOP_ROW_GAP_PX,
+  CA_VENN_OUTER_MIN_W,
 } from '../store/cohortAnalyzerLayoutConstants';
 
 /** Chart summary view: Venn row, tabs, controls, category cards, table area. */
@@ -25,7 +26,7 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     display: 'flex',
     flexDirection: 'row',
     flexWrap: 'wrap',
-    alignItems: 'flex-start',
+    alignItems: 'stretch',
     alignContent: 'flex-start',
     gap: CA_TOP_ROW_GAP_PX,
     width: '100%',
@@ -37,19 +38,28 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     [theme.breakpoints.down('md')]: {
       flexDirection: 'column',
       flexWrap: 'nowrap',
+      alignItems: 'stretch',
       gap: CA_TOP_ROW_GAP_PX,
     },
   },
+  /**
+   * Use content-based flex-basis so when survival wraps to its own row, the Venn (alone on
+   * the first line) grows to the full row width; both peers still share a wide row when they fit.
+   */
   vennColumn: {
-    flex: '1 1 0',
+    flex: `1 1 ${CA_VENN_OUTER_MIN_W}px`,
     minWidth: 0,
     maxWidth: '100%',
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
+    [theme.breakpoints.down('md')]: {
+      flex: '1 1 auto',
+      width: '100%',
+    },
   },
   survivalBesideVennColumn: {
-    flex: '1 1 0',
+    flex: `1 1 ${CA_SURVIVAL_CARD_MIN_WIDTH}px`,
     minWidth: CA_SURVIVAL_CARD_MIN_WIDTH,
     minHeight: CA_SURVIVAL_CARD_MIN_HEIGHT,
     maxWidth: '100%',
@@ -59,6 +69,11 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     alignSelf: 'stretch',
     overflow: 'visible',
     position: 'relative',
+    [theme.breakpoints.down('md')]: {
+      flex: '1 1 auto',
+      width: '100%',
+      minWidth: 0,
+    },
   },
   rightSideAnalyzerInnerContainer: {
     display: 'flex',

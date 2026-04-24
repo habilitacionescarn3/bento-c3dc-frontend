@@ -76,6 +76,8 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     minWidth: CA_VENN_OUTER_MIN_W,
     maxHeight: CA_VENN_OUTER_MAX_H,
     minHeight: CA_SURVIVAL_CARD_MIN_HEIGHT,
+    /* chartContainer also sets overflow hidden; allow long cohort labels that extend in layout padding. */
+    overflow: 'visible',
     /** Fill card when resizing height; generic chartContainer uses 80% / 95% and hides growth. */
     '& .App': {
       width: '100%',
