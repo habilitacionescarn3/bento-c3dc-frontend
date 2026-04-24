@@ -325,6 +325,7 @@ useEffect(() => {
         boxSizing: 'border-box',
         display: 'flex',
         flexDirection: 'column',
+        padding: 0,
       }}
     >
       <div
@@ -332,11 +333,12 @@ useEffect(() => {
         className="chart-container"
         style={{
           flex: 1,
-          minHeight: 0,
           width: '100%',
           display: 'flex',
           alignItems: 'center',
+          minHeight: '100%',
           justifyContent: 'center',
+          padding: 0
         }}
       >
         <canvas ref={canvasRef} id="canvas" />

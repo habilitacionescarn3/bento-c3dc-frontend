@@ -25,7 +25,7 @@ export const CA_VENN_OUTER_MAX_H = 900;
 /**
  * Overall survival card (beside Venn + strip): cannot resize below min; can grow up to max.
  */
-export const CA_SURVIVAL_CARD_MIN_WIDTH = 581;
+export const CA_SURVIVAL_CARD_MIN_WIDTH = 420;
 export const CA_SURVIVAL_CARD_MAX_WIDTH = 2000;
 /** Also the default Venn outer height when no saved layout (top-row peers align). */
 export const CA_SURVIVAL_CARD_MIN_HEIGHT = 444;
