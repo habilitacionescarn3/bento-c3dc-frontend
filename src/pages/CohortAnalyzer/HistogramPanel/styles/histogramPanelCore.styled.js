@@ -121,9 +121,10 @@ export const ChartWrapper = styled.div`
     transform: none;
     box-shadow: none;
   }
-  @media (max-width: 1500px) {
-    width: calc((100% - 14px) / 2);
-  }
+  /**
+   * Keep three cards per row (1/3 − gap) until a narrow viewport; the old 1500px breakpoint
+   * forced two columns and made cards look stretched. Stack to one column on small screens only.
+   */
   @media (max-width: 980px) {
     width: 100%;
     min-width: 0;

@@ -168,7 +168,8 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
   vennChartRadioContainer: {
     display: 'flex',
     flexDirection: 'row',
-    flexWrap: 'wrap',
+    /** One row of three options by default; wrap only when the viewport is narrow. */
+    flexWrap: 'nowrap',
     marginTop: 10,
     gap: 16,
     padding: 0,
@@ -178,6 +179,9 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     color: '#1C2B33',
     fontSize: 15,
     fontFamily: 'Poppins, sans-serif',
+    [theme.breakpoints.down('sm')]: {
+      flexWrap: 'wrap',
+    },
   },
   leftAlignedText: {
     display: 'flex',
