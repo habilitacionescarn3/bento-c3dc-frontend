@@ -29,7 +29,7 @@ export const cohortAnalyzerLayoutStyles = (theme) => ({
   },
   cohortSelectionChild: {
     display: 'flex',
-    alignItems: 'start',
+    alignItems: 'flex-start',
     width: '100%',
     '& span': {
       fontSize: 12,
