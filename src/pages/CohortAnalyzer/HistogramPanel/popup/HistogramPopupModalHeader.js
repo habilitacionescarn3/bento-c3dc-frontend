@@ -164,7 +164,7 @@ export function HistogramPopupModalHeader({
       
       <CloseButton onClick={() => setExpandedChart(null)}>
       <svg width="16" height="16" viewBox="0 0 11 11" fill="none" xmlns="http://www.w3.org/2000/svg">
-<g clip-path="url(#clip0_12597_43488)">
+<g clipPath="url(#clip0_12597_43488)">
 <path d="M10.8996 1.29841L9.69961 0.0998535L5.69961 4.09503L4.19961 5.59322L0.0996094 9.68827L1.29961 10.8868L5.49961 6.69189L9.69961 10.8868L10.8996 9.68827L6.69961 5.49334L10.8996 1.29841Z" fill="#5C5C5C"/>
 <path d="M0.0996094 9.68803L1.29961 10.8866L5.29961 6.89141L6.79961 5.39322L10.8996 1.29816L9.69961 0.0996094L5.49961 4.29454L1.29961 0.0996094L0.0996094 1.29816L4.29961 5.4931L0.0996094 9.68803Z" fill="#5C5C5C"/>
 </g>
