@@ -105,7 +105,7 @@ export const ChartWrapper = styled.div`
   width: calc((100% - 28px) / 3);
   min-width: clamp(${HISTOGRAM_CARD_MIN_WIDTH}px, 17vw, 100%);
   min-height: max(200px, ${HISTOGRAM_CARD_SHELL_MIN_VH}vh);
-  max-height: auto;
+  max-height: none;
   margin-bottom: 0;
   padding: 0px;
   border: 1px solid #b8c7cc;
