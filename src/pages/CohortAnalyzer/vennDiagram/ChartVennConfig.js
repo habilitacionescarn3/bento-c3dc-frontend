@@ -32,7 +32,6 @@ export const VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH = 1800;
 export const VENN_CANVAS_SIZE_SCALE_BIG_SCREEN = 0.99;
 
 /**
- * Optional max characters for cohort name in *data* labels (elision before drawing).
  * Prefer full names; visual line-wrapping is done by {@link vennCohortLabelFitPlugin}.
  */
 export const VENN_COHORT_NAME_MAX_CHARS = 200;
