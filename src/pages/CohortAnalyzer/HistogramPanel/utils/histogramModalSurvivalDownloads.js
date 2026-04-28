@@ -86,6 +86,7 @@ export function createHistogramModalSurvivalDownloads({
       }
 
       const tableElement = riskTableRef.current;
+      const originalHeight = tableElement.style.height;
       tableElement.style.height = 'auto';
       htmlToImage.toPng(tableElement, {
         backgroundColor: 'transparent',
@@ -104,8 +105,9 @@ export function createHistogramModalSurvivalDownloads({
       }).catch((error) => {
         console.error('Error using html-to-image:', error);
         alert('Error downloading Risk table. Please check the console for details.');
+      }).finally(() => {
+        tableElement.style.height = originalHeight;
       });
-      tableElement.style.height = '280px';
       setShowDownloadDropdown(false);
     } catch (error) {
       console.error('Error downloading Risk table:', error);
