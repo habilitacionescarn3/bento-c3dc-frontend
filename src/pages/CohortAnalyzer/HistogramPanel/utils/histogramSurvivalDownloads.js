@@ -79,6 +79,7 @@ export function downloadRiskTable(riskTableRef) {
     const tableElement = riskTableRef.current;
 
     const originalMargin = tableElement.style.marginLeft;
+    const originalBackgroundColor = tableElement.style.backgroundColor;
     tableElement.style.marginLeft = '0';
     tableElement.style.backgroundColor = 'transparent';
 
@@ -87,8 +88,6 @@ export function downloadRiskTable(riskTableRef) {
       pixelRatio: 4,
       quality: 1.0,
     }).then((dataUrl) => {
-      tableElement.style.marginLeft = originalMargin;
-
       const a = document.createElement('a');
       a.href = dataUrl;
       a.download = 'risk_table.png';
@@ -98,9 +97,11 @@ export function downloadRiskTable(riskTableRef) {
         document.body.removeChild(a);
       }, 100);
     }).catch((error) => {
-      tableElement.style.marginLeft = originalMargin;
       console.error('Error using html-to-image:', error);
       alert('Error downloading Risk table. Please check the console for details.');
+    }).finally(() => {
+      tableElement.style.marginLeft = originalMargin;
+      tableElement.style.backgroundColor = originalBackgroundColor;
     });
   } catch (error) {
     console.error('Error downloading Risk table:', error);
