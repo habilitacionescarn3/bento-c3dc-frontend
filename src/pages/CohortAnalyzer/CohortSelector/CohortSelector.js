@@ -84,7 +84,7 @@ const CohortItem = ({ cohort, cohortData, selectedCohorts, handleCheckbox, setDe
     );
 };
 
-export const CohortSelector = ({ handleDemoClick, handleTutorialClick, tutorialButtonLabel }) => {
+export const CohortSelector = ({ handleDemoClick }) => {
     //context
     const { state } = useContext(CohortStateContext);
     const {
