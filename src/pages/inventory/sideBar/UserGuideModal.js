@@ -64,7 +64,7 @@ function UserGuideModal({ classes, open, onClose, pendingSectionId }) {
   }, [open, pendingSectionId]);
 
   const handleNavClick = (event) => {
-    const id = event.target.getAttribute('name');
+    const id = event.currentTarget.getAttribute('name');
     setSelectedNavTitle(id);
     const contentElement = document.getElementById('UserGuideContentSection');
     const element = document.getElementById(id);
