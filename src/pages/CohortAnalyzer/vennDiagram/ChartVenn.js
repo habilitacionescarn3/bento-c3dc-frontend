@@ -248,6 +248,7 @@ if(data){
 useEffect(() => {
   if (chartRef.current && canvasRef.current) {
     chartRef.current.destroy();
+    chartRef.current = null;
   }
   
   if (canvasRef.current && containerRef.current && data && config && config.type) {
