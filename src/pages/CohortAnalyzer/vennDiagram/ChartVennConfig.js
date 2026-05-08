@@ -92,8 +92,9 @@ function wrapVennTextToWidth(ctx, text, maxWidth, maxLines) {
       line = '';
     }
   };
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
+  for (let wi = 0; wi < words.length; wi += 1) {
+    const w = words[wi];
+    const test = line ? `${line} ${w}` : w;
     if (ctx.measureText(test).width <= maxWidth) {
       line = test;
     } else {
@@ -101,11 +102,12 @@ function wrapVennTextToWidth(ctx, text, maxWidth, maxLines) {
       if (lines.length >= maxLines) {
         return lines.slice(0, maxLines);
       }
-      if (ctx.measureText(word).width <= maxWidth) {
-        line = word;
+      if (ctx.measureText(w).width <= maxWidth) {
+        line = w;
         continue;
       }
-      for (const ch of word) {
+      for (let i = 0; i < w.length; i += 1) {
+        const ch = w.charAt(i);
         const t2 = line + ch;
         if (ctx.measureText(t2).width > maxWidth && line) {
           lines.push(line);

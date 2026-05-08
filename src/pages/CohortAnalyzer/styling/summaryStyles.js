@@ -175,7 +175,6 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     padding: '8px 16px',
     cursor: 'pointer',
     marginRight: 0,
-    textAlign: 'left',
     whiteSpace: 'nowrap',
     display: 'flex',
     alignItems: 'center',
