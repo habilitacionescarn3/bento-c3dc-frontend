@@ -1,53 +1,156 @@
-import React, { useMemo, useRef, useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import DownloadIcon from "../../../assets/icons/Download_Histogram_icon.svg";
-import DownloadIconBorderless from "../../../assets/icons/download-icon-borderless.svg";
-import ExpandIcon from "../../../assets/icons/Expand_Histogram_icon.svg";
-import { useHistogramData } from './useHistogramData';
-import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
-import questionIcon from "../../../assets/icons/Question_icon_2.svg";
-import CustomChartTooltip from './CustomChartTooltip';
-import CustomXAxisTick from './CustomXAxisTick';
-import { KaplanMeierChart } from '@bento-core/kmplot';
-import useKmplot from './useKmplot';
-import useRiskTable from './useRiskTable';
-import { makeStyles } from '@material-ui/core';
-import { kmplotColors } from './HistogramPanel.styled';
-
+import React, { useMemo, useRef, useState, useEffect, useCallback } from 'react';
+import { useHistogramData } from './hooks/useHistogramData';
+import useKmplot from './survival/useKmplot';
+import useRiskTable from './survival/useRiskTable';
 import {
-  HistogramContainer, ChartWrapper, HeaderSection, RadioGroup, RadioInput
-  , RadioLabel, ChartActionButtons, ChartTitle,
-  CenterContainer, DatasetSelectionTitle, DownloadDropdown, DownloadDropdownMenu, DownloadDropdownItem
-  , SurvivalAnalysisHeader, SurvivalAnalysisContainer, KmChartWrapper,
-  barColors, RiskTableWrapper, CheckBoxSection,
+  HistogramContainer,
+  ChartWrapper,
+  CenterContainer,
+  ChartResizeHandle,
 } from './HistogramPanel.styled';
-import ExpandedChartModal from './HistogramPopup';
-import PlaceHolder2 from '../../../assets/histogram/Placeholder2.svg';
-import TreatmentTypePlaceHolder from '../../../assets/histogram/TreatmentTypePlaceHolder.svg';
-import RiskTable from '@bento-core/risk-table';
+import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
+import {
+  encodePanelDragPayload,
+  CA_PANEL_DRAG_MIME,
+} from '../store/panelDnD';
+import ExpandedChartModal from './popup/HistogramPopup';
+import AddChartInlinePanel from '../components/AddChartInlinePanel';
+import { useDispatch, useSelector } from 'react-redux';
+import { patchChartVisuals } from '../store/cohortAnalyzerLayoutActions';
+import {
+  COHORT_ANALYZER_HISTOGRAM_TITLES as titles,
+} from '../store/cohortAnalyzerDefaultPanelRegistry';
+import { HISTOGRAM_CARD_CHROME_HEIGHT } from './histogramConstants';
+import { hasAnyAddableChartCatalogEntry } from '../config/cohortAnalyzerChartCatalog';
+import {
+  defaultHistogramPlotHeightPx,
+  defaultHistogramStripDropSlotWidthPx,
+  defaultHistogramCardOuterMinHeightPx,
+  defaultVennOuterPx,
+} from '../config/cohortAnalyzerViewPercentDefaults';
+import { clampSurvivalPanelSize } from '../store/cohortAnalyzerLayoutReducer';
+import { useHistogramPanelMuiStyles } from './styles/histogramMuiStyles';
+import {
+  useFilteredKmPlotData,
+  useKmCohortColors,
+  useRiskTableCohortsShape,
+  useFilteredHistogramGraphData,
+} from './hooks/useHistogramDerivedData';
+import { useHistogramResizeHandlers } from './hooks/useHistogramResizeHandlers';
+import { useHistogramStripDnD } from './hooks/useHistogramStripDnD';
+import { useHistogramPanelBootstrap } from './hooks/useHistogramPanelBootstrap';
+import { useSurvivalBesideVennCardStyle } from './hooks/useSurvivalBesideVennCardStyle';
+import { useBesideStripHistogramMetrics } from './hooks/useBesideStripHistogramMetrics';
+import { HistogramStripChartRow } from './strip/HistogramStripChartRow';
+import { HistogramBesideVennHistogramPortal } from './strip/HistogramBesideVennHistogramPortal';
+import {
+  HistogramSurvivalBesideVennPortal,
+  SurvivalHistogramInlineLegacy,
+} from './survival/HistogramSurvivalLayoutFragments';
+import { SurvivalAnalysisCardBody } from './survival/SurvivalAnalysisCardBody';
 
-import * as htmlToImage from 'html-to-image';
-import { NoDataCard } from '../NoDataCard';
+const Histogram = ({
+  c1,
+  c2,
+  c3,
+  c1Name = '',
+  c2Name = '',
+  c3Name = '',
+  survivalBesideVennTarget,
+  onSurvivalBesideColumnActive,
+  besideCardDrag,
+  besidePanelDragState = null,
+  besidePanelDraggingRef = null,
+  inlineAddChartOpen = false,
+  onInlineAddChartClose,
+  inlineAddChartNonce = 0,
+  chartModalExpandedChart,
+  setChartModalExpandedChart,
+  chartModalActiveTab,
+  setChartModalActiveTab,
+  cohortParticipantState,
+  containerRef,
+  canvasRef,
+  histogramExportRef,
+  onAllAddableChartsAddedChange,
+  /** Clears Venn/survival drag state after drop on histogram strip (from useBesidePanelDnD). */
+  onTopRowStripDropComplete,
+  onExpandVenn,
+}) => {
+  const classes = useHistogramPanelMuiStyles();
+  const dispatch = useDispatch();
+  const panelRegistry = useSelector((state) => state.cohortAnalyzerLayout.panelRegistry || {});
+  const besideStripPanelId = useSelector((state) => state.cohortAnalyzerLayout.besideStripPanelId);
+  const layoutSizes = useSelector((state) => state.cohortAnalyzerLayout.sizes || {});
+  const topRowOrder = useSelector((state) => state.cohortAnalyzerLayout.topRowOrder);
+  const chartVisualByPanelId = useSelector((state) => state.cohortAnalyzerLayout.chartVisualByPanelId || {});
 
-const useStyles = makeStyles({
-  cohortNameEllipsis: {
-    maxWidth: '120px',
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    display: 'block',
-  },
-  chartContentWrapper: {
-    margin: 0,
-    width: '100%',
-    display: 'flex',
-    flexDirection: 'row',
-  },
-});
+  const getChartTitle = useCallback(
+    (dataset) =>
+      (panelRegistry[dataset] && panelRegistry[dataset].label) || titles[dataset] || String(dataset),
+    [panelRegistry],
+  );
 
-const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '' }) => {
-  const classes = useStyles();
-  const { graphData, viewType, setViewType, activeTab, setActiveTab, selectedDatasets, expandedChart, setExpandedChart, chartRef, handleDatasetChange, downloadChart } = useHistogramData({ c1, c2, c3 });
+  const displayTitles = useMemo(() => {
+    const out = { ...titles };
+    Object.keys(panelRegistry).forEach((id) => {
+      const entry = panelRegistry[id];
+      if (entry && entry.label) {
+        out[id] = entry.label;
+      }
+    });
+    return out;
+  }, [panelRegistry]);
+
+  const reduxHistogramSizes = useMemo(() => {
+    const out = {};
+    Object.keys(titles).forEach((k) => {
+      if (k === 'survivalAnalysis') return;
+      if (layoutSizes[k] != null) out[k] = layoutSizes[k];
+    });
+    return out;
+  }, [layoutSizes]);
+
+  const reduxSurvivalSize = layoutSizes.survival != null ? layoutSizes.survival : null;
+
+  const {
+    graphData,
+    fetchedData,
+    viewType,
+    setViewType,
+    activeTab,
+    setActiveTab,
+    selectedDatasets,
+    setSelectedDatasets,
+    expandedChart,
+    setExpandedChart,
+    chartRef,
+    downloadChart,
+  } = useHistogramData({
+    c1,
+    c2,
+    c3,
+    expandedChart: chartModalExpandedChart,
+    setExpandedChart: setChartModalExpandedChart,
+    activeTab: chartModalActiveTab,
+    setActiveTab: setChartModalActiveTab,
+  });
+
+  useEffect(() => {
+    if (!histogramExportRef) return;
+    histogramExportRef.current = {
+      getChartExportPayload() {
+        return {
+          graphData,
+          fetchedData,
+          viewType,
+          chartTitles: displayTitles,
+          selectedDatasets,
+        };
+      },
+    };
+  }, [graphData, fetchedData, viewType, displayTitles, selectedDatasets]);
+
   const {
     data: kmPlotData,
     loading: kmLoading,
@@ -58,41 +161,8 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '' }) => {
     data: riskTableData,
   } = useRiskTable({ c1, c2, c3 });
 
-  // Map cohort colors based on which cohorts are selected - memoized to update when cohorts change
-  const cohortColors = useMemo(() => {
-    const colors = [];
-    if (c1 && c1.length > 0) colors.push(kmplotColors.colorA);
-    if (c2 && c2.length > 0) colors.push(kmplotColors.colorB);
-    if (c3 && c3.length > 0) colors.push(kmplotColors.colorC);
-    return colors;
-  }, [c1, c2, c3]);
-
-  // Filter KM plot data to only include selected cohorts
-  const filteredKmPlotData = useMemo(() => {
-    if (!kmPlotData || !Array.isArray(kmPlotData)) return [];
-
-    const selectedGroups = [];
-    if (c1 && c1.length > 0) selectedGroups.push('c1');
-    if (c2 && c2.length > 0) selectedGroups.push('c2');
-    if (c3 && c3.length > 0) selectedGroups.push('c3');
-
-    // Filter data to only include groups that match selected cohorts
-    return kmPlotData.filter(item => {
-      // Check if the item's group matches any selected cohort
-      // The group field might be 'c1', 'c2', 'c3' or '1', '2', '3' or similar
-      const group = item.group || item.group_id || '';
-      return selectedGroups.some(selectedGroup => {
-        // Handle different group formats: 'c1', '1', 'Cohort 1', etc.
-        const groupStr = String(group).toLowerCase();
-        const selectedStr = selectedGroup.toLowerCase();
-        return groupStr.includes(selectedStr) ||
-          groupStr.includes(selectedStr.replace('c', '')) ||
-          (selectedGroup === 'c1' && (groupStr === '1' || groupStr === 'cohort 1' || groupStr === 'cohort1')) ||
-          (selectedGroup === 'c2' && (groupStr === '2' || groupStr === 'cohort 2' || groupStr === 'cohort2')) ||
-          (selectedGroup === 'c3' && (groupStr === '3' || groupStr === 'cohort 3' || groupStr === 'cohort3'));
-      });
-    });
-  }, [kmPlotData, c1, c2, c3]);
+  const cohortColors = useKmCohortColors(c1, c2, c3);
+  const filteredKmPlotData = useFilteredKmPlotData(kmPlotData, c1, c2, c3);
   const kmChartRef = useRef(null);
   const kmChartRefExpanded = useRef(null);
   const survivalAnalysisContainerRef = useRef(null);
@@ -100,273 +170,201 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '' }) => {
   const riskTableRefExpanded = useRef(null);
   const [showDownloadDropdown, setShowDownloadDropdown] = useState(false);
   const dropdownRef = useRef(null);
-  
-  // Close dropdown when clicking outside
+  const [chartTypeMenuDataset, setChartTypeMenuDataset] = useState(null);
+  const chartTypeMenuRef = useRef(null);
+  /** Per-dataset card size after user resize: { width, plotHeight } (mirrors Redux; local updates during drag) */
+  const [histogramCardSizes, setHistogramCardSizes] = useState(reduxHistogramSizes);
+  const [survivalCardSize, setSurvivalCardSize] = useState(reduxSurvivalSize);
+
+  const {
+    stripOrder,
+    inlineAddStep,
+    setInlineAddStep,
+    inlineSelectedCatalogId,
+    setInlineSelectedCatalogId,
+    finalizeInlineAddChart,
+    handleRemoveHistogramDataset,
+    survivalSelected,
+  } = useHistogramPanelBootstrap({
+    selectedDatasets,
+    setSelectedDatasets,
+    setActiveTab,
+    setExpandedChart,
+    inlineAddChartOpen,
+    inlineAddChartNonce,
+    onInlineAddChartClose,
+    reduxHistogramSizes,
+    reduxSurvivalSize,
+    chartTypeMenuDataset,
+    setChartTypeMenuDataset,
+    chartTypeMenuRef,
+    showDownloadDropdown,
+    setShowDownloadDropdown,
+    dropdownRef,
+    histogramCardSizes,
+    setHistogramCardSizes,
+    setSurvivalCardSize,
+  });
+
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setShowDownloadDropdown(false);
-      }
-    };
+    if (typeof onAllAddableChartsAddedChange !== 'function') return;
+    const anyAddable = hasAnyAddableChartCatalogEntry(stripOrder, selectedDatasets);
+    onAllAddableChartsAddedChange(!anyAddable);
+  }, [stripOrder, selectedDatasets, onAllAddableChartsAddedChange]);
 
-    if (showDownloadDropdown) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+  const defaultPlotHeightPx = useMemo(() => defaultHistogramPlotHeightPx(), []);
+  const defaultDropSlotWidthPx = useMemo(() => defaultHistogramStripDropSlotWidthPx(), []);
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showDownloadDropdown]);
-
-  // Download function for Kaplan-Meier chart
-  const downloadKaplanMeierChart = (kmChartRef) => {
-    try {
-      if (!kmChartRef.current) return;
-
-      const svgElement = kmChartRef.current.querySelector("svg");
-      if (!svgElement) return;
-
-      const scaleFactor = 2;
-
-      // Get SVG dimensions from viewBox or width/height attributes, fallback to bounding rect
-      let width, height;
-      const viewBox = svgElement.getAttribute('viewBox');
-      if (viewBox) {
-        const [, , vw, vh] = viewBox.split(/\s+/).map(parseFloat);
-        width = vw || svgElement.width.baseVal.value || svgElement.getBoundingClientRect().width;
-        height = vh || svgElement.height.baseVal.value || svgElement.getBoundingClientRect().height;
-      } else {
-        width = svgElement.width.baseVal.value || svgElement.getBoundingClientRect().width;
-        height = svgElement.height.baseVal.value || svgElement.getBoundingClientRect().height;
-      }
-
-      // Clone SVG and set explicit dimensions to ensure proper rendering
-      const clonedSvg = svgElement.cloneNode(true);
-      clonedSvg.setAttribute('width', width);
-      clonedSvg.setAttribute('height', height);
-      clonedSvg.removeAttribute('style'); // Remove any inline styles that might affect size
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width * scaleFactor;
-      canvas.height = height * scaleFactor;
-      const ctx = canvas.getContext("2d");
-      const TRANSPARENT_COLOR = "#00000000";
-
-      ctx.fillStyle = TRANSPARENT_COLOR;
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.scale(scaleFactor, scaleFactor);
-
-      const svgData = new XMLSerializer().serializeToString(clonedSvg);
-      const svgBlob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-      const url = URL.createObjectURL(svgBlob);
-
-      const img = new Image();
-      img.onload = () => {
-        ctx.drawImage(img, 0, 0, width, height);
-        URL.revokeObjectURL(url);
-
-        canvas.toBlob((blob) => {
-          const downloadUrl = URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = downloadUrl;
-          a.download = `kaplan_meier_chart.png`;
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          URL.revokeObjectURL(downloadUrl);
-        }, "image/png");
-      };
-
-      img.src = url;
-      setShowDownloadDropdown(false);
-    } catch (error) {
-      console.error("Error downloading Kaplan-Meier chart:", error);
-    }
-  };
-
-
-  // Download function for Risk table
-  const downloadRiskTable = (riskTableRef) => {
-    try {
-      if (!riskTableRef || !riskTableRef.current) {
-        console.error("Risk table ref not available");
-        return;
-      }
-
-      // Use the ref directly to capture the Risk Table element
-      const tableElement = riskTableRef.current;
-
-      // Store original margin and temporarily remove it
-      const originalMargin = tableElement.style.marginLeft;
-      tableElement.style.marginLeft = '0';
-      tableElement.style.backgroundColor = 'transparent';
-
-      // Generate image from the ref element using html-to-image
-      htmlToImage.toPng(tableElement, {
-        backgroundColor: 'transparent',
-        pixelRatio: 4,
-        quality: 1.0
-      }).then((dataUrl) => {
-        // Restore original margin
-        tableElement.style.marginLeft = originalMargin;
-
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `risk_table.png`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-        }, 100);
-      }).catch(error => {
-        // Restore original margin even on error
-        tableElement.style.marginLeft = originalMargin;
-        console.error("Error using html-to-image:", error);
-        alert("Error downloading Risk table. Please check the console for details.");
-      });
-
-      setShowDownloadDropdown(false);
-    } catch (error) {
-      console.error("Error downloading Risk table:", error);
-      alert("Error downloading Risk table. Please check the console for details.");
-    }
-  };
-
-  // Download both charts as a single combined image
-  const downloadBoth = () => {
-    try {
-      setShowDownloadDropdown(false);
-
-      if (!survivalAnalysisContainerRef.current) {
-        console.error("Survival analysis container ref not available");
-        alert("Container not available for download.");
-        return;
-      }
-
-      const containerElement = survivalAnalysisContainerRef.current;
-
-      htmlToImage.toPng(containerElement, {
-        backgroundColor: 'transparent',
-        pixelRatio: 2,
-        quality: 1.0,
-        useCORS: true,
-        allowTaint: true
-      }).then((dataUrl) => {
-        const a = document.createElement("a");
-        a.href = dataUrl;
-        a.download = `survival_analysis_combined.png`;
-        document.body.appendChild(a);
-        a.click();
-        setTimeout(() => {
-          document.body.removeChild(a);
-        }, 100);
-      }).catch((error) => {
-        console.error("Error downloading combined chart:", error);
-        alert("Error downloading combined chart. Please check the console for details.");
-      });
-    } catch (error) {
-      console.error("Error downloading combined chart:", error);
-      alert("Error downloading combined chart. Please check the console for details.");
-    }
-  };
-
-  const titles = {
-    survivalAnalysis: 'Survival Analysis',
-    sexAtBirth: 'Sex at Birth',
-    race: 'Race',
-    treatmentType: 'Treatment Type',
-    response: 'Treatment Outcome',
-  };
-  const nullImages = {
-    treatmentType: TreatmentTypePlaceHolder,
-    response: TreatmentTypePlaceHolder,
-    sexAtBirth: PlaceHolder2,
-    race: PlaceHolder2,
-    survivalAnalysis: PlaceHolder2
-  };
-
-  // Transform risk table data to match RiskTable component format
-  const { cohorts, timeIntervals } = useMemo(() => {
-    if (!riskTableData || !riskTableData.cohorts) {
-      return { cohorts: [], timeIntervals: [] };
-    }
-
-    const cohortColors = {
-      'c1': barColors.colorA,
-      'c2': barColors.colorB,
-      'c3': barColors.colorC,
-    };
-
-    const transformedCohorts = riskTableData.cohorts
-      .filter(cohort => {
-        // Only include cohorts that have data and match selected cohorts
-        const cohortKey = cohort.cohort.toLowerCase();
-        return (
-          (cohortKey === 'c1' && c1 && c1.length > 0) ||
-          (cohortKey === 'c2' && c2 && c2.length > 0) ||
-          (cohortKey === 'c3' && c3 && c3.length > 0)
-        );
-      })
-      .map((cohort) => {
-        // Convert survivalData array to data object format
-        const data = {};
-        cohort.survivalData.forEach(item => {
-          // Convert float subjects to integer (e.g., 2.0 -> 2)
-          data[item.group] = Math.round(item.subjects || 0);
-        });
-
-        // Determine the cohort name based on which cohort it is
-        const cohortKey = cohort.cohort.toLowerCase();
-        let cohortName;
-        if (cohortKey === 'c1') cohortName = c1Name || 'Cohort A';
-        else if (cohortKey === 'c2') cohortName = c2Name || 'Cohort B';
-        else if (cohortKey === 'c3') cohortName = c3Name || 'Cohort C';
-
-        return {
-          id: cohortKey,
-          name: cohortName,
-          color: cohortColors[cohort.cohort.toLowerCase()] || '#ADD8E6',
-          data: data,
-        };
-      });
-
+  const estimateHistogramCardDropSize = useCallback((datasetKey) => {
+    const ph0 = defaultPlotHeightPx;
+    const outerH0 = defaultHistogramCardOuterMinHeightPx(ph0);
+    if (!datasetKey) return { width: defaultDropSlotWidthPx, height: outerH0 };
+    const entry = histogramCardSizes[datasetKey];
+    const w = entry && entry.width != null ? entry.width : defaultDropSlotWidthPx;
+    const ph = entry && entry.plotHeight != null ? entry.plotHeight : ph0;
     return {
-      cohorts: transformedCohorts,
-      timeIntervals: riskTableData.timeIntervals || [],
+      width: w,
+      height: Math.max(outerH0, ph + HISTOGRAM_CARD_CHROME_HEIGHT),
     };
-  }, [riskTableData, c1, c2, c3, c1Name, c2Name, c3Name]);
+  }, [histogramCardSizes, defaultPlotHeightPx, defaultDropSlotWidthPx]);
+
+  const visibleHistogramDatasets = useMemo(
+    () => selectedDatasets.filter((d) => d !== 'survivalAnalysis'),
+    [selectedDatasets],
+  );
+
+  const {
+    draggingDataset,
+    beginStripChartDrag,
+    endStripChartDrag,
+    dragOverDataset,
+    setDragOverDataset,
+    draggingCardDimensions,
+    histogramDragSizeRef,
+    captureHistogramDragCardSize,
+    clearHistogramDragSize,
+    handleStripChartDragOver,
+    handleStripChartDrop,
+  } = useHistogramStripDnD({
+    chartRef,
+    estimateHistogramCardDropSize,
+    stripOrder,
+    dispatch,
+    besidePanelDraggingRef,
+    onTopRowDroppedOnStrip: onTopRowStripDropComplete,
+  });
+
+  const orderedVisibleHistograms = useMemo(() => {
+    const order = stripOrder.filter(
+      (d) =>
+        d !== 'venn' &&
+        d !== 'survivalAnalysis' &&
+        visibleHistogramDatasets.includes(d),
+    );
+    const missing = visibleHistogramDatasets.filter((d) => !order.includes(d));
+    return [...order, ...missing];
+  }, [stripOrder, visibleHistogramDatasets]);
+
+  const besideDatasetForColumn = useMemo(() => {
+    if (survivalSelected) return null;
+    if (orderedVisibleHistograms.length === 0) return null;
+    if (besideStripPanelId && orderedVisibleHistograms.includes(besideStripPanelId)) {
+      return besideStripPanelId;
+    }
+    return orderedVisibleHistograms[0];
+  }, [survivalSelected, orderedVisibleHistograms, besideStripPanelId]);
+
+  const mainHistogramRowOrder = useMemo(() => {
+    if (!besideDatasetForColumn) return orderedVisibleHistograms;
+    return orderedVisibleHistograms.filter((d) => d !== besideDatasetForColumn);
+  }, [orderedVisibleHistograms, besideDatasetForColumn]);
+
+  /** Full strip layout: histogram keys plus `venn` / `survivalAnalysis` when moved from the top row. */
+  const stripRenderOrder = useMemo(() => {
+    return stripOrder.filter((id) => {
+      if (id === 'venn') return true;
+      if (id === 'survivalAnalysis') return survivalSelected;
+      if (besideDatasetForColumn && id === besideDatasetForColumn) return false;
+      return mainHistogramRowOrder.includes(id);
+    });
+  }, [stripOrder, survivalSelected, besideDatasetForColumn, mainHistogramRowOrder]);
+
+  const reduxVennSize = layoutSizes.venn;
+
+  /** Strip `ChartWrapper` defaults to 1/3 row width — pin to Redux / drag snapshot size for top-row panels. */
+  const stripVennChartWrapperStyle = useMemo(() => {
+    const box = reduxVennSize != null ? reduxVennSize : defaultVennOuterPx();
+    const w = box.width;
+    const h = box.height;
+    return {
+      width: w,
+      minWidth: w,
+      height: h,
+      minHeight: h,
+      maxWidth: 'none',
+      flex: '0 0 auto',
+      alignSelf: 'flex-start',
+      boxSizing: 'border-box',
+    };
+  }, [reduxVennSize]);
+
+  const stripSurvivalChartWrapperStyle = useMemo(() => {
+    const raw = survivalCardSize || reduxSurvivalSize;
+    const box = clampSurvivalPanelSize(raw && typeof raw === 'object' ? raw : {});
+    return {
+      width: box.width,
+      minWidth: box.width,
+      height: box.height,
+      minHeight: box.height,
+      maxWidth: 'none',
+      flex: '0 0 auto',
+      alignSelf: 'flex-start',
+      boxSizing: 'border-box',
+    };
+  }, [survivalCardSize, reduxSurvivalSize]);
+
+  useEffect(() => {
+    if (!onSurvivalBesideColumnActive) return;
+    const active = Boolean(survivalBesideVennTarget) && selectedDatasets.includes('survivalAnalysis');
+    onSurvivalBesideColumnActive(active);
+  }, [survivalBesideVennTarget, selectedDatasets, onSurvivalBesideColumnActive]);
+
+  const { cohorts, timeIntervals } = useRiskTableCohortsShape(
+    riskTableData,
+    c1,
+    c2,
+    c3,
+    c1Name,
+    c2Name,
+    c3Name,
+  );
 
   let data = graphData;
-  const MAX_BARS_DISPLAYED = 6;
-  const MAX_BARS_DISPLAYED_EXPANDED = 21;
   const cellHover = useRef(null);
-  const filteredData = useMemo(() => {
-    if (Object.keys(graphData).length > 0 && selectedDatasets.length > 0) {
-      const otherKey = expandedChart ? 'OtherMany' : 'OtherFew';
-      const maxDisplayed = expandedChart ? MAX_BARS_DISPLAYED_EXPANDED : MAX_BARS_DISPLAYED;
-      const graphDataCopy = JSON.parse(JSON.stringify(graphData));
+  const filteredData = useFilteredHistogramGraphData(graphData, selectedDatasets, expandedChart);
 
-      selectedDatasets.forEach((dataset) => {
-        // Skip survivalAnalysis as it doesn't have data in graphData
-        if (dataset === 'survivalAnalysis' || !graphDataCopy[dataset]) {
-          return;
-        }
-        const manyOthers = graphDataCopy[dataset].find(item => item.name === otherKey);
+  const { besideHistogramBarSums, besideStripPlotHeight } = useBesideStripHistogramMetrics({
+    besideDatasetForColumn,
+    filteredData,
+    histogramCardSizes,
+    defaultPlotHeightPx,
+  });
 
-        const filteredRegularItems = graphDataCopy[dataset]
-          .filter(item => item.name !== 'OtherFew' && item.name !== 'OtherMany');
-        const regularItems = filteredRegularItems.slice(0, manyOthers ? maxDisplayed - 1 : maxDisplayed);
-        graphDataCopy[dataset] = [...regularItems];
-        if (manyOthers) {
-          graphDataCopy[dataset].push(manyOthers);
-        }
-      })
-      return graphDataCopy;
+  /** Match beside-column histogram shell to survival overall card (width × height). */
+  const besidePeerShellBox = useMemo(() => {
+    if (!besideDatasetForColumn) return null;
+    const raw = survivalCardSize || reduxSurvivalSize;
+    return clampSurvivalPanelSize(raw && typeof raw === 'object' ? raw : {});
+  }, [besideDatasetForColumn, survivalCardSize, reduxSurvivalSize]);
+
+  const besideColumnPlotHeightPx = useMemo(() => {
+    if (!besidePeerShellBox || besidePeerShellBox.height == null) {
+      return besideStripPlotHeight;
     }
-    return graphData;
-  }, [graphData, selectedDatasets, expandedChart])
+    const inner = besidePeerShellBox.height - HISTOGRAM_CARD_CHROME_HEIGHT;
+    return Math.max(120, Math.round(inner));
+  }, [besidePeerShellBox, besideStripPlotHeight]);
 
-  // Hover effect for bars
   const handleMouseEnter = (entry) => {
     cellHover.current = entry;
   };
@@ -377,309 +375,271 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '' }) => {
 
   const allInputsEmpty = [c1, c2, c3].every(arr => !Array.isArray(arr) || arr.length === 0);
 
-  // Helper function to check if dataset requires compact spacing
-  const requiresCompactSpacing = (dataset) => {
-    return dataset === 'race' || dataset === 'treatmentType' || dataset === 'response';
+  const survivalBesideVennCardStyle = useSurvivalBesideVennCardStyle({
+    survivalCardSize,
+    besideCardDrag,
+    allInputsEmpty,
+    besidePanelDragState,
+  });
+
+  const { handleHistogramCardResizeStart, handleSurvivalCardResizeStart } = useHistogramResizeHandlers({
+    allInputsEmpty,
+    histogramCardSizes,
+    setHistogramCardSizes,
+    survivalCardSize,
+    setSurvivalCardSize,
+    dispatch,
+    defaultPlotHeightPx,
+    besideHistogramDataset: besideDatasetForColumn,
+  });
+
+  const survivalAnalysisBodyProps = {
+    classes,
+    allInputsEmpty,
+    besideCardDrag,
+    survivalCardSize,
+    kmChartRef,
+    survivalAnalysisContainerRef,
+    riskTableRef,
+    filteredKmPlotData,
+    kmLoading,
+    kmError,
+    cohortColors,
+    cohorts,
+    timeIntervals,
+    showDownloadDropdown,
+    setShowDownloadDropdown,
+    dropdownRef,
+    setExpandedChart,
+    setActiveTab,
+    handleRemoveHistogramDataset,
   };
 
   return (
     <HistogramContainer>
-      {/* Dataset Selection */}
-      <DatasetSelectionTitle disabled={allInputsEmpty}>
-        View Venn Diagram in set operations:
-      </DatasetSelectionTitle>
-        <CheckBoxSection> 
-        {Object.keys(titles).map((key, index) => (
-          <label key={key} style={{ fontFamily: 'Poppins', fontSize: '14px', color: '#000000', display: 'flex', alignItems: 'center',flexWrap: 'nowrap',flexDirection: 'row' }}>
-            <input
-              type="checkbox"
-              value={key}
-              checked={selectedDatasets.includes(key)}
-              onChange={() => handleDatasetChange(key)}
-              disabled={allInputsEmpty}
-              style={{ marginRight: '8px', accentColor: '#6D5F5B', cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}
-            />
-            {titles[key]}
-          </label>
-        ))}
-      </CheckBoxSection>
-
-      {/* View Type Selection */}
-
-      <CenterContainer>
-        {/* Multiple Charts */}
-        {selectedDatasets.includes('survivalAnalysis') && (
-          <ChartWrapper>
-            <SurvivalAnalysisHeader>
-              <ChartTitle>
-                {'Overall Survival by Diagnosis'}
-                <ToolTip
-                  maxWidth="235px"
-                  border={'1px solid #598ac5'}
-                  arrowBorder={'1px solid #598AC5'}
-                  title={<div>
-                    Participants with unreported age values or whose last diagnosis age is later than their last survival follow-up were excluded to ensure valid survival timelines.
-                    <br />
-                    <br />
-                    Displays survival data based on the earliest diagnosis when multiple diagnoses exist. 
-                  </div>}
-                  placement="top-end"
-                  arrow
-                  interactive
-                  arrowSize="30px"
-                >
-
-                  <img alt="Question Icon" src={questionIcon} width={10} style={{ border: "0px", top: -3, position: 'relative', marginLeft: 3 }} />
-
-                </ToolTip>
-              </ChartTitle>
-
-              <ChartActionButtons>
-                <span onClick={() => {
-                  if (!allInputsEmpty) {
-                    setExpandedChart('survivalAnalysis');
-                    setActiveTab('survivalAnalysis');
-                  }
-                }} style={{ cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}>
-                  <img src={ExpandIcon} alt={"expand"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
-                </span>
-                <DownloadDropdown ref={dropdownRef}>
-                  <span
-                    onClick={() => !allInputsEmpty && setShowDownloadDropdown(!showDownloadDropdown)}
-                    style={{ cursor: allInputsEmpty ? 'not-allowed' : 'pointer' }}
-                  >
-                    <img src={DownloadIcon} alt={"download"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
-                  </span>
-                  {showDownloadDropdown && !allInputsEmpty && (
-                    <DownloadDropdownMenu>
-                      <DownloadDropdownItem onClick={() => downloadKaplanMeierChart(kmChartRef)}>
-                        <img src={DownloadIconBorderless} alt="download Kaplan Meier Plot" style={{ width: '10px', height: '12px' }} />
-                        Kaplan Meier Plot
-                      </DownloadDropdownItem>
-                      <DownloadDropdownItem onClick={() => downloadRiskTable(riskTableRef)}>
-                        <img src={DownloadIconBorderless} alt="download Risk Table" style={{ width: '10px', height: '12px' }} />
-                        Risk Table
-                      </DownloadDropdownItem>
-                      <DownloadDropdownItem onClick={() => downloadBoth()}>
-                        <img src={DownloadIconBorderless} alt="download Both Kaplan Meier Plot and Risk Table" style={{ width: '10px', height: '12px' }} />
-                        Download Both
-                      </DownloadDropdownItem>
-                    </DownloadDropdownMenu>
-                  )}
-                </DownloadDropdown>
-              </ChartActionButtons>
-            </SurvivalAnalysisHeader>
-
-            <SurvivalAnalysisContainer ref={survivalAnalysisContainerRef}>
-              <KmChartWrapper ref={kmChartRef}>
-                <KaplanMeierChart
-                  data={filteredKmPlotData}
-                  title=""
-                  width={"100%"}
-                  height={230}
-                  loading={kmLoading}
-                  error={kmError}
-                  colors={cohortColors}
-                  showLabels={false}
-                  showLegend={false}
-                />
-              </KmChartWrapper>
-              <RiskTableWrapper ref={riskTableRef}>
-                  <RiskTable
-                     classes={{ cohortName: classes.cohortNameEllipsis }}
-                     cohortNameCharLimit={10}
-                    cohorts={cohorts}
-                    timeIntervals={timeIntervals}
-                  />
-
-              </RiskTableWrapper>
-            </SurvivalAnalysisContainer>
-          </ChartWrapper>
-        )}
-        {selectedDatasets
-          .filter(dataset => dataset !== 'survivalAnalysis') // Filter out survivalAnalysis as it's rendered separately
-          .map((dataset, index) => {
-            let valueA = 0;
-            let valueB = 0;
-            let valueC = 0;
-            if (Array.isArray(filteredData[dataset])) {
-              filteredData[dataset].forEach((entry) => {
-                valueA += entry.valueA || 0;
-                valueB += entry.valueB || 0;
-                valueC += entry.valueC || 0;
-              });
-            }
+      <HistogramBesideVennHistogramPortal
+        survivalSelected={survivalSelected}
+        besideDatasetForColumn={besideDatasetForColumn}
+        survivalBesideVennTarget={survivalBesideVennTarget}
+        draggingDataset={draggingDataset}
+        chartRef={chartRef}
+        histogramCardSizes={histogramCardSizes}
+        allInputsEmpty={allInputsEmpty}
+        beginStripChartDrag={beginStripChartDrag}
+        endStripChartDrag={endStripChartDrag}
+        setDragOverDataset={setDragOverDataset}
+        captureHistogramDragCardSize={captureHistogramDragCardSize}
+        clearHistogramDragSize={clearHistogramDragSize}
+        getChartTitle={getChartTitle}
+        data={data}
+        filteredData={filteredData}
+        viewType={viewType}
+        chartVisualByPanelId={chartVisualByPanelId}
+        besideHistogramBarSums={besideHistogramBarSums}
+        besideStripPlotHeight={besideStripPlotHeight}
+        besidePeerShellBox={besidePeerShellBox}
+        besideColumnPlotHeightPx={besideColumnPlotHeightPx}
+        cellHover={cellHover}
+        handleMouseEnter={handleMouseEnter}
+        handleMouseLeave={handleMouseLeave}
+        classes={classes}
+        setExpandedChart={setExpandedChart}
+        setActiveTab={setActiveTab}
+        downloadChart={downloadChart}
+        handleRemoveHistogramDataset={handleRemoveHistogramDataset}
+        handleHistogramCardResizeStart={handleHistogramCardResizeStart}
+        c1Name={c1Name}
+        c2Name={c2Name}
+        c3Name={c3Name}
+        chartTypeMenuDataset={chartTypeMenuDataset}
+        setChartTypeMenuDataset={setChartTypeMenuDataset}
+        chartTypeMenuRef={chartTypeMenuRef}
+        setChartVisualForPanel={(panelId, type) => dispatch(patchChartVisuals({ [panelId]: type }))}
+      />
+      <HistogramSurvivalBesideVennPortal
+        selectedDatasets={selectedDatasets}
+        survivalBesideVennTarget={survivalBesideVennTarget}
+        besideCardDrag={besideCardDrag}
+        survivalBesideVennCardStyle={survivalBesideVennCardStyle}
+        survivalAnalysisBodyProps={survivalAnalysisBodyProps}
+        allInputsEmpty={allInputsEmpty}
+        handleSurvivalCardResizeStart={handleSurvivalCardResizeStart}
+      />
+      <CenterContainer
+        onDragLeave={(event) => {
+          const besideDrag =
+            besidePanelDraggingRef && besidePanelDraggingRef.current;
+          if (!draggingDataset && !besideDrag) return;
+          const related = event.relatedTarget;
+          if (related && event.currentTarget.contains(related)) return;
+          setDragOverDataset(null);
+        }}
+      >
+        <SurvivalHistogramInlineLegacy
+          selectedDatasets={selectedDatasets}
+          survivalBesideVennTarget={survivalBesideVennTarget}
+          survivalCardSize={survivalCardSize}
+          survivalAnalysisBodyProps={survivalAnalysisBodyProps}
+          allInputsEmpty={allInputsEmpty}
+          handleSurvivalCardResizeStart={handleSurvivalCardResizeStart}
+          stripOrder={stripOrder}
+          topRowOrder={topRowOrder}
+        />
+        {stripRenderOrder.map((panelId) => {
+          if (panelId === 'venn') {
             return (
-              <ChartWrapper id={`chart-${dataset}`} ref={(el) => chartRef.current[dataset] = el}>
-                <HeaderSection>
-                  <ChartTitle className={`${Array.isArray(data[dataset]) && data[dataset].length > 0 ? '' : 'empty'}`} >
-                    {titles[dataset]}
-                    {Array.isArray(filteredData[dataset]) && filteredData[dataset].length > 5 && (
-                      <ToolTip
-                        maxWidth="335px"
-                        border={'1px solid #598ac5'}
-                        arrowBorder={'1px solid #598AC5'}
-                        title={<div>
-                          {"You can expand to see the full item"}
-                        </div>}
-                        placement="top-end"
-                        arrow
-                        interactive
-                        arrowSize="30px"
-                      >
-                        <img alt="Question Icon" src={questionIcon} width={10} style={{ border: "0px", top: -3, left: 3, position: 'relative' }} />
-                      </ToolTip>
-                    )}
-                  </ChartTitle>
-
-                  <ChartActionButtons>
-                    <span
-                      style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
-                      onClick={() => {
-                        if (!allInputsEmpty) {
-                          setExpandedChart(dataset);
-                          setActiveTab(dataset);
-                        }
-                      }} >
-                      <img src={ExpandIcon} alt={"expand"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
-                    </span>
-                    <span
-                      style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
-                      onClick={() => !allInputsEmpty && downloadChart(dataset, false)}>
-                      <img src={DownloadIcon} alt={"download"} style={{ opacity: allInputsEmpty ? 0.5 : 1, width: '23px', height: '23px' }} />
-                    </span>
-
-                  </ChartActionButtons>
-
-                </HeaderSection>
-                <div 
-                  className={classes.chartContentWrapper}
-                  style={{ 
-                    paddingBottom: requiresCompactSpacing(dataset) ? '12px' : '0px'
-                  }}
-                >
-
-                  {Array.isArray(data[dataset]) && data[dataset].length > 0 ? (
-                    <>
-                      <fieldset style={{ border: 'none' }}>
-                        <legend style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
-                          Data Type Options
-                        </legend>
-                        <RadioGroup>
-                          <RadioLabel>
-                            <RadioInput
-                              type="radio"
-                              name={`viewType-${dataset}`}
-                              value="count"
-                              checked={viewType[dataset] === 'count'}
-                              onChange={(e) => setViewType({ ...viewType, [dataset]: e.target.value })}
-                            />
-                            # of Cases
-                          </RadioLabel>
-                          <RadioLabel>
-                            <RadioInput
-                              type="radio"
-                              name={`viewType-${dataset}`}
-                              value="percentage"
-                              checked={viewType[dataset] === 'percentage'}
-                              onChange={(e) => setViewType({ ...viewType, [dataset]: e.target.value })}
-                            />
-                            % of Cases
-                          </RadioLabel>
-                        </RadioGroup>
-                      </fieldset>
-                      <ResponsiveContainer width="80%" height="100%">
-                        <BarChart
-                          data={filteredData[dataset]}
-                          margin={{ 
-                            top: 20, 
-                            right: 30, 
-                            left: 10, 
-                            bottom: requiresCompactSpacing(dataset) ? 12 : 0 
-                          }}
-                        >
-                          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal={true} vertical={false} />
-                          <XAxis
-                            dataKey="name"
-                            interval={0}
-                            angle={0}
-                            textAnchor="middle"
-                            height={50}
-                            tick={(props) => {
-                           
-                              const dataLength = (filteredData[dataset] && filteredData[dataset].length) || 1;
-                              const estimatedChartWidth = 400; // Approximate width of chart area
-                              const availableWidth = (estimatedChartWidth / dataLength) * 0.9; // 90% to leave padding
-                              
-                            
-                              let xFontSize = 10;
-                              let xLineHeight = 11;
-                              let xLetterSpacing = 0;
-                              
-                              if (requiresCompactSpacing(dataset)) {
-                                xFontSize = 10;
-                                xLineHeight = 10;
-                              }
-                              
-                              return <CustomXAxisTick {...props} width={availableWidth} fontSize={xFontSize} lineHeight={xLineHeight} letterSpacing={xLetterSpacing} />;
-                            }}
-                          />
-                          <YAxis
-                            domain={[0, 'dataMax']}
-                            tickFormatter={(value) => {
-                              const num = Number(value);
-                              const formatted = num % 1 === 0 ? num : num.toFixed(1);
-                              return viewType[dataset] === 'percentage' ? `${formatted}%` : formatted;
-                            }} 
-                            tick={{ 
-                              fontSize: 11, 
-                              fill: '#666666', 
-                              fontFamily: 'Nunito', 
-                              fontWeight: 500,
-                              lineHeight: 11,
-                              letterSpacing: 0
-                            }}
-                          />
-                          <Tooltip content={<CustomChartTooltip viewType={viewType[dataset]} cellHoverRef={cellHover} />} />
-                          {valueA > 0 && (
-                            <Bar dataKey="valueA" maxBarSize={60} stroke="#000" strokeWidth={0.6}>
-                              {filteredData[dataset].map((entry, entryIndex) => (
-                                <Cell key={`cell-${dataset}-${entryIndex}`} fill={entry.colorA} onMouseEnter={() => handleMouseEnter("valueA")} onMouseLeave={handleMouseLeave} />
-                              ))}
-                            </Bar>
-                          )}
-                          {valueB > 0 && (
-                            <Bar dataKey="valueB" maxBarSize={60} stroke="#000" strokeWidth={0.6} >
-                              {filteredData[dataset].map((entry, entryIndex) => (
-                                <Cell key={`cell-${dataset}-${entryIndex}`} fill={entry.colorB} onMouseEnter={() => handleMouseEnter("valueB")} onMouseLeave={handleMouseLeave} />
-                              ))}
-                            </Bar>
-                          )}
-                          {valueC > 0 && (
-                            <Bar dataKey="valueC" maxBarSize={60} stroke="#000" strokeWidth={0.6}>
-                              {filteredData[dataset].map((entry, entryIndex) => (
-                                <Cell key={`cell-${dataset}-${entryIndex}`} fill={entry.colorC} onMouseEnter={() => handleMouseEnter("valueC")} onMouseLeave={handleMouseLeave} />
-                              ))}
-                            </Bar>)}
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </>
-                  ) : (
-                    allInputsEmpty ? (
-                      <div style={{ width: '100%', height: '200px', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                        <img src={nullImages[dataset]} alt="No data" style={{ maxWidth: '100%', maxHeight: '100%' }} />
-                      </div>) : (
-                      <div style={{ width: '100%', height: '200px', display: 'flex', justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-                        <NoDataCard />
-                      </div>
-                    )
-                  )}
-
-                </div>
+              <ChartWrapper
+                key="strip-venn"
+                id="cohort-analyzer-venn-card"
+                data-ca-histogram-strip-dataset="venn"
+                ref={(el) => {
+                  chartRef.current.venn = el;
+                }}
+                style={{
+                  ...stripVennChartWrapperStyle,
+                  cursor: 'default',
+                }}
+                draggable={false}
+                onDragOver={(e) => handleStripChartDragOver(e, 'venn')}
+                onDrop={(e) => handleStripChartDrop(e, 'venn')}
+              >
+                <VennDiagramContainer
+                  state={cohortParticipantState}
+                  containerRef={containerRef}
+                  canvasRef={canvasRef}
+                  classes={classes}
+                  besideCardDrag={undefined}
+                  besidePanelDragState={besidePanelDragState}
+                  chartModalOpen={chartModalExpandedChart != null}
+                  chartModalActiveTab={chartModalActiveTab}
+                  onExpandVenn={onExpandVenn}
+                />
               </ChartWrapper>
-
             );
-          })}
+          }
+          if (panelId === 'survivalAnalysis') {
+            const ds = 'survivalAnalysis';
+            return (
+              <ChartWrapper
+                key="strip-survival"
+                id="cohort-analyzer-survival-beside-card"
+                data-ca-histogram-strip-dataset={ds}
+                ref={(el) => {
+                  chartRef.current[ds] = el;
+                }}
+                style={{
+                  ...stripSurvivalChartWrapperStyle,
+                  cursor: allInputsEmpty ? 'default' : 'grab',
+                }}
+                draggable={!allInputsEmpty}
+                onDragStart={(event) => {
+                  setDragOverDataset(null);
+                  captureHistogramDragCardSize(event, ds);
+                  const payload = encodePanelDragPayload({ kind: 'histogram', dataset: ds });
+                  event.dataTransfer.setData(CA_PANEL_DRAG_MIME, payload);
+                  event.dataTransfer.setData('text/plain', ds);
+                  event.dataTransfer.effectAllowed = 'move';
+                  const imgEl = event.currentTarget || chartRef.current[ds];
+                  if (imgEl) {
+                    event.dataTransfer.setDragImage(imgEl, 32, 20);
+                  }
+                  beginStripChartDrag(ds);
+                }}
+                onDragEnd={() => {
+                  endStripChartDrag();
+                }}
+                onDragOver={(e) => handleStripChartDragOver(e, ds)}
+                onDrop={(e) => handleStripChartDrop(e, ds)}
+              >
+                <SurvivalAnalysisCardBody {...survivalAnalysisBodyProps} besideVenn={false} />
+                <ChartResizeHandle
+                  aria-label="Resize survival analysis card"
+                  title="Drag to resize card"
+                  onMouseDown={handleSurvivalCardResizeStart}
+                  style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
+                />
+              </ChartWrapper>
+            );
+          }
+          const dataset = panelId;
+          return (
+          <HistogramStripChartRow
+            key={dataset}
+            dataset={dataset}
+            classes={classes}
+            data={data}
+            filteredData={filteredData}
+            viewType={viewType}
+            setViewType={setViewType}
+            chartVisualByPanelId={chartVisualByPanelId}
+            histogramCardSizes={histogramCardSizes}
+            defaultPlotHeightPx={defaultPlotHeightPx}
+            defaultDropSlotWidthPx={defaultDropSlotWidthPx}
+            defaultHistogramCardOuterMinHeightPx={defaultHistogramCardOuterMinHeightPx}
+            estimateHistogramCardDropSize={estimateHistogramCardDropSize}
+            draggingDataset={draggingDataset}
+            beginStripChartDrag={beginStripChartDrag}
+            endStripChartDrag={endStripChartDrag}
+            dragOverDataset={dragOverDataset}
+            setDragOverDataset={setDragOverDataset}
+            draggingCardDimensions={draggingCardDimensions}
+            histogramDragSizeRef={histogramDragSizeRef}
+            captureHistogramDragCardSize={captureHistogramDragCardSize}
+            clearHistogramDragSize={clearHistogramDragSize}
+            handleStripChartDragOver={handleStripChartDragOver}
+            handleStripChartDrop={handleStripChartDrop}
+            handleHistogramCardResizeStart={handleHistogramCardResizeStart}
+            chartRef={chartRef}
+            allInputsEmpty={allInputsEmpty}
+            getChartTitle={getChartTitle}
+            chartTypeMenuDataset={chartTypeMenuDataset}
+            setChartTypeMenuDataset={setChartTypeMenuDataset}
+            chartTypeMenuRef={chartTypeMenuRef}
+            cellHover={cellHover}
+            handleMouseEnter={handleMouseEnter}
+            handleMouseLeave={handleMouseLeave}
+            downloadChart={downloadChart}
+            setExpandedChart={setExpandedChart}
+            setActiveTab={setActiveTab}
+            handleRemoveHistogramDataset={handleRemoveHistogramDataset}
+            c1Name={c1Name}
+            c2Name={c2Name}
+            c3Name={c3Name}
+            besidePanelDraggingRef={besidePanelDraggingRef}
+          />
+          );
+        })}
+        {inlineAddChartOpen ? (
+          <ChartWrapper
+            id="chart-inline-add"
+            draggable={false}
+            style={{
+              flexShrink: 0,
+              alignSelf: 'flex-start',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
+              borderStyle: 'dashed',
+              borderWidth: 2,
+              borderColor: 'rgba(24, 103, 122, 0.55)',
+            }}
+          >
+            <div
+              className={classes.chartContentWrapper}
+              style={{ padding: '12px 14px 16px' }}
+            >
+              <AddChartInlinePanel
+                step={inlineAddStep}
+                setStep={setInlineAddStep}
+                selectedCatalogId={inlineSelectedCatalogId}
+                setSelectedCatalogId={setInlineSelectedCatalogId}
+                onCompleteWithChartType={finalizeInlineAddChart}
+                onClose={onInlineAddChartClose}
+                existingStripKeys={stripOrder}
+                selectedDatasets={selectedDatasets}
+              />
+            </div>
+          </ChartWrapper>
+        ) : null}
 
       </CenterContainer>
       {expandedChart && (
@@ -690,7 +650,7 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '' }) => {
           viewType={viewType}
           setViewType={setViewType}
           data={filteredData}
-          titles={titles}
+          titles={displayTitles}
           downloadChart={downloadChart}
           kmPlotData={kmPlotData}
           kmLoading={kmLoading}
@@ -702,6 +662,14 @@ const Histogram = ({ c1, c2, c3, c1Name = '', c2Name = '', c3Name = '' }) => {
           c1={c1}
           c2={c2}
           c3={c3}
+          c1Name={c1Name}
+          c2Name={c2Name}
+          c3Name={c3Name}
+          chartVisualByPanelId={chartVisualByPanelId}
+          onSetChartVisual={(panelId, type) => dispatch(patchChartVisuals({ [panelId]: type }))}
+          cohortParticipantState={cohortParticipantState}
+          containerRef={containerRef}
+          canvasRef={canvasRef}
         />
       )}
 

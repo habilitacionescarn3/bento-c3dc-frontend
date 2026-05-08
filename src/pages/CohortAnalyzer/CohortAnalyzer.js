@@ -1,20 +1,19 @@
-import React, { useContext, useEffect, useRef } from "react";
+import React, { useContext, useEffect, useRef, useState, useMemo } from "react";
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { CohortStateContext } from "../../components/CohortSelectorState/CohortStateContext";
 import { configColumn } from "../inventory/tabs/tableConfig/Column";
-import { themeConfig } from "../studies/tableConfig/Theme";
 import { onCreateNewCohort, onDeleteAllCohort, onDeleteSingleCohort } from "../../components/CohortSelectorState/store/action";
 import { tableConfig, analyzer_tables } from "../../bento/cohortAnalyzerPageData";
-import ToolTip from "@bento-core/tool-tip/dist/ToolTip";
 import Stats from '../../components/Stats/GlobalStatsController';
 import ConfirmationModal from "../../components/CohortModal/components/shared/ConfirmationModal";
-import NavigateAwayModal from './navigateAwayModal';
+import NavigateAwayModal from './components/navigateAwayModal';
 import { CohortModalContext } from "../../components/CohortModal/CohortModalContext";
 import CohortModal from "../../components/CohortModal/CohortModal";
 import Alert from '@material-ui/lab/Alert';
 import { useGlobal } from "../../components/Global/GlobalProvider";
 import questionIcon from "../../assets/icons/Question_icon_2.svg";
-import { useStyle } from "./cohortAnalyzerStyling";
+import { useStyle } from './styling/cohortAnalyzerStyling';
 import { CohortAnalyzerTableSection } from "./CohortAnalyzerTableSection/CohortAnalyzerTableSection"
 import {
     handlePopup,
@@ -25,93 +24,68 @@ import {
 import store from "../../store";
 import { updateUploadData, updateUploadMetadata } from "@bento-core/local-find";
 import { CohortSelector } from "./CohortSelector/CohortSelector";
-import { useCohortAnalyzer } from "./CohortAnalyzerContext";
-import VennDiagramContainer from "./vennDiagram/VennDiagramContainer";
-import Histogram from "./HistogramPanel/Histogram";
+import { useCohortAnalyzer } from './context/CohortAnalyzerContext';
+import { cohortAnalyzerThemeConfig } from './styling/cohortAnalyzerThemeConfig';
+import { useBesidePanelDnD } from './hooks/useBesidePanelDnD';
+import { CohortAnalyzerChartArea } from './components/CohortAnalyzerChartArea';
+import { CohortAnalyzerSummaryView } from './components/CohortAnalyzerSummaryView';
 import { getJoinedCohortData } from "./CohortAnalyzerUtil/CohortDataTransform";
 import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortData";
 import { exportToCCDIHub } from "../../components/CohortModal/utils";
+import { useUserGuide } from '../inventory/sideBar/UserGuideContext';
+import { USER_GUIDE_SECTION_ANALYZING_COHORTS } from '../inventory/sideBar/userGuideConstants';
 
 export const CohortAnalyzer = () => {
-    //context
-    const cohortAnalyzerContext = useCohortAnalyzer();
-    // Cohort selection and list management
+    const { openUserGuide } = useUserGuide();
+    const topRowOrder = useSelector((s) => s.cohortAnalyzerLayout.topRowOrder);
+
+    const [activeView, setActiveView] = useState("chart");
+    const [inlineAddChartOpen, setInlineAddChartOpen] = useState(false);
+    const [inlineAddChartNonce, setInlineAddChartNonce] = useState(0);
+    const [survivalBesideVennEl, setSurvivalBesideVennEl] = useState(null);
+    const [survivalBesideColumnActive, setSurvivalBesideColumnActive] = useState(false);
     const {
+        resetVennWorkspaceUi,
         selectedCohorts,
         setSelectedCohorts,
         cohortList,
         setCohortList,
         nodeIndex,
-    } = cohortAnalyzerContext;
-    // Cohort data and general info
-    const {
         cohortData,
         setCohortData,
         generalInfo,
         setGeneralInfo,
-    } = cohortAnalyzerContext;
-    // Row data and table refresh
-    const {
         rowData,
         setRowData,
         setRefreshTableContent,
-    } = cohortAnalyzerContext;
-    // Search and query
-    const {
         searchValue,
         setSearchValue,
         setQueryVariable,
-    } = cohortAnalyzerContext;
-    // Chart and cohort section selection
-    const {
         selectedChart,
         selectedCohortSection,
         setSelectedCohortSections,
-    } = cohortAnalyzerContext;
-    // Modal and alert handling
-    const {
         setDeleteInfo,
         deleteInfo,
         handleCheckbox,
         showNavigateAwayModal,
         setShowNavigateAwayModal,
         setAlert,
-    } = cohortAnalyzerContext;
+        alert,
+    } = useCohortAnalyzer();
 
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
     const classes = useStyle();
-    const { state, dispatch } = useContext(CohortStateContext);
+    const { state, dispatch: cohortDispatch } = useContext(CohortStateContext);
+    const hasParticipantData = useMemo(() => {
+        if (!state || !Array.isArray(selectedCohorts)) return false;
+        return selectedCohorts.some(
+            (id) => state[id] && Array.isArray(state[id].participants) && state[id].participants.length > 0,
+        );
+    }, [state, selectedCohorts]);
     const { setShowCohortModal, showCohortModal, setCurrentCohortChanges, setWarningMessage, warningMessage } = useContext(CohortModalContext);
     const { Notification } = useGlobal();
     const navigate = useNavigate();
-    const cohortAnalyzerThemeConfig = {
-        ...themeConfig, tblHeader: {
-            ...themeConfig.tblHeader, 
-            MuiTableRow: {
-                head: {
-                    height: '40px',
-                    borderTop: '3px solid #679AAA',
-                    borderBottom: '1px solid #000000',
-                },
-            },
-        },
-        tblBody: {
-            ...themeConfig.tblBody,
-            MuiTableCell: {
-                ...themeConfig.tblBody.MuiTableCell,
-                body: {
-                    ...themeConfig.tblBody.MuiTableCell.body,
-                    '&:first-of-type': {
-                        color: '#004C73',
-                        textDecoration: 'underline',
-                    },
-                }
-
-            },
-        },
-    };
-   
     const handleUserRedirect = () => {
         // NOTE: If needed to show in only Autocomplete of Localfind.
         // const data = rowData.map(r=>({type: 'participantIds', title: r.participant_id}))
@@ -298,7 +272,7 @@ export const CohortAnalyzer = () => {
         if (selectedCohortSection.length > 0 && rowData.length > 0) {
 
             setCurrentCohortChanges(null);
-            dispatch(onCreateNewCohort(
+            cohortDispatch(onCreateNewCohort(
                 "",
                 "",
                 rowData,
@@ -323,7 +297,7 @@ export const CohortAnalyzer = () => {
         // Delete existing example cohorts from state
         exampleCohortKeys.forEach(cohortId => {
             if (state[cohortId]) {
-                dispatch(onDeleteSingleCohort(cohortId));
+                cohortDispatch(onDeleteSingleCohort(cohortId));
             }
         });
 
@@ -354,7 +328,7 @@ export const CohortAnalyzer = () => {
 
         // Create each example cohort
         exampleCohorts.forEach(cohort => {
-            dispatch(onCreateNewCohort(
+            cohortDispatch(onCreateNewCohort(
                 cohort.cohortId,
                 cohort.cohortDescription,
                 cohort.participants,
@@ -406,6 +380,8 @@ export const CohortAnalyzer = () => {
         tableMsg: getTableMessage(cohortList, selectedCohortSection, tableConfig)
     });
 
+    const besideDnD = useBesidePanelDnD(survivalBesideColumnActive);
+
     return (
         <>
             <NavigateAwayModal
@@ -421,7 +397,7 @@ export const CohortAnalyzer = () => {
                     handleDelete(deleteInfo.cohortId,
                         setCohortList,
                         setSelectedCohorts,
-                        dispatch,
+                        cohortDispatch,
                         onDeleteSingleCohort,
                         onDeleteAllCohort,
                         setGeneralInfo,
@@ -455,49 +431,65 @@ export const CohortAnalyzer = () => {
                             {alert.message}
                         </Alert>
                     )}
-                    <div className={classes.rightSideAnalyzerHeader} style={{ justifyContent: 'flex-start', alignItems: 'center' }}>
-                        <h1> Cohort Analyzer</h1>
+                    <div className={classes.rightSideAnalyzerHeader}>
+                        <h1>Cohort Analyzer</h1>
                     </div>
 
-                    <div className={classes.rightSideContentContainer}>
-                    <div className={classes.rightSideAnalyzerOuterContainer}>
-                        <div className={classes.rightSideAnalyzerInnerContainer}>
-                            <div className={classes.rightSideAnalyzerHeader2}>
-                                <p>After selecting cohorts using the Cohort Selector panel (on the left), the Cohort Analyzer Venn diagram will be updated. Click on a Venn diagram segment to view the relevant results. By default, the Venn diagram will use <b>Participant ID</b> to match across cohorts, but other data categories can be selected.
-
-                                    <ToolTip backgroundColor={'white'} zIndex={3000} title={"The Venn diagram is a stylized representation of selected cohorts. Numbers in parentheses show unique records for the radio button selection, while numbers inside the diagram indicate unique values. The count next to your cohort in the sidebar reflects total participants."} arrow placement="top">
-                                        <img alt={"question mark icon"} src={questionIcon} width={10} style={{ fontSize: 10, position: 'relative', top: -5, left: -3 }} />
-                                    </ToolTip>
-                                </p>
-                            </div>
-                            <VennDiagramContainer
+                    <CohortAnalyzerSummaryView
+                        classes={classes}
+                        activeView={activeView}
+                        setActiveView={setActiveView}
+                        summaryTrailingActions={(
+                            <button
+                                type="button"
+                                className={classes.readmeButton}
+                                onClick={() => openUserGuide(USER_GUIDE_SECTION_ANALYZING_COHORTS)}
+                            >
+                                README
+                            </button>
+                        )}
+                        chartPanel={(
+                            <CohortAnalyzerChartArea
+                                classes={classes}
                                 state={state}
                                 containerRef={containerRef}
                                 canvasRef={canvasRef}
-                                classes={classes}
+                                selectedCohorts={selectedCohorts}
+                                hasParticipantData={hasParticipantData}
+                                survivalBesideTopRowUsesOrder={besideDnD.survivalBesideTopRowUsesOrder}
+                                topRowOrder={topRowOrder}
+                                besideDropTarget={besideDnD.besideDropTarget}
+                                besideColumnDropTargetStyle={besideDnD.besideColumnDropTargetStyle}
+                                handleBesideRowDragLeave={besideDnD.handleBesideRowDragLeave}
+                                handleBesideColumnDragOver={besideDnD.handleBesideColumnDragOver}
+                                handleBesidePanelDrop={besideDnD.handleBesidePanelDrop}
+                                survivalBesideDrag={besideDnD.survivalBesideDrag}
+                                besidePanelDragging={besideDnD.besidePanelDragging}
+                                besidePanelDraggingRef={besideDnD.besidePanelDraggingRef}
+                                endBesidePanelDrag={besideDnD.endBesidePanelDrag}
+                                survivalBesideVennEl={survivalBesideVennEl}
+                                setSurvivalBesideVennEl={setSurvivalBesideVennEl}
+                                setSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
+                                inlineAddChartOpen={inlineAddChartOpen}
+                                setInlineAddChartOpen={setInlineAddChartOpen}
+                                inlineAddChartNonce={inlineAddChartNonce}
+                                setInlineAddChartNonce={setInlineAddChartNonce}
+                                resetVennWorkspaceUi={resetVennWorkspaceUi}
                             />
-                        </div>
-
-                        <Histogram
-                            c1={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                            c2={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                            c3={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].participants.map((item) => item.id ? item.id : item.participant.id) : []}
-                            c1Name={selectedCohorts[0] && state && state[selectedCohorts[0]] ? state[selectedCohorts[0]].cohortName : ''}
-                            c2Name={selectedCohorts[1] && state && state[selectedCohorts[1]] ? state[selectedCohorts[1]].cohortName : ''}
-                            c3Name={selectedCohorts[2] && state && state[selectedCohorts[2]] ? state[selectedCohorts[2]].cohortName : ''}
-                        />
-                    </div>
-                     <CohortAnalyzerTableSection
-                        classes={classes}
-                        selectedCohortSection={selectedCohortSection}
-                        questionIcon={questionIcon}
-                        handleClick={handleClick} 
-                        handleBuildInExplore={handleBuildInExplore}
-                        handleExportToCCDIHub={handleExportToCCDIHub}
-                        initTblState={initTblState}
-                        themeConfig={cohortAnalyzerThemeConfig}
+                        )}
+                        tablePanel={(
+                            <CohortAnalyzerTableSection
+                                classes={classes}
+                                selectedCohortSection={selectedCohortSection}
+                                questionIcon={questionIcon}
+                                handleClick={handleClick}
+                                handleBuildInExplore={handleBuildInExplore}
+                                handleExportToCCDIHub={handleExportToCCDIHub}
+                                initTblState={initTblState}
+                                themeConfig={cohortAnalyzerThemeConfig}
+                            />
+                        )}
                     />
-                    </div>
                 </div>
             </div>
         </>

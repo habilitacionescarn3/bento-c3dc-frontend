@@ -2,9 +2,9 @@ import React, { useMemo, useCallback } from 'react';
 import { TableView } from '@bento-core/paginated-table';
 import { CreateNewCohortButton } from '../CreateNewCohortButton/CreateNewCohortButton';
 import DownloadSelectedCohort from '../downloadCohort/DownloadSelectedCohorts';
-import { exploreCCDIHubTooltip, exploreDashboardTooltip } from '../CohortAnalyzerConfig';
+import { exploreCCDIHubTooltip, exploreDashboardTooltip } from '../config/CohortAnalyzerConfig';
 import linkoutIcon from '../../../assets/landing/Export_Icon_White.svg';
-import { useCohortAnalyzer } from '../CohortAnalyzerContext';
+import { useCohortAnalyzer } from '../context/CohortAnalyzerContext';
 import { ButtonWithTooltip } from './ButtonWithTooltip';
 
 const row = { display: 'flex', alignItems: 'center' };
@@ -56,21 +56,16 @@ const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handle
             icon={questionIcon}
           >
             <div className={classes.leftAlignedText}>
-            BUILD IN EXPLORE <br></br> DASHBOARD
+              BUILD IN
+              <br />
+                EXPLORE
+             
+              DASHBOARD
             </div>
           </ButtonWithTooltip>
 
 
-          <ButtonWithTooltip
-            className={canHub ? classes.exploreButton : classes.exploreButtonFaded}
-            disabled={!canHub}
-            onClick={onHub}
-            tooltip={exploreCCDIHubTooltip}
-            icon={questionIcon}
-          >
-            EXPLORE IN CCDI HUB
-            <img alt="link out" src={linkoutIcon} height={13} width={13} />
-          </ButtonWithTooltip>
+          
         </div>
       </div>
 

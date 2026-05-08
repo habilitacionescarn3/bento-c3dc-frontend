@@ -1,8 +1,16 @@
 import { useState, useRef, useMemo, useEffect } from "react";
 import { gql } from "@apollo/client";
 import { useApolloClient } from "@apollo/client";
-import { barColors } from "./HistogramPanel.styled";
-export const useHistogramData = ({c1=[],c2=[],c3=[]}) => {
+import { barColors } from '../HistogramPanel.styled';
+export const useHistogramData = ({
+  c1 = [],
+  c2 = [],
+  c3 = [],
+  expandedChart,
+  setExpandedChart,
+  activeTab,
+  setActiveTab,
+}) => {
   const viewTypeApiKeys= {
     treatmentType: 'treatment_type',
     response: 'response',
@@ -17,9 +25,12 @@ export const useHistogramData = ({c1=[],c2=[],c3=[]}) => {
     race: "percentage"
   });
 
-  const [expandedChart, setExpandedChart] = useState(null);
-  const [activeTab, setActiveTab] = useState("sexAtBirth");
-  const [selectedDatasets, setSelectedDatasets] = useState(["sexAtBirth","race"]);
+  const [selectedDatasets, setSelectedDatasets] = useState([
+    "sexAtBirth",
+    "race",
+    "response",
+    "survivalAnalysis",
+  ]);
   const chartRef = useRef({});
   const [fetchedData, setFetchedData] = useState({});
 
@@ -191,9 +202,25 @@ const fetchChartData = async () => {
   useEffect(() => {
     const allInputsEmpty = [c1, c2, c3].every(arr => arr.length === 0);
     if (allInputsEmpty) {
-      setSelectedDatasets(["sexAtBirth", "race"]);
+      setSelectedDatasets(["sexAtBirth", "race", "response", "survivalAnalysis"]);
     }
   }, [c1, c2, c3]);
+
+  /** Ensure count/percentage exists for any histogram key (e.g. chart added from Add chart wizard). */
+  useEffect(() => {
+    setViewType((prev) => {
+      const next = { ...prev };
+      let changed = false;
+      selectedDatasets.forEach((key) => {
+        if (key === 'survivalAnalysis') return;
+        if (next[key] == null) {
+          next[key] = 'percentage';
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [selectedDatasets]);
 
   const toCamelCase = (input) => {
   return input
@@ -243,6 +270,7 @@ const graphData = useMemo(() => {
 
   return {
     graphData,
+    fetchedData,
     viewType,
     setViewType,
     activeTab,

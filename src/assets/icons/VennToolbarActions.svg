@@ -1,0 +1,28 @@
+<svg width="73" height="19" viewBox="0 0 73 19" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g clip-path="url(#venn_tb_clip0)">
+<rect x="28" y="1" width="21" height="21" rx="2" fill="white"/>
+<path d="M43.128 1C44.16 1 45 1.84 45 2.872V16.128C45 17.16 44.16 18 43.128 18H29.872C28.84 18 28 17.16 28 16.128V2.872C28 1.84 28.84 1 29.872 1H43.128ZM43.128 0H29.872C28.286 0 27 1.286 27 2.872V16.128C27 17.714 28.286 19 29.872 19H43.128C44.714 19 46 17.714 46 16.128V2.872C46 1.286 44.714 0 43.128 0Z" fill="#5C5C5C"/>
+<g clip-path="url(#venn_tb_clip1)">
+<path d="M42.5744 3H38.763V3.8519H41.547L37.8906 7.50655L38.4921 8.1097L42.1484 4.45334V7.23735H43.0003V3.42595L42.5744 3Z" fill="#5C5C5C" stroke="#5C5C5C" stroke-width="0.25"/>
+<path d="M34.5083 10.8901L30.8519 14.5448V11.7608H30V15.5739L30.426 15.9998H34.2391V15.1479H31.455L35.1114 11.4916L34.5083 10.8901Z" fill="#5C5C5C" stroke="#5C5C5C" stroke-width="0.25"/>
+<path d="M30.8519 7.23735V4.44993L34.5083 8.1097L35.1097 7.50826L31.4602 3.8519H34.2391V3H30.426L30 3.42595V7.23735H30.8519Z" fill="#5C5C5C" stroke="#5C5C5C" stroke-width="0.25"/>
+<path d="M42.1484 14.5399L38.4921 10.8887L37.8906 11.4918L41.5521 15.1482H38.763V16.0001H42.5744L43.0003 15.5741V11.761H42.1484V14.5399Z" fill="#5C5C5C" stroke="#5C5C5C" stroke-width="0.25"/>
+</g>
+</g>
+<g clip-path="url(#venn_tb_clip2)">
+<rect width="19" height="19" transform="translate(54)" fill="white"/>
+<path d="M70.128 1C71.16 1 72 1.84 72 2.872V16.128C72 17.16 71.16 18 70.128 18H56.872C55.84 18 55 17.16 55 16.128V2.872C55 1.84 55.84 1 56.872 1H70.128ZM70.128 0H56.872C55.286 0 54 1.286 54 2.872V16.128C54 17.714 55.286 19 56.872 19H70.128C71.714 19 73 17.714 73 16.128V2.872C73 1.286 71.714 0 70.128 0Z" fill="#5C5C5C"/>
+<path d="M59.9538 9.73504L59 10.6517L63.5 15L68 10.6517L67.0462 9.73504L64.1848 12.5085V4H62.8152V12.5085L59.9538 9.73504Z" fill="#5C5C5C"/>
+</g>
+<defs>
+<clipPath id="venn_tb_clip0">
+<rect width="19" height="19" fill="white" transform="translate(27)"/>
+</clipPath>
+<clipPath id="venn_tb_clip1">
+<rect width="13" height="13" fill="white" transform="translate(30 3)"/>
+</clipPath>
+<clipPath id="venn_tb_clip2">
+<rect width="19" height="19" fill="white" transform="translate(54)"/>
+</clipPath>
+</defs>
+</svg>

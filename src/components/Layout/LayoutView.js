@@ -19,7 +19,7 @@ import OverlayWindow from "../OverlayWindow/OverlayWindow";
 import AnnouncementPage from "../../pages/announcement/announcementPage";
 import CohortManager from "../../pages/CohortManager/CohortManagerController";
 import ReleaseNoteController from "../../pages/releaseNote/releaseNoteController";
-import  CohortAnalyzerController  from "../../pages/CohortAnalyzer/CohortAnalyzerController";
+import CohortAnalyzerController from '../../pages/CohortAnalyzer/controllers/CohortAnalyzerController';
 import DataModelNavigator from '../../pages/dmn';
 // import NewsDetail from '../../pages/news/newsDetailView';
 

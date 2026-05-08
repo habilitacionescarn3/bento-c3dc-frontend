@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
-import { CohortStateContext } from "../../components/CohortSelectorState/CohortStateContext";
+import React, { createContext, useContext, useState, useCallback } from "react";
+import { CohortStateContext } from '../../../components/CohortSelectorState/CohortStateContext';
 
 const CohortAnalyzerContext = createContext();
 
@@ -51,6 +51,16 @@ export const CohortAnalyzerProvider = ({ children }) => {
 
     }
 
+    /** Clears Venn selections, table rows from Venn, and related filters (used with layout reset). */
+    const resetVennWorkspaceUi = useCallback(() => {
+        setNodeIndex(0);
+        setSelectedChart([]);
+        setSelectedCohortSections([]);
+        setRowData([]);
+        setGeneralInfo({});
+        setRefreshSelectedChart((v) => !v);
+    }, []);
+
     const contextValue = {
         deleteInfo,
         setDeleteInfo,
@@ -84,7 +94,8 @@ export const CohortAnalyzerProvider = ({ children }) => {
         cohortData,
         setCohortData,
         showNavigateAwayModal,
-        setShowNavigateAwayModal
+        setShowNavigateAwayModal,
+        resetVennWorkspaceUi,
     };
 
     return (

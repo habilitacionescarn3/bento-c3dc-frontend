@@ -3,6 +3,14 @@ import styled from "styled-components";
 
 
 export const useStyle = makeStyles((theme) => ({
+    cohortSelectorColumn: {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'stretch',
+        minWidth: 268,
+        maxWidth: 268,
+        flexShrink: 0,
+    },
     sortCount: {
         display: 'flex',
         margin: 0,
@@ -11,8 +19,7 @@ export const useStyle = makeStyles((theme) => ({
         cursor: 'pointer'
     },
     leftSideAnalyzer: {
-        minWidth: 268,
-        maxWidth: 268,
+        width: '100%',
         height: 588,
         marginTop: 40,
         overflow: 'hidden',
@@ -25,6 +32,7 @@ export const useStyle = makeStyles((theme) => ({
     },
     leftSideAnalyzerChild: {
         flex: 1,
+        minHeight: 0,
         overflowY: 'scroll',
         '&::-webkit-scrollbar': {
             width: "6px"
@@ -36,6 +44,60 @@ export const useStyle = makeStyles((theme) => ({
         '&::-webkit-scrollbar-track': {
             background: '#CECECE',
         },
+    },
+    cohortListFooter: {
+        flexShrink: 0,
+        display: 'flex',
+        justifyContent: 'flex-start',
+        alignItems: 'center',
+        width: '100%',
+        boxSizing: 'border-box',
+        flexDirection: 'column',
+        padding: '12px 12px 0 0',
+    },
+    cohortListFooterButton: {
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 10,
+        width: 'calc(100% - 12px)',
+        minHeight: 56,
+        padding: '10px 12px 10px 18px',
+        margin: 0,
+        marginLeft: 10,
+        background: '#C9C9C9',
+        border: 'none',
+        borderRadius: '18px',
+        cursor: 'pointer',
+        flexShrink: 0,
+        height: 90,
+        textAlign: 'left',
+        '&:hover': {
+            background: '#BDBDBD',
+        },
+        '&:focus': {
+            outline: '2px solid #4E8191',
+            outlineOffset: '2px',
+        },
+    },
+    cohortTutorialButtonLabel: {
+        flex: 1,
+        minWidth: 0,
+        fontFamily: 'Open Sans',
+        fontSize: 12,
+        fontWeight: 600,
+        lineHeight: 1.25,
+        color: '#3D3D3D',
+        letterSpacing: '0.01em',
+        textAlign: 'left',
+    },
+    cohortTutorialPlayCircle: {
+        flexShrink: 0,
+        display: 'block',
+        width: 49,
+        height: 49,
     },
     cohortSelectionChild: {
         display: 'flex',

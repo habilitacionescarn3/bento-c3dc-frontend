@@ -1,7 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { VennDiagramChart, extractSets } from "chartjs-chart-venn";
-import { baseColorArray, nodes, DEFAULT_FONT_SIZE_THRESHOLD, hexToRgba } from "./ChartVennConfig";
-
+import {
+  baseColorArray,
+  nodes,
+  DEFAULT_FONT_SIZE_THRESHOLD,
+  hexToRgba,
+  VENN_CHART_LAYOUT_PADDING,
+  VENN_CANVAS_SIZE_SCALE_NORMAL,
+  VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS,
+  VENN_CANVAS_SIZE_SCALE_EXPANDED,
+  VENN_CANVAS_SIZE_SCALE_BIG_SCREEN,
+  VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH,
+  buildVennCohortSetLabel,
+  vennCohortLabelFitPlugin,
+} from "./ChartVennConfig";
+import { chartVennFallbackCanvasDimensionsPx } from '../config/cohortAnalyzerViewPercentDefaults';
 
 const intersectionColors = [
   "#000","#000","#cbdfcc",
@@ -20,11 +33,64 @@ function reduceOpacity(rgbaColor, reductionPercentage) {
   return `rgba(${r}, ${g}, ${b}, ${newAlpha})`;
 }
 
-const ChartVenn = ({ intersection, cohortData, setSelectedChart, setSelectedCohortSections,selectedCohortSection,selectedCohort,setGeneralInfo,containerRef,canvasRef }) => {
+const ChartVenn = ({
+  intersection,
+  cohortData,
+  setSelectedChart,
+  setSelectedCohortSections,
+  selectedCohortSection,
+  selectedCohort,
+  setGeneralInfo,
+  containerRef,
+  canvasRef,
+  slotWidth,
+  slotHeight,
+  /**
+   * When true (expanded chart modal), canvas uses VENN_CANVAS_SIZE_SCALE_EXPANDED.
+   * When false, scale follows cohort count; at viewport ≥ VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH,
+   * inline uses VENN_CANVAS_SIZE_SCALE_BIG_SCREEN instead.
+   */
+  expandedView = false,
+}) => {
   const chartRef = useRef(null);
+  /** Observed chart plot box — keeps canvas in sync when the parent card is resized. */
+  const chartAreaRef = useRef(null);
+  const [observedPlotSize, setObservedPlotSize] = useState({ width: 0, height: 0 });
+  const [viewportWidth, setViewportWidth] = useState(() =>
+    (typeof window !== 'undefined' ? window.innerWidth : 0),
+  );
 
   const [baseSets, setBaseSets] = useState([]);
   const [data, setData] = useState(null);
+
+  useEffect(() => {
+    const onResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+
+  useLayoutEffect(() => {
+    const el = chartAreaRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return undefined;
+
+    const measure = () => {
+      const { width, height } = el.getBoundingClientRect();
+      if (width < 1 || height < 1) return;
+      const w = Math.round(width);
+      const h = Math.round(height);
+      setObservedPlotSize((prev) => {
+        if (prev.width === w && prev.height === h) return prev;
+        return { width: w, height: h };
+      });
+    };
+
+    measure();
+    const ro = new ResizeObserver(() => {
+      measure();
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   
   const handleChartClick = (event) => {
     const elementsAtEvent = chartRef.current.getElementsAtEventForMode(
@@ -104,8 +170,16 @@ if(data){
         },
       ],
     },
+    /**
+     * Custom cohort labels (multiline + shrink) — chartjs-chart-venn only draws a single
+     * fillText; we hide y tick labels and render in {@link vennCohortLabelFitPlugin}.
+     */
+    plugins: [vennCohortLabelFitPlugin],
     options: {
       onClick: handleChartClick,
+      layout: {
+        padding: VENN_CHART_LAYOUT_PADDING,
+      },
       scales: {
         x: {
             ticks: {
@@ -119,6 +193,8 @@ if(data){
         },
         y: {
             ticks: {
+                /* Font options still feed vennCohortLabelFitPlugin; display false skips built-in one-line labels. */
+                display: false,
                 font: {
                     family: 'Nunito',
                     size: 16,
@@ -143,7 +219,7 @@ if(data){
     const updatedBaseSets = cohortData.filter(cohort => cohort && cohort.cohortName).map((cohort) => {
       const seenValues = new Set();
       return {
-        label: `${cohort.cohortName.length > 13 ? cohort.cohortName.slice(0, 13) + '...' : cohort.cohortName} (${cohort.participants.length})`,
+        label: buildVennCohortSetLabel(cohort.cohortName, cohort.participants.length),
         values: cohort.participants
           .map(p => p[nodes[intersection]])
           .filter(value => {
@@ -158,7 +234,7 @@ if(data){
     });
 
     setBaseSets(updatedBaseSets);
-  }, [cohortData]);
+  }, [cohortData, intersection]);
 
   useEffect(() => {
     if (baseSets.length > 0) {
@@ -172,12 +248,38 @@ if(data){
 useEffect(() => {
   if (chartRef.current && canvasRef.current) {
     chartRef.current.destroy();
+    chartRef.current = null;
   }
   
   if (canvasRef.current && containerRef.current && data && config && config.type) {
-    const maxWidth =  cohortData.length === 2 ? 750 : 800;
-    const maxHeight = cohortData.length === 2 ? 200 : 390;
-    
+    const fallback = chartVennFallbackCanvasDimensionsPx(cohortData.length);
+    const slotW =
+      observedPlotSize.width > 0 ? observedPlotSize.width : slotWidth;
+    const slotH =
+      observedPlotSize.height > 0 ? observedPlotSize.height : slotHeight;
+
+    let maxWidth = fallback.width;
+    let maxHeight = fallback.height;
+    if (slotW != null && slotH != null) {
+      maxWidth = Math.max(220, Math.round(slotW * 0.99) - 6);
+      maxHeight = Math.max(120, Math.round(slotH * 0.98) - 8);
+    }
+
+    const vennCohortCount = cohortData.filter((c) => c && c.cohortName).length;
+    const isBigScreen = viewportWidth >= VENN_BIG_SCREEN_VIEWPORT_MIN_WIDTH;
+    let canvasScale;
+    if (expandedView) {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_EXPANDED;
+    } else if (isBigScreen) {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_BIG_SCREEN;
+    } else if (vennCohortCount === 2) {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_NORMAL_TWO_COHORTS;
+    } else {
+      canvasScale = VENN_CANVAS_SIZE_SCALE_NORMAL;
+    }
+    maxWidth = Math.round(maxWidth * canvasScale);
+    maxHeight = Math.round(maxHeight * canvasScale);
+
     canvasRef.current.width = maxWidth;
     canvasRef.current.height = maxHeight;
     canvasRef.current.style.width = `${maxWidth}px`;
@@ -189,7 +291,7 @@ useEffect(() => {
   return () => {
     if (chartRef.current) chartRef.current.destroy();
   };
-}, [selectedCohortSection, data, selectedCohort , cohortData]);
+}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight, expandedView, observedPlotSize, viewportWidth]);
 
   useEffect(() => {
     let updatedStat = {};
@@ -214,11 +316,35 @@ useEffect(() => {
     )
   }
   return (
-    <div ref={containerRef} style={{ paddingTop: 20, paddingBottom: 30}} className="App">
-      <div className="chart-container">
-        <canvas ref={canvasRef} id="canvas"></canvas>
+    <div
+      ref={containerRef}
+      className="App"
+      style={{
+        width: '100%',
+        height: '100%',
+        minHeight: 0,
+        boxSizing: 'border-box',
+        display: 'flex',
+        flexDirection: 'column',
+        padding: 0,
+      }}
+    >
+      <div
+        ref={chartAreaRef}
+        className="chart-container"
+        style={{
+          flex: 1,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          minHeight: '100%',
+          justifyContent: 'center',
+          padding: 0,
+          overflow: 'visible',
+        }}
+      >
+        <canvas ref={canvasRef} id="canvas" />
       </div>
-
     </div>
   );
 };

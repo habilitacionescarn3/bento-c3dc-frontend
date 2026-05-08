@@ -8,6 +8,7 @@ import stats from '../components/Stats/StatsState';
 import inventoryReducer from '../components/Inventory/InventoryState';
 import { cartReducerGenerator } from '@bento-core/cart';
 import { LocalFindReducerGenerator } from '@bento-core/local-find';
+import cohortAnalyzerLayout from '../pages/CohortAnalyzer/store/cohortAnalyzerLayoutReducer';
 
 const { localFind } = LocalFindReducerGenerator();
 const { statusReducer } = sideBarReducerGenerator();
@@ -20,6 +21,7 @@ const reducers = {
   statusReducer,
   layout,
   stats,
+  cohortAnalyzerLayout,
 };
 const loggerMiddleware = createLogger();
 
