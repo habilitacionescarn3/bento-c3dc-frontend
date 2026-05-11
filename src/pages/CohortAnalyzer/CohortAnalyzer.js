@@ -31,7 +31,6 @@ import { CohortAnalyzerChartArea } from './components/CohortAnalyzerChartArea';
 import { CohortAnalyzerSummaryView } from './components/CohortAnalyzerSummaryView';
 import { getJoinedCohortData } from "./CohortAnalyzerUtil/CohortDataTransform";
 import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortData";
-import { exportToCCDIHub } from "../../components/CohortModal/utils";
 import { useUserGuide } from '../inventory/sideBar/UserGuideContext';
 import { USER_GUIDE_SECTION_ANALYZING_COHORTS } from '../inventory/sideBar/userGuideConstants';
 
@@ -112,21 +111,6 @@ export const CohortAnalyzer = () => {
         } else {
             setShowNavigateAwayModal(true); // show modal
         }
-    }
-
-    const handleExportToCCDIHub = async () => {
-        // Use centralized export function with Cohort Analyzer context
-        await exportToCCDIHub(rowData, {
-            showAlert: (type, message) => {
-                // Convert to Cohort Analyzer's notification system
-                if (type === 'success') {
-                    Notification.show(message, 3000);
-                } else if (type === 'error' || type === 'warning') {
-                    Notification.show(message, 5000);
-                }
-            },
-            useInteropService: true
-        });
     }
 
     const searchRef = useRef();
@@ -484,7 +468,6 @@ export const CohortAnalyzer = () => {
                                 questionIcon={questionIcon}
                                 handleClick={handleClick}
                                 handleBuildInExplore={handleBuildInExplore}
-                                handleExportToCCDIHub={handleExportToCCDIHub}
                                 initTblState={initTblState}
                                 themeConfig={cohortAnalyzerThemeConfig}
                             />

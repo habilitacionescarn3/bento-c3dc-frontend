@@ -2,8 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 import { TableView } from '@bento-core/paginated-table';
 import { CreateNewCohortButton } from '../CreateNewCohortButton/CreateNewCohortButton';
 import DownloadSelectedCohort from '../downloadCohort/DownloadSelectedCohorts';
-import { exploreCCDIHubTooltip, exploreDashboardTooltip } from '../config/CohortAnalyzerConfig';
-import linkoutIcon from '../../../assets/landing/Export_Icon_White.svg';
+import { exploreDashboardTooltip } from '../config/CohortAnalyzerConfig';
 import { useCohortAnalyzer } from '../context/CohortAnalyzerContext';
 import { ButtonWithTooltip } from './ButtonWithTooltip';
 
@@ -11,22 +10,16 @@ const row = { display: 'flex', alignItems: 'center' };
 const bar = { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, flexWrap: 'wrap' };
 
 
-const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handleBuildInExplore, handleExportToCCDIHub, themeConfig, initTblState }) => {
+const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handleBuildInExplore, themeConfig, initTblState }) => {
   const { selectedCohortSection, queryVariable, selectedCohorts, rowData, refreshTableContent } = useCohortAnalyzer();
 
 
   const hasSel = useMemo(() => selectedCohorts.length > 0, [selectedCohorts]);
   const hasRows = useMemo(() => rowData.length > 0, [rowData]);
   const canBuild = hasSel;
-  const canHub = hasSel && hasRows;
 
 
   const onBuild = useCallback(() => canBuild && handleBuildInExplore(), [canBuild, handleBuildInExplore]);
-  const onHub = useCallback(async () => {
-    if (canHub) {
-      await handleExportToCCDIHub();
-    }
-  }, [canHub, handleExportToCCDIHub]);
 
 
   return (
