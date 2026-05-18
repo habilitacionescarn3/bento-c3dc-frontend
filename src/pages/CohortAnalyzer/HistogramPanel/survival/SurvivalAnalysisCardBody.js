@@ -107,6 +107,7 @@ export function SurvivalAnalysisCardBody({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              marginRight: 6,
               cursor: survivalHasNoDisplayData ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
               opacity: survivalHasNoDisplayData ? 0.45 : 1,
             }}
@@ -147,7 +148,7 @@ export function SurvivalAnalysisCardBody({
               alt=""
               src={questionIcon}
               width={10}
-              style={{ border: '0px', display: 'block', flexShrink: 0, marginLeft: 3 }}
+              style={{ border: '0px', display: 'block', flexShrink: 0 }}
             />
           </ToolTip>
         </ChartTitle>

@@ -28,4 +28,19 @@ export const cohortAnalyzerThemeConfig = {
             },
         },
     },
+    // Background of the "no match" row shown by @bento-core/table's
+    // DisplayErrMsg when the table has zero rows (e.g. before a cohort is selected).
+    // The library forwards themeConfig.displayErr into the inner ThemeProvider.
+    displayErr: {
+        ...(themeConfig.displayErr || {}),
+        MuiContainer: {
+            ...(themeConfig.displayErr && themeConfig.displayErr.MuiContainer),
+            root: {
+                ...(themeConfig.displayErr
+                    && themeConfig.displayErr.MuiContainer
+                    && themeConfig.displayErr.MuiContainer.root),
+                backgroundColor: '#F4F4F4',
+            },
+        },
+    },
 };

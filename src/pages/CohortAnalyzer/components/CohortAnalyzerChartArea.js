@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
 import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
 import Histogram from '../HistogramPanel';
@@ -9,6 +9,7 @@ import {
     upsertPanelRegistry,
 } from '../store/cohortAnalyzerLayoutActions';
 import { buildDefaultCohortAnalyzerPanelRegistry } from '../store/cohortAnalyzerDefaultPanelRegistry';
+import { isCohortAnalyzerLayoutPristine } from '../store/cohortAnalyzerLayoutReducer';
 import { CohortAnalyzerDownloadAllDropdown } from './CohortAnalyzerDownloadAllDropdown';
 import { BESIDE_PEER_DRAG_STYLE } from '../HistogramPanel/histogramConstants';
 
@@ -32,7 +33,8 @@ function AddChartToolbarButton({
             aria-label={ariaLabel}
             title={showAllAddedTip ? ALL_CHARTS_ADDED_TOOLTIP : undefined}
         >
-            ADD CHART <span aria-hidden>+</span>
+            <span className={classes.addChartButtonLabel}>ADD CHART</span>
+            <span aria-hidden className={classes.addChartButtonIcon}>+</span>
         </button>
     );
     if (!showAllAddedTip) {
@@ -85,6 +87,9 @@ export function CohortAnalyzerChartArea({
     resetVennWorkspaceUi,
 }) {
     const dispatch = useDispatch();
+
+    const isLayoutPristine = useSelector((s) => isCohortAnalyzerLayoutPristine(s.cohortAnalyzerLayout));
+    const resetViewDisabled = isLayoutPristine && !inlineAddChartOpen;
 
     const chartSummaryExportRef = useRef(null);
     const histogramExportRef = useRef(null);
@@ -228,7 +233,11 @@ export function CohortAnalyzerChartArea({
                             key={label}
                             type="button"
                             className={classes.categoryPillButton}
+                            disabled={resetViewDisabled}
+                            aria-disabled={resetViewDisabled}
+                            title={resetViewDisabled ? 'Nothing to reset' : undefined}
                             onClick={() => {
+                                if (resetViewDisabled) return;
                                 dispatch(resetCohortAnalyzerLayout());
                                 dispatch(upsertPanelRegistry(buildDefaultCohortAnalyzerPanelRegistry()));
                                 setInlineAddChartOpen(false);

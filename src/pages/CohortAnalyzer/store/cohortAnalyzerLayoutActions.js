@@ -23,9 +23,16 @@ export function setTopRowOrder(order) {
 /** @deprecated use setTopRowOrder */
 export const setTopRowPanelOrder = setTopRowOrder;
 
-/** @param {string[]} orderedStripPanelIds */
-export function setStripOrder(order) {
-  return { type: CA_LAYOUT_SET_STRIP_ORDER, payload: order };
+/**
+ * @param {string[]} orderedStripPanelIds
+ * @param {{ userInitiated?: boolean }} [meta]
+ *   Pass `{ userInitiated: true }` for user DnD reorders so the reducer flips the
+ *   `userLayoutChanged` flag. Bootstrap auto-sync dispatches should call without meta.
+ */
+export function setStripOrder(order, meta) {
+  const action = { type: CA_LAYOUT_SET_STRIP_ORDER, payload: order };
+  if (meta && meta.userInitiated) action.meta = { userInitiated: true };
+  return action;
 }
 
 /** @deprecated use setStripOrder */

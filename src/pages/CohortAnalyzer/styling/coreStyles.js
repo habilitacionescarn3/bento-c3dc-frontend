@@ -154,8 +154,8 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
   vennSubHeaderPromptRow: {
     display: 'flex',
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+    alignItems: 'flex-start',
+    gap: 2,
     flexWrap: 'wrap',
   },
   vennSubHeaderPrompt: {

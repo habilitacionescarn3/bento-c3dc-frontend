@@ -234,9 +234,13 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     fontSize: 10.5,
     fontWeight: 500,
     lineHeight: '13px',
-    padding: '4px 8px',
+    padding: '2px 7px',
     letterSpacing: '0.01em',
     cursor: 'default',
+    '&:disabled': {
+      opacity: 0.45,
+      cursor: 'not-allowed',
+    },
   },
   chartActionButtons: {
     display: 'flex',
@@ -244,6 +248,11 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     gap: 8,
   },
   addChartButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    padding: '0 16px',
     border: '1px solid #295665',
     borderRadius: 4,
     background: '#006A8F',
@@ -254,16 +263,19 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     height: 41,
     minWidth: 174,
     cursor: 'pointer',
-    '& span': {
-      fontSize: 16,
-      marginLeft: 8,
-      position: 'relative',
-      top: 1,
-    },
     '&:disabled': {
       opacity: 0.45,
       cursor: 'not-allowed',
     },
+  },
+  addChartButtonLabel: {
+    textAlign: 'left',
+  },
+  addChartButtonIcon: {
+    fontSize: 16,
+    lineHeight: 1,
+    position: 'relative',
+    top: 1,
   },
   downloadAllButton: {
     border: '1px solid #2C4D59',

@@ -133,6 +133,7 @@ export function HistogramBesideVennHistogramPortal({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              marginRight: 6,
               cursor: allInputsEmpty ? 'not-allowed' : 'grab',
               opacity: allInputsEmpty ? 0.45 : 1,
             }}

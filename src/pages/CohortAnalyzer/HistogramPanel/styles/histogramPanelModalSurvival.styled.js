@@ -92,15 +92,17 @@ export const Tab = styled.button`
 `;
 
 /**
- * Chart type selector (pie / vertical bar / horizontal bar / line).
- * Strip cards use negative trailing margin to sit closer to the next icon; the expanded modal
- * header should not, or the chart-type→download gap looks smaller than download→close (same flex gap).
+ * Chart type selector (pie / vertical bar / horizontal bar / line). Strip cards have a 38px
+ * trigger button next to 19px expand/download/close icons, so the empty space inside the button
+ * widens the visible gap; the negative trailing margin pulls the icon back to sit visually in
+ * line with its neighbours. The expanded modal opts out with `$compactTrailingGap={false}`
+ * because all of its buttons are already equal-sized 38px hit-targets.
  */
 export const ChartTypeDropdownRoot = styled.div`
   position: relative;
   display: inline-flex;
   align-items: center;
-  margin-right: ${(p) => (p.$compactTrailingGap !== false ? '-6px' : '0')};
+  margin-right: ${(p) => (p.$compactTrailingGap !== false ? '-8px' : '0')};
 `;
 
 export const ChartTypeDropdownPanel = styled.div`

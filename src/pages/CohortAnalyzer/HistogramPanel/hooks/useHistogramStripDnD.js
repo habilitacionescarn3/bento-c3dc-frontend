@@ -167,7 +167,7 @@ export function useHistogramStripDnD({
       const insertIndex = fromIndex < toIndex ? toIndex - 1 : toIndex;
       nextOrder.splice(fromIndex, 1);
       nextOrder.splice(insertIndex, 0, draggingDataset);
-      dispatch(setStripOrder(nextOrder));
+      dispatch(setStripOrder(nextOrder, { userInitiated: true }));
       endStripChartDrag();
     },
     [

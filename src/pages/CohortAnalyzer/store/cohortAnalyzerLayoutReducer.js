@@ -85,7 +85,21 @@ export const cohortAnalyzerLayoutInitialState = {
    */
   chartVisualByPanelId: {},
   workspaceGridLayout: null,
+  /**
+   * True after any user-initiated layout action (drag-drop, resize, chart-type swap,
+   * top-row reorder, workspace grid drag, strip reorder, beside-promote). Bootstrap
+   * auto-sync dispatches (initial stripOrder / besideStripPanelId computed from default
+   * selected datasets) do NOT flip this flag, so the "Reset View" button knows there is
+   * nothing to undo on first mount.
+   */
+  userLayoutChanged: false,
 };
+
+/** Selector: returns true when the user hasn't made any layout change since last reset/mount. */
+export function isCohortAnalyzerLayoutPristine(layoutState) {
+  if (!layoutState) return true;
+  return !layoutState.userLayoutChanged;
+}
 
 /** Migrate persisted v1 payloads into v2 shape (no manual user migration). */
 export function migrateLayoutPayloadToV2(raw) {
@@ -172,10 +186,16 @@ function legacyPanelSizeToId(payload) {
 export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayoutInitialState, action) {
   switch (action.type) {
     case CA_LAYOUT_SET_TOP_ROW_ORDER:
-      return { ...state, topRowOrder: action.payload };
+      return { ...state, topRowOrder: action.payload, userLayoutChanged: true };
 
-    case CA_LAYOUT_SET_STRIP_ORDER:
-      return { ...state, stripOrder: action.payload };
+    case CA_LAYOUT_SET_STRIP_ORDER: {
+      const userInitiated = !!(action.meta && action.meta.userInitiated);
+      return {
+        ...state,
+        stripOrder: action.payload,
+        userLayoutChanged: state.userLayoutChanged || userInitiated,
+      };
+    }
 
     case CA_LAYOUT_SET_BESIDE_STRIP_PANEL:
       return { ...state, besideStripPanelId: action.payload };
@@ -185,7 +205,12 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
       if (!Array.isArray(nextStrip) || typeof nextBeside !== 'string' || !nextBeside) {
         return state;
       }
-      return { ...state, stripOrder: nextStrip, besideStripPanelId: nextBeside };
+      return {
+        ...state,
+        stripOrder: nextStrip,
+        besideStripPanelId: nextBeside,
+        userLayoutChanged: true,
+      };
     }
 
     case CA_LAYOUT_MOVE_TOP_ROW_INTO_STRIP: {
@@ -198,7 +223,12 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
         insertBeforeDataset,
       );
       const nextTop = filterTopRowOrderAfterMove(state.topRowOrder, panel);
-      return { ...state, topRowOrder: nextTop, stripOrder: nextStrip };
+      return {
+        ...state,
+        topRowOrder: nextTop,
+        stripOrder: nextStrip,
+        userLayoutChanged: true,
+      };
     }
 
     case CA_LAYOUT_PATCH_VISIBILITY:
@@ -217,6 +247,7 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
       return {
         ...state,
         sizes: { ...state.sizes, [panelId]: merged },
+        userLayoutChanged: true,
       };
     }
 
@@ -231,6 +262,7 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
       return {
         ...state,
         sizes: { ...state.sizes, [panelId]: merged },
+        userLayoutChanged: true,
       };
     }
 
@@ -250,10 +282,11 @@ export default function cohortAnalyzerLayoutReducer(state = cohortAnalyzerLayout
       return {
         ...state,
         chartVisualByPanelId: { ...state.chartVisualByPanelId, ...action.payload },
+        userLayoutChanged: true,
       };
 
     case CA_LAYOUT_SET_WORKSPACE_GRID:
-      return { ...state, workspaceGridLayout: action.payload };
+      return { ...state, workspaceGridLayout: action.payload, userLayoutChanged: true };
 
     case CA_LAYOUT_HYDRATE: {
       const normalized = migrateLayoutPayloadToV2(action.payload);

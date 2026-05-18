@@ -18,7 +18,10 @@ const vennRadioStyle = (selected) => ({
   cursor: 'pointer',
   borderRadius: '50%',
   border: '2px solid #5C5C5C',
-  backgroundColor: selected ? '#3A7587' : '#FFFFFF',
+  backgroundColor: '#FFFFFF',
+  backgroundImage: selected
+    ? 'radial-gradient(circle, #3A7587 0 4px, transparent 4.5px)'
+    : 'none',
   flexShrink: 0,
   boxSizing: 'border-box',
 });

@@ -230,6 +230,7 @@ export function HistogramStripChartRow({
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                marginRight: 6,
                 cursor: allInputsEmpty ? 'not-allowed' : 'grab',
                 opacity: allInputsEmpty ? 0.45 : 1,
               }}
@@ -264,7 +265,7 @@ export function HistogramStripChartRow({
                   alt="Question Icon"
                   src={questionIcon}
                   width={10}
-                  style={{ border: '0px', display: 'block', flexShrink: 0, marginLeft: 3 }}
+                  style={{ border: '0px', display: 'block', flexShrink: 0 }}
                 />
               </ToolTip>
             )}
@@ -287,7 +288,7 @@ export function HistogramStripChartRow({
               >
                 <ChartTypeIcon
                   type={chartVisualByPanelId[dataset] || DEFAULT_CHART_TYPE}
-                  size={22}
+                  size={28}
                 />
               </ChartTypeTriggerButton>
               {chartTypeMenuDataset === dataset && !allInputsEmpty && (
@@ -325,25 +326,24 @@ export function HistogramStripChartRow({
             >
               <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
             </span>
-            <div style={{ display: 'inline-flex', alignItems: 'center', columnGap: 4 }}>
-              <span
-                style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
-                onClick={() => !allInputsEmpty && downloadChart(dataset, false)}
-              >
-                <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
-              </span>
-              <button
-                type="button"
-                className={classes.headerCloseButton}
-                aria-label={`Remove ${getChartTitle(dataset) || 'chart'} from layout`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleRemoveHistogramDataset(dataset);
-                }}
-              >
-                <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
-              </button>
-            </div>
+            <span
+              style={{ cursor: allInputsEmpty ? 'default' : 'pointer' }}
+              onClick={() => !allInputsEmpty && downloadChart(dataset, false)}
+            >
+              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.5 : 1, display: 'block' }} />
+            </span>
+            <button
+              type="button"
+              className={classes.headerCloseButton}
+              style={{ padding: 0 }}
+              aria-label={`Remove ${getChartTitle(dataset) || 'chart'} from layout`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRemoveHistogramDataset(dataset);
+              }}
+            >
+              <img src={histogramCloseIcon} alt="" width={19} height={19} style={{ opacity: allInputsEmpty ? 0.45 : 1, display: 'block' }} />
+            </button>
 
           </ChartActionButtons>
 

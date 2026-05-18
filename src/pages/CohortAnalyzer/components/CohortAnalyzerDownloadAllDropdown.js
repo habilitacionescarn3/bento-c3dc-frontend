@@ -97,8 +97,7 @@ export function CohortAnalyzerDownloadAllDropdown({
       >
         <span className={classes.downloadAllTriggerLabel}>
           DOWNLOAD ALL
-          <br />
-          IMAGES
+          
         </span>
         <span className={classes.downloadAllChevron} aria-hidden>
           {open ? '▲' : '▼'}
