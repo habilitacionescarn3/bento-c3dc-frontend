@@ -239,35 +239,37 @@ export function HistogramStripChartRow({
               <img
                 src={histogramChartTitleHandle}
                 alt=""
-                width={14}
-                height={15}
+                width={11}
+                height={12}
                 aria-hidden
                 style={{ display: 'block', flexShrink: 0 }}
               />
             </span>
             {getChartTitle(dataset)}
             {Array.isArray(filteredData[dataset]) && filteredData[dataset].length > 5 && (
-              <ToolTip
-                maxWidth="335px"
-                border="1px solid #598ac5"
-                arrowBorder="1px solid #598AC5"
-                title={(
-                  <div>
-                    You can expand to see the full item
-                  </div>
-                )}
-                placement="top-end"
-                arrow
-                interactive
-                arrowSize="30px"
-              >
-                <img
-                  alt="Question Icon"
-                  src={questionIcon}
-                  width={10}
-                  style={{ border: '0px', display: 'block', flexShrink: 0 }}
-                />
-              </ToolTip>
+              <span style={{ display: 'inline-flex', alignSelf: 'flex-start' }}>
+                <ToolTip
+                  maxWidth="335px"
+                  border="1px solid #598ac5"
+                  arrowBorder="1px solid #598AC5"
+                  title={(
+                    <div>
+                      You can expand to see the full item
+                    </div>
+                  )}
+                  placement="top-end"
+                  arrow
+                  interactive
+                  arrowSize="30px"
+                >
+                  <img
+                    alt="Question Icon"
+                    src={questionIcon}
+                    width={10}
+                    style={{ border: '0px', display: 'block', flexShrink: 0 }}
+                  />
+                </ToolTip>
+              </span>
             )}
           </ChartTitle>
 

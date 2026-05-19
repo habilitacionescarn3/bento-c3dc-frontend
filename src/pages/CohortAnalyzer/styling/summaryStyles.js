@@ -447,7 +447,6 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     width: '100%',
     maxHeight: 540,
     overflowY: 'scroll',
-    borderTop: '3px #679AAA solid',
     '&::-webkit-scrollbar': {
       width: '6px',
     },

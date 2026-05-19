@@ -65,7 +65,7 @@ export const ChartTitle = styled.h2`
   line-height: 1.25;
   display: flex;
   flex-direction: row;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   column-gap: 2px;
   row-gap: 2px;
@@ -225,7 +225,7 @@ export const RadioLabel = styled.label`
   align-items: center;
   font-family: Poppins;
   font-size: 13px;
-  color: #666;
+  color: #494949;
   cursor: pointer;
 `;
 

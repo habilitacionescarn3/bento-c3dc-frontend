@@ -50,7 +50,7 @@ export const CustomCellView = (props) => {
 
   if (Array.isArray(label) && dataField === "cohort") {
     return (
-      <div style={{ display: 'flex', gap: 10, justifyContent:'center', width: 67 }}>
+      <div style={{ display: 'inline-flex', gap: 10, justifyContent:'center', width: 67 }}>
         {
           label.map((cohort, index) => (
             <ToolTip title={<div>

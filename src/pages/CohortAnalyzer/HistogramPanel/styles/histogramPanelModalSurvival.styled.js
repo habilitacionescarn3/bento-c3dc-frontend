@@ -71,7 +71,7 @@ export const TabContainer = styled.div`
   overflow-x: auto;
   overflow-y: hidden;
   align-items: stretch;
-  gap: 0;
+  gap: 30px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 `;
@@ -79,10 +79,10 @@ export const TabContainer = styled.div`
 export const Tab = styled.button`
   background: transparent;
   border: none;
-  padding: 10px 17px;
+  padding: 10px 0px;
   cursor: pointer;
-  font-family: 'Nunito', sans-serif;
-  font-size: 20px;
+  font-family: Poppins;
+  font-size: 22px;
   line-height: 1.25;
   white-space: nowrap;
   flex: 0 0 auto;
@@ -271,6 +271,7 @@ export const KmChartWrapper = styled.div`
 export const RiskTableWrapper = styled.div`
   width: 100%;
   max-width: 100%;
+  padding-left: 50px;
   padding-right: 50px;
   margin-top: 10px;
   min-width: 0;
@@ -286,6 +287,7 @@ export const KmChartWrapperBesideVenn = styled(KmChartWrapper)`
 `;
 
 export const RiskTableWrapperBesideVenn = styled(RiskTableWrapper)`
+  padding-left: 8px;
   padding-right: 8px;
   margin-top: 8px;
 `;
@@ -351,7 +353,7 @@ export const ModalHeaderContainer = styled.div`
   padding: 0 10px 0 4px;
   box-sizing: border-box;
   min-height: 50px;
-  border-bottom: 1px solid #E0E0E0;
+  border-bottom: 1px solid #969696;
   border-top-left-radius: 8px;
 `;
 
@@ -437,7 +439,7 @@ export const ModalRadioFieldset = styled.fieldset`
 
 export const ModalRadioGroup = styled(RadioGroup)`
   width: 100%;
-  margin: 26px 0 12px 6px;
+  margin: 20px 0 20px 60px;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;

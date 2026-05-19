@@ -2,6 +2,8 @@ import React from 'react';
 import ChartVenn from '../../vennDiagram/ChartVenn';
 import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 import { ModalVennTabRoot } from '../HistogramPanel.styled';
+import VennCategoryRadios from '../../components/VennCategoryRadios';
+import { useCohortAnalyzer } from '../../context/CohortAnalyzerContext';
 
 export function HistogramPopupModalVennTab({
   vennModalChartAreaRef,
@@ -12,8 +14,21 @@ export function HistogramPopupModalVennTab({
   vennModalSlot,
   vennModalShowsEmptyState,
 }) {
+  const {
+    selectedCohorts,
+    nodeIndex,
+    setNodeIndex,
+    setRowData,
+  } = useCohortAnalyzer();
+
   return (
     <ModalVennTabRoot ref={vennModalChartAreaRef}>
+      <VennCategoryRadios
+        selectedCohorts={selectedCohorts}
+        nodeIndex={nodeIndex}
+        setNodeIndex={setNodeIndex}
+        setRowData={setRowData}
+      />
       {vennModalShowsChart ? (
         <ChartVenn
           {...chartVennModalProps}

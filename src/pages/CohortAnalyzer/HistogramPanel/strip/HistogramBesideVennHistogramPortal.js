@@ -141,8 +141,8 @@ export function HistogramBesideVennHistogramPortal({
             <img
               src={histogramChartTitleHandle}
               alt=""
-              width={14}
-              height={15}
+              width={11}
+              height={12}
               aria-hidden
               style={{ display: 'block', flexShrink: 0 }}
             />

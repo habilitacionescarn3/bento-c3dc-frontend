@@ -14,6 +14,7 @@ import { CohortAnalyzerDownloadAllDropdown } from './CohortAnalyzerDownloadAllDr
 import { BESIDE_PEER_DRAG_STYLE } from '../HistogramPanel/histogramConstants';
 
 const ALL_CHARTS_ADDED_TOOLTIP = 'All charts are already added';
+const NO_COHORT_SELECTED_TOOLTIP = 'To proceed, please select a cohort from the cohort list in the left panel.';
 
 function AddChartToolbarButton({
     classes,
@@ -24,6 +25,10 @@ function AddChartToolbarButton({
 }) {
     const disabled = !hasParticipantData || allAddableChartsAdded;
     const showAllAddedTip = hasParticipantData && allAddableChartsAdded;
+    const showNoCohortTip = !hasParticipantData;
+    const tooltipText = showNoCohortTip
+        ? NO_COHORT_SELECTED_TOOLTIP
+        : (showAllAddedTip ? ALL_CHARTS_ADDED_TOOLTIP : null);
     const button = (
         <button
             type="button"
@@ -31,13 +36,13 @@ function AddChartToolbarButton({
             disabled={disabled}
             onClick={openAddChartInline}
             aria-label={ariaLabel}
-            title={showAllAddedTip ? ALL_CHARTS_ADDED_TOOLTIP : undefined}
+            title={tooltipText || undefined}
         >
             <span className={classes.addChartButtonLabel}>ADD CHART</span>
             <span aria-hidden className={classes.addChartButtonIcon}>+</span>
         </button>
     );
-    if (!showAllAddedTip) {
+    if (!tooltipText) {
         return button;
     }
     return (
@@ -45,7 +50,7 @@ function AddChartToolbarButton({
             maxWidth="280px"
             border="1px solid #598ac5"
             arrowBorder="1px solid #598AC5"
-            title={<div>{ALL_CHARTS_ADDED_TOOLTIP}</div>}
+            title={<div>{tooltipText}</div>}
             placement="top"
             arrow
             interactive

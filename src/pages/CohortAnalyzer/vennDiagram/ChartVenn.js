@@ -188,7 +188,7 @@ if(data){
                     size: fontSizeX,
                     weight: 0,
                 },
-                color: '#000',
+                color: '#494949',
             },
         },
         y: {
@@ -200,7 +200,7 @@ if(data){
                     size: 16,
                     weight: 570,
                 },
-                color: 'black',
+                color: '#494949',
             },
         },
     },
