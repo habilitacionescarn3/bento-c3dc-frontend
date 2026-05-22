@@ -188,7 +188,7 @@ if(data){
                     size: fontSizeX,
                     weight: 0,
                 },
-                color: '#000',
+                color: '#494949',
             },
         },
         y: {
@@ -200,7 +200,7 @@ if(data){
                     size: 16,
                     weight: 570,
                 },
-                color: 'black',
+                color: '#494949',
             },
         },
     },
@@ -261,8 +261,11 @@ useEffect(() => {
     let maxWidth = fallback.width;
     let maxHeight = fallback.height;
     if (slotW != null && slotH != null) {
-      maxWidth = Math.max(220, Math.round(slotW * 0.99) - 6);
-      maxHeight = Math.max(120, Math.round(slotH * 0.98) - 8);
+      // Use nearly the full slot — only a few px reserved as safety so we never
+      // overflow when the slot resizes mid-render. The CSS margin below is 0,
+      // so this is the only buffer between canvas edge and slot edge.
+      maxWidth = Math.max(100, Math.round(slotW) );
+      maxHeight = Math.max(10, Math.round(slotH) );
     }
 
     const vennCohortCount = cohortData.filter((c) => c && c.cohortName).length;
@@ -284,7 +287,9 @@ useEffect(() => {
     canvasRef.current.height = maxHeight;
     canvasRef.current.style.width = `${maxWidth}px`;
     canvasRef.current.style.height = `${maxHeight}px`;
-    canvasRef.current.style.margin = "10px";
+    // No outer margin — slot-fit constants above already reserve safety pixels,
+    // and removing the 10px CSS margin lets the venn fill its slot.
+    canvasRef.current.style.margin = "0";
     chartRef.current = new VennDiagramChart(canvasRef.current, config);
   }
 

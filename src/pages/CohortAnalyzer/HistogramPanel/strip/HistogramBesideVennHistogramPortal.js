@@ -133,6 +133,7 @@ export function HistogramBesideVennHistogramPortal({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              marginRight: 6,
               cursor: allInputsEmpty ? 'not-allowed' : 'grab',
               opacity: allInputsEmpty ? 0.45 : 1,
             }}
@@ -140,8 +141,8 @@ export function HistogramBesideVennHistogramPortal({
             <img
               src={histogramChartTitleHandle}
               alt=""
-              width={14}
-              height={15}
+              width={11}
+              height={12}
               aria-hidden
               style={{ display: 'block', flexShrink: 0 }}
             />

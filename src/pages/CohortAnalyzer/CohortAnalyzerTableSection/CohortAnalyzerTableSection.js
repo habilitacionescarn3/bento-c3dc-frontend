@@ -23,7 +23,7 @@ const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handle
 
 
   return (
-    <div className={classes.tableSectionOuterContainer}>
+    <>
       <div className={classes.cohortCountSection}>
         <div style={bar}>
           <div style={row}>
@@ -62,20 +62,22 @@ const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handle
         </div>
       </div>
 
-      <div className={classes.rightSideTableContainer}>
-        {refreshTableContent && (
-          <TableView
-            initState={initTblState}
-            themeConfig={themeConfig}
-            tblRows={rowData}
-            queryVariables={queryVariable}
-            server={false}
-            totalRowCount={rowData.length || 0}
-            activeTab="Participant"
-          />
-        )}
+      <div className={classes.tableSectionOuterContainer}>
+        <div className={classes.rightSideTableContainer}>
+          {refreshTableContent && (
+            <TableView
+              initState={initTblState}
+              themeConfig={themeConfig}
+              tblRows={rowData}
+              queryVariables={queryVariable}
+              server={false}
+              totalRowCount={rowData.length || 0}
+              activeTab="Participant"
+            />
+          )}
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 

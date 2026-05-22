@@ -8,8 +8,10 @@ export default () => ({
     borderRadius: '8px',
     color: '#646464',
     fontFamily: 'Nunito',
-    fontWeight: '400',
+    fontWeight: 500,
     fontSize: '14px',
+    lineHeight: 'normal',
+    letterSpacing: 0,
     '& fieldset': {
       borderWidth: '1px !important',
       borderColor: '#535353 !important',

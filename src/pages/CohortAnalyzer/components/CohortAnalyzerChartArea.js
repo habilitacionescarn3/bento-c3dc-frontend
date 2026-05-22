@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import ToolTip from '@bento-core/tool-tip/dist/ToolTip';
 import VennDiagramContainer from '../vennDiagram/VennDiagramContainer';
 import Histogram from '../HistogramPanel';
@@ -9,10 +9,12 @@ import {
     upsertPanelRegistry,
 } from '../store/cohortAnalyzerLayoutActions';
 import { buildDefaultCohortAnalyzerPanelRegistry } from '../store/cohortAnalyzerDefaultPanelRegistry';
+import { isCohortAnalyzerLayoutPristine } from '../store/cohortAnalyzerLayoutReducer';
 import { CohortAnalyzerDownloadAllDropdown } from './CohortAnalyzerDownloadAllDropdown';
 import { BESIDE_PEER_DRAG_STYLE } from '../HistogramPanel/histogramConstants';
 
 const ALL_CHARTS_ADDED_TOOLTIP = 'All charts are already added';
+const NO_COHORT_SELECTED_TOOLTIP = 'To proceed, please select a cohort from the cohort list in the left panel.';
 
 function AddChartToolbarButton({
     classes,
@@ -23,6 +25,10 @@ function AddChartToolbarButton({
 }) {
     const disabled = !hasParticipantData || allAddableChartsAdded;
     const showAllAddedTip = hasParticipantData && allAddableChartsAdded;
+    const showNoCohortTip = !hasParticipantData;
+    const tooltipText = showNoCohortTip
+        ? NO_COHORT_SELECTED_TOOLTIP
+        : (showAllAddedTip ? ALL_CHARTS_ADDED_TOOLTIP : null);
     const button = (
         <button
             type="button"
@@ -30,12 +36,13 @@ function AddChartToolbarButton({
             disabled={disabled}
             onClick={openAddChartInline}
             aria-label={ariaLabel}
-            title={showAllAddedTip ? ALL_CHARTS_ADDED_TOOLTIP : undefined}
+            title={tooltipText || undefined}
         >
-            ADD CHART <span aria-hidden>+</span>
+            <span className={classes.addChartButtonLabel}>ADD CHART</span>
+            <span aria-hidden className={classes.addChartButtonIcon}>+</span>
         </button>
     );
-    if (!showAllAddedTip) {
+    if (!tooltipText) {
         return button;
     }
     return (
@@ -43,7 +50,7 @@ function AddChartToolbarButton({
             maxWidth="280px"
             border="1px solid #598ac5"
             arrowBorder="1px solid #598AC5"
-            title={<div>{ALL_CHARTS_ADDED_TOOLTIP}</div>}
+            title={<div>{tooltipText}</div>}
             placement="top"
             arrow
             interactive
@@ -85,6 +92,9 @@ export function CohortAnalyzerChartArea({
     resetVennWorkspaceUi,
 }) {
     const dispatch = useDispatch();
+
+    const isLayoutPristine = useSelector((s) => isCohortAnalyzerLayoutPristine(s.cohortAnalyzerLayout));
+    const resetViewDisabled = isLayoutPristine && !inlineAddChartOpen;
 
     const chartSummaryExportRef = useRef(null);
     const histogramExportRef = useRef(null);
@@ -228,7 +238,11 @@ export function CohortAnalyzerChartArea({
                             key={label}
                             type="button"
                             className={classes.categoryPillButton}
+                            disabled={resetViewDisabled}
+                            aria-disabled={resetViewDisabled}
+                            title={resetViewDisabled ? 'Nothing to reset' : undefined}
                             onClick={() => {
+                                if (resetViewDisabled) return;
                                 dispatch(resetCohortAnalyzerLayout());
                                 dispatch(upsertPanelRegistry(buildDefaultCohortAnalyzerPanelRegistry()));
                                 setInlineAddChartOpen(false);

@@ -107,6 +107,7 @@ export function SurvivalAnalysisCardBody({
               alignItems: 'center',
               justifyContent: 'center',
               flexShrink: 0,
+              marginRight: 6,
               cursor: survivalHasNoDisplayData ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
               opacity: survivalHasNoDisplayData ? 0.45 : 1,
             }}
@@ -119,37 +120,39 @@ export function SurvivalAnalysisCardBody({
             <img
               src={histogramChartTitleHandle}
               alt=""
-              width={14}
-              height={15}
+              width={11}
+              height={12}
               aria-hidden
               style={{ display: 'block', flexShrink: 0 }}
             />
           </span>
           {'Overall Survival by Diagnosis'}
-          <ToolTip
-            maxWidth="235px"
-            border="1px solid #598ac5"
-            arrowBorder="1px solid #598AC5"
-            title={(
-              <div>
-                Participants with unreported age values or whose last diagnosis age is later than their last survival follow-up were excluded to ensure valid survival timelines.
-                <br />
-                <br />
-                Displays survival data based on the earliest diagnosis when multiple diagnoses exist.
-              </div>
-            )}
-            placement="top-end"
-            arrow
-            interactive
-            arrowSize="30px"
-          >
-            <img
-              alt=""
-              src={questionIcon}
-              width={10}
-              style={{ border: '0px', display: 'block', flexShrink: 0, marginLeft: 3 }}
-            />
-          </ToolTip>
+          <span style={{ display: 'inline-flex', alignSelf: 'flex-start' }}>
+            <ToolTip
+              maxWidth="235px"
+              border="1px solid #598ac5"
+              arrowBorder="1px solid #598AC5"
+              title={(
+                <div>
+                  Participants with unreported age values or whose last diagnosis age is later than their last survival follow-up were excluded to ensure valid survival timelines.
+                  <br />
+                  <br />
+                  Displays survival data based on the earliest diagnosis when multiple diagnoses exist.
+                </div>
+              )}
+              placement="top-end"
+              arrow
+              interactive
+              arrowSize="30px"
+            >
+              <img
+                alt=""
+                src={questionIcon}
+                width={10}
+                style={{ border: '0px', display: 'block', flexShrink: 0 }}
+              />
+            </ToolTip>
+          </span>
         </ChartTitle>
 
         <ChartActionButtons>
@@ -261,7 +264,7 @@ export function SurvivalAnalysisCardBody({
             <RiskWrap ref={riskTableRef}>
               <RiskTable
                 classes={{ cohortName: classes.cohortNameEllipsis }}
-                cohortNameCharLimit={10}
+                cohortNameCharLimit={7}
                 cohorts={cohorts}
                 timeIntervals={timeIntervals}
               />

@@ -29,10 +29,10 @@ export const HistogramContainer = styled.div`
   margin-left: 0px;
   min-height: 0;
   height: auto;
-  margin-top: 20px;
+  margin-top: 16px;
   @media (max-width: 1900px) {
     max-width: 100%;
-    margin: 24px 0 0;
+    margin: 16px 0 0;
   }
 `;
 
@@ -67,7 +67,7 @@ export const ChartTitle = styled.h2`
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
-  column-gap: 6px;
+  column-gap: 2px;
   row-gap: 2px;
   &.empty {
     opacity: 0.3;
@@ -151,7 +151,7 @@ export const ChartResizeHandle = styled.div`
     width: 0;
     height: 0;
     border-left: 16px solid transparent;
-    border-bottom: 16px solid #000000;
+    border-bottom: 16px solid #525252;
   }
 `;
 
@@ -225,7 +225,7 @@ export const RadioLabel = styled.label`
   align-items: center;
   font-family: Poppins;
   font-size: 13px;
-  color: #666;
+  color: #494949;
   cursor: pointer;
 `;
 

@@ -1,6 +1,13 @@
 import { themeConfig } from '../../studies/tableConfig/Theme';
 
 /**
+ * Cohort Analyzer table typography tokens. Header + body share Primary 4; first-column links
+ * use Purple 1. Sizes are spec'd as font-size / line-height / letter-spacing.
+ */
+const PRIMARY_4 = '#0F253A';
+const PURPLE_1 = '#763E96';
+
+/**
  * Table + MUI overrides for Cohort Analyzer data grids (table view).
  */
 export const cohortAnalyzerThemeConfig = {
@@ -14,6 +21,45 @@ export const cohortAnalyzerThemeConfig = {
                 borderBottom: '1px solid #000000',
             },
         },
+        // Left-align all column headers; first column keeps its larger 20px left gutter.
+        MuiTableCell: {
+            ...(themeConfig.tblHeader && themeConfig.tblHeader.MuiTableCell),
+            root: {
+                ...(themeConfig.tblHeader
+                    && themeConfig.tblHeader.MuiTableCell
+                    && themeConfig.tblHeader.MuiTableCell.root),
+                textAlign: 'left',
+                padding: '0px 8px',
+                // Column headers: Inter Bold, 17/17/0, Primary 4.
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 700,
+                fontSize: '17px',
+                lineHeight: '17px',
+                letterSpacing: '0',
+                color: PRIMARY_4,
+                '&:first-of-type': {
+                    paddingLeft: '20px',
+                },
+            },
+        },
+        // Sort label container — left-justify in every column.
+        // Inherit the cell's Inter Bold typography so the sortable header label matches the spec.
+        MuiTableSortLabel: {
+            ...(themeConfig.tblHeader && themeConfig.tblHeader.MuiTableSortLabel),
+            root: {
+                ...(themeConfig.tblHeader
+                    && themeConfig.tblHeader.MuiTableSortLabel
+                    && themeConfig.tblHeader.MuiTableSortLabel.root),
+                justifyContent: 'flex-start',
+                width: '100%',
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 700,
+                fontSize: '17px',
+                lineHeight: '17px',
+                letterSpacing: '0',
+                color: `${PRIMARY_4} !important`,
+            },
+        },
     },
     tblBody: {
         ...themeConfig.tblBody,
@@ -21,10 +67,38 @@ export const cohortAnalyzerThemeConfig = {
             ...themeConfig.tblBody.MuiTableCell,
             body: {
                 ...themeConfig.tblBody.MuiTableCell.body,
+                textAlign: 'left',
+                paddingLeft: '8px',
+                paddingRight: '8px',
+                // Table text: Inter Regular, 16/17/0, Primary 4.
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '17px',
+                letterSpacing: '0',
+                color: PRIMARY_4,
                 '&:first-of-type': {
-                    color: '#004C73',
+                    // Table text links: Inter Semibold, 16/17/0, Purple 1.
+                    color: PURPLE_1,
                     textDecoration: 'underline',
+                    paddingLeft: '20px',
+                    fontWeight: 600,
                 },
+            },
+        },
+    },
+    // Background of the "no match" row shown by @bento-core/table's
+    // DisplayErrMsg when the table has zero rows (e.g. before a cohort is selected).
+    // The library forwards themeConfig.displayErr into the inner ThemeProvider.
+    displayErr: {
+        ...(themeConfig.displayErr || {}),
+        MuiContainer: {
+            ...(themeConfig.displayErr && themeConfig.displayErr.MuiContainer),
+            root: {
+                ...(themeConfig.displayErr
+                    && themeConfig.displayErr.MuiContainer
+                    && themeConfig.displayErr.MuiContainer.root),
+                backgroundColor: '#F4F4F4',
             },
         },
     },
