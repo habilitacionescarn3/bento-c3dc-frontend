@@ -92,12 +92,16 @@ export function buildVennCohortSetLabel(
   cohortName,
   participantCount,
   maxNameChars = VENN_COHORT_NAME_MAX_CHARS,
+  includeCount = true,
 ) {
   const name = String(cohortName || '').trim();
   const cap = Number.isFinite(maxNameChars) && maxNameChars < name.length
     ? maxNameChars
     : name.length;
   const shortName = name.length > cap ? `${name.slice(0, cap)}…` : name;
+  if (!includeCount) {
+    return shortName;
+  }
   return `${shortName} (${participantCount})`;
 }
 

@@ -12,10 +12,12 @@ import {
   defaultVennOuterPx,
   vennChartSlotDimensionsFromOuterPx,
 } from '../config/cohortAnalyzerViewPercentDefaults';
+import { buildPlaceholderVennCohortData } from '../utils/cohortAnalyzerChartPreview';
 
 const VennDiagramContainer = ({
   classes,
   state,
+  chartPreviewMode = false,
   containerRef,
   canvasRef,
   besideCardDrag,
@@ -42,12 +44,15 @@ const VennDiagramContainer = ({
   } = useCohortAnalyzer();
 
   const mappedCohortData = useMemo(() => {
-    if (cohortData && selectedCohorts.length > 0 && state) {
+    if (chartPreviewMode) {
+      return buildPlaceholderVennCohortData();
+    }
+    if (selectedCohorts.length > 0 && state) {
       const mappingFunction = (cohortId) => (cohortData || state)[cohortId];
       return selectedCohorts.map(mappingFunction);
     }
     return [];
-  }, [cohortData, selectedCohorts, state]);
+  }, [chartPreviewMode, cohortData, selectedCohorts, state]);
 
   const vennHasRenderableCohorts = useMemo(
     () => mappedCohortData.some(
@@ -58,19 +63,25 @@ const VennDiagramContainer = ({
 
   const chartModalVennActive = chartModalOpen && chartModalActiveTab === CA_EXPANDED_CHART_MODAL_TAB_VENN;
 
-  const showChartVenn = refreshTableContent
-    && selectedCohorts.length > 0
-    && vennHasRenderableCohorts
-    && !chartModalVennActive;
+  const showChartVenn = chartPreviewMode
+    ? refreshTableContent && !chartModalVennActive
+    : (
+      refreshTableContent
+      && selectedCohorts.length > 0
+      && vennHasRenderableCohorts
+      && !chartModalVennActive
+    );
 
-  const showVennEmptyState = selectedCohorts.length === 0
+  const showVennEmptyState = !chartPreviewMode && (
+    selectedCohorts.length === 0
     || (
       refreshTableContent
       && !chartModalVennActive
       && selectedCohorts.length > 0
       && cohortData != null
       && !vennHasRenderableCohorts
-    );
+    )
+  );
 
   const [vennContainerSize, setVennContainerSize] = useState(() =>
     (vennSizeFromStore != null ? vennSizeFromStore : defaultVennOuterPx()),
@@ -152,7 +163,7 @@ const VennDiagramContainer = ({
         setSelectedCohortSections(data);
       },
       selectedCohortSection,
-      selectedCohort: selectedCohorts,
+      selectedCohort: chartPreviewMode ? [] : selectedCohorts,
       setGeneralInfo,
     }),
     [
@@ -160,6 +171,7 @@ const VennDiagramContainer = ({
       mappedCohortData,
       handleSetSelectedChart,
       selectedCohortSection,
+      chartPreviewMode,
       selectedCohorts,
       setGeneralInfo,
       setSelectedCohortSections,
@@ -216,6 +228,7 @@ const VennDiagramContainer = ({
         {showChartVenn && (
           <ChartVenn
             {...chartVennProps}
+            chartPreviewMode={chartPreviewMode}
             containerRef={containerRef}
             canvasRef={canvasRef}
             slotWidth={chartSlot.slotWidth}

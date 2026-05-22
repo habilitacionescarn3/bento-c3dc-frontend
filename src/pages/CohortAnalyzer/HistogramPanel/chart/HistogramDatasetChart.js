@@ -114,6 +114,7 @@ export function HistogramDatasetChart({
   c1Name = 'Cohort A',
   c2Name = 'Cohort B',
   c3Name = 'Cohort C',
+  previewShell = false,
 }) {
   const bottomMargin = compact ? 12 : 0;
   const yAxisTickFormatter = (value) => {
@@ -148,6 +149,34 @@ export function HistogramDatasetChart({
     lineHeight: compact ? 10 : 11,
     letterSpacing: 0,
   };
+
+  if (previewShell) {
+    const shellMargin = {
+      top: 20,
+      right: 30,
+      left: 10,
+      bottom: bottomMargin,
+    };
+    return (
+      <ResponsiveContainer width={width} height={height}>
+        <BarChart data={[{ name: ' ' }]} margin={shellMargin}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e0e0e0" horizontal vertical={false} />
+          <XAxis
+            dataKey="name"
+            interval={0}
+            tick={false}
+            axisLine={{ stroke: '#e0e0e0' }}
+            height={xAxisHeight}
+          />
+          <YAxis
+            domain={[0, 100]}
+            tickFormatter={yAxisTickFormatter}
+            tick={yAxisTickStyle}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    );
+  }
 
   if (chartType === CHART_TYPE_KEYS.PIE) {
     const pieData = buildPieData(rows);

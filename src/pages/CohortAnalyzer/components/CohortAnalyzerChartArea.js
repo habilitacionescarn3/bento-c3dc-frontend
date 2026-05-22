@@ -12,6 +12,10 @@ import { buildDefaultCohortAnalyzerPanelRegistry } from '../store/cohortAnalyzer
 import { isCohortAnalyzerLayoutPristine } from '../store/cohortAnalyzerLayoutReducer';
 import { CohortAnalyzerDownloadAllDropdown } from './CohortAnalyzerDownloadAllDropdown';
 import { BESIDE_PEER_DRAG_STYLE } from '../HistogramPanel/histogramConstants';
+import {
+    chartPreviewCohortName,
+    getChartPreviewContentStyle,
+} from '../utils/cohortAnalyzerChartPreview';
 
 const ALL_CHARTS_ADDED_TOOLTIP = 'All charts are already added';
 const NO_COHORT_SELECTED_TOOLTIP = 'To proceed, please select a cohort from the cohort list in the left panel.';
@@ -142,16 +146,26 @@ export function CohortAnalyzerChartArea({
         setAllAddableChartsAdded(Boolean(allAdded));
     }, []);
 
+    const chartPreviewMode = !hasParticipantData;
+
     const participantIds = (index) => {
+        if (chartPreviewMode) {
+            return [];
+        }
         const id = selectedCohorts[index];
         if (!id || !state || !state[id]) return [];
         return state[id].participants.map((item) => (item.id ? item.id : item.participant.id));
     };
 
     const cohortName = (index) => {
+        if (chartPreviewMode) {
+            return chartPreviewCohortName(index);
+        }
         const id = selectedCohorts[index];
         return id && state && state[id] ? state[id].cohortName : '';
     };
+
+    const chartPreviewContentStyle = getChartPreviewContentStyle(chartPreviewMode);
 
     const vennColumnDragStyle = {
         ...(besidePanelDragging && besidePanelDragging.kind === 'survival'
@@ -269,7 +283,11 @@ export function CohortAnalyzerChartArea({
                     />
                 </div>
             </div>
-            <div className={classes.chartSummaryMain} ref={chartSummaryExportRef}>
+            <div
+                className={classes.chartSummaryMain}
+                ref={chartSummaryExportRef}
+            >
+                <div style={chartPreviewContentStyle}>
                 {topRowOrder.length > 0 && (
                     <div
                         className={classes.vennSurvivalRow}
@@ -297,6 +315,7 @@ export function CohortAnalyzerChartArea({
                                         <div className={classes.rightSideAnalyzerHeader2} />
                                         <VennDiagramContainer
                                             state={state}
+                                            chartPreviewMode={chartPreviewMode}
                                             containerRef={containerRef}
                                             canvasRef={canvasRef}
                                             classes={classes}
@@ -327,6 +346,7 @@ export function CohortAnalyzerChartArea({
                     </div>
                 )}
                 <Histogram
+                    chartPreviewMode={chartPreviewMode}
                     survivalBesideVennTarget={survivalBesideVennEl}
                     onSurvivalBesideColumnActive={setSurvivalBesideColumnActive}
                     besideCardDrag={survivalBesideDrag}
@@ -353,6 +373,7 @@ export function CohortAnalyzerChartArea({
                                 onTopRowStripDropComplete={endBesidePanelDrag}
                                 onExpandVenn={handleExpandVennInChartModal}
                             />
+                </div>
                 <div
                     ref={addChartScrollAnchorRef}
                     className={classes.chartSummaryHistogramFooter}

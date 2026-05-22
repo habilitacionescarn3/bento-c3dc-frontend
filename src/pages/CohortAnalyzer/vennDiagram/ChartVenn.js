@@ -51,6 +51,7 @@ const ChartVenn = ({
    * inline uses VENN_CANVAS_SIZE_SCALE_BIG_SCREEN instead.
    */
   expandedView = false,
+  chartPreviewMode = false,
 }) => {
   const chartRef = useRef(null);
   /** Observed chart plot box — keeps canvas in sync when the parent card is resized. */
@@ -183,6 +184,7 @@ if(data){
       scales: {
         x: {
             ticks: {
+                display: !chartPreviewMode,
                 font: {
                     family: 'Nunito',
                     size: fontSizeX,
@@ -219,7 +221,12 @@ if(data){
     const updatedBaseSets = cohortData.filter(cohort => cohort && cohort.cohortName).map((cohort) => {
       const seenValues = new Set();
       return {
-        label: buildVennCohortSetLabel(cohort.cohortName, cohort.participants.length),
+        label: buildVennCohortSetLabel(
+          cohort.cohortName,
+          cohort.participants.length,
+          undefined,
+          !chartPreviewMode,
+        ),
         values: cohort.participants
           .map(p => p[nodes[intersection]])
           .filter(value => {
@@ -234,7 +241,7 @@ if(data){
     });
 
     setBaseSets(updatedBaseSets);
-  }, [cohortData, intersection]);
+  }, [cohortData, intersection, chartPreviewMode]);
 
   useEffect(() => {
     if (baseSets.length > 0) {
@@ -296,7 +303,7 @@ useEffect(() => {
   return () => {
     if (chartRef.current) chartRef.current.destroy();
   };
-}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight, expandedView, observedPlotSize, viewportWidth]);
+}, [selectedCohortSection, data, selectedCohort, cohortData, slotWidth, slotHeight, expandedView, chartPreviewMode, observedPlotSize, viewportWidth]);
 
   useEffect(() => {
     let updatedStat = {};
