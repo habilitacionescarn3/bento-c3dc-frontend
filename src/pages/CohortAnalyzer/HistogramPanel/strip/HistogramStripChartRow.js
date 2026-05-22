@@ -30,6 +30,7 @@ import {
 import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from '../utils/histogramLayoutUtils';
 import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 import { HISTOGRAM_STRIP_DROP_SLOT_WIDTH_EXTRA_PX } from '../histogramConstants';
+import { getChartPreviewContentStyle } from '../../utils/cohortAnalyzerChartPreview';
 
 export function HistogramStripChartRow({
   dataset,
@@ -58,6 +59,7 @@ export function HistogramStripChartRow({
   handleHistogramCardResizeStart,
   chartRef,
   allInputsEmpty,
+  chartPreviewMode = false,
   getChartTitle,
   chartTypeMenuDataset,
   setChartTypeMenuDataset,
@@ -99,6 +101,9 @@ export function HistogramStripChartRow({
   const estimatedChartW = cardSize && cardSize.width != null
     ? Math.max(280, cardSize.width - 48)
     : 400;
+  const hasDatasetData = Array.isArray(data[dataset]) && data[dataset].length > 0;
+  const showChartBody = chartPreviewMode || hasDatasetData;
+  const chartPreviewStyle = getChartPreviewContentStyle(chartPreviewMode);
   const topRowSnap = besidePanelDraggingRef && besidePanelDraggingRef.current;
   const topRowStripDrag =
     topRowSnap &&
@@ -192,6 +197,7 @@ export function HistogramStripChartRow({
               ...(chartWrapperStyle || {}),
               ...peerShadowStyle,
               ...dropTargetStyle,
+              ...chartPreviewStyle,
               opacity: cardDragOpacity,
             }),
           cursor: allInputsEmpty ? 'default' : 'grab',
@@ -357,7 +363,7 @@ export function HistogramStripChartRow({
           }}
         >
 
-          {Array.isArray(data[dataset]) && data[dataset].length > 0 ? (
+          {showChartBody ? (
             <>
               <fieldset style={{ border: 'none', width: '100%', margin: 0, padding: 0 }}>
                 <legend style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', whiteSpace: 'nowrap', border: 0 }}>
@@ -391,8 +397,8 @@ export function HistogramStripChartRow({
                 style={{ minHeight: plotH, height: plotH }}
               >
                 <HistogramDatasetChart
-                  rows={filteredData[dataset]}
-                  viewType={viewType[dataset]}
+                  rows={chartPreviewMode ? [] : filteredData[dataset]}
+                  viewType={viewType[dataset] || 'percentage'}
                   chartType={chartVisualByPanelId[dataset] || DEFAULT_CHART_TYPE}
                   valueA={valueA}
                   valueB={valueB}
@@ -408,6 +414,7 @@ export function HistogramStripChartRow({
                   c1Name={c1Name || 'Cohort A'}
                   c2Name={c2Name || 'Cohort B'}
                   c3Name={c3Name || 'Cohort C'}
+                  previewShell={chartPreviewMode}
                 />
               </div>
             </>

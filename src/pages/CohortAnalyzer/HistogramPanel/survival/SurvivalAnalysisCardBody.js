@@ -31,6 +31,11 @@ import {
   downloadSurvivalCombined,
 } from '../utils/histogramSurvivalDownloads';
 import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
+import {
+  buildPlaceholderSurvivalRiskCohorts,
+  CHART_PREVIEW_KM_COLORS,
+  CHART_PREVIEW_RISK_TIME_INTERVALS,
+} from '../../utils/cohortAnalyzerChartPreview';
 
 /**
  * Survival analysis card: header actions, KM plot, and risk table (inline or beside Venn).
@@ -38,6 +43,10 @@ import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
 export function SurvivalAnalysisCardBody({
   besideVenn,
   classes,
+  chartPreviewMode = false,
+  c1Name = '',
+  c2Name = '',
+  c3Name = '',
   allInputsEmpty,
   besideCardDrag,
   survivalCardSize,
@@ -76,9 +85,17 @@ export function SurvivalAnalysisCardBody({
     ),
   );
   const survivalHasNoDisplayData =
-    !kmLoading
+    !chartPreviewMode
+    && !kmLoading
     && !kmError
     && (!Array.isArray(filteredKmPlotData) || filteredKmPlotData.length === 0);
+
+  const previewRiskCohorts = chartPreviewMode
+    ? buildPlaceholderSurvivalRiskCohorts().map((row, index) => {
+      const names = [c1Name || 'Cohort A', c2Name || 'Cohort B', c3Name || 'Cohort C'];
+      return { ...row, name: names[index] || row.name };
+    })
+    : null;
   const survivalBodyMinHeight = Math.max(
     kmHeight + 120,
     Math.round(effectiveSurvivalH - survivalHeaderChromePx),
@@ -90,7 +107,7 @@ export function SurvivalAnalysisCardBody({
   return (
     <>
       <SurvivalAnalysisHeader>
-        <ChartTitle className={survivalHasNoDisplayData ? 'empty' : ''}>
+        <ChartTitle className={!chartPreviewMode && survivalHasNoDisplayData ? 'empty' : ''}>
           <span
             role="button"
             tabIndex={0}
@@ -108,8 +125,8 @@ export function SurvivalAnalysisCardBody({
               justifyContent: 'center',
               flexShrink: 0,
               marginRight: 6,
-              cursor: survivalHasNoDisplayData ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
-              opacity: survivalHasNoDisplayData ? 0.45 : 1,
+              cursor: (!chartPreviewMode && survivalHasNoDisplayData) ? 'not-allowed' : canBesideReorder ? 'grab' : 'default',
+              opacity: (!chartPreviewMode && survivalHasNoDisplayData) ? 0.45 : 1,
             }}
             title={
               canBesideReorder
@@ -159,16 +176,16 @@ export function SurvivalAnalysisCardBody({
           <button
             type="button"
             aria-label="Expand survival chart"
-            disabled={survivalHasNoDisplayData}
+            disabled={allInputsEmpty || survivalHasNoDisplayData}
             onClick={() => {
-              if (!survivalHasNoDisplayData) {
+              if (!allInputsEmpty && !survivalHasNoDisplayData) {
                 setExpandedChart('survivalAnalysis');
                 setActiveTab('survivalAnalysis');
               }
             }}
-            style={{ padding: 0, background: 'none', border: 'none', cursor: survivalHasNoDisplayData ? 'not-allowed' : 'pointer' }}
+            style={{ padding: 0, background: 'none', border: 'none', cursor: (allInputsEmpty || survivalHasNoDisplayData) ? 'not-allowed' : 'pointer' }}
           >
-            <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: survivalHasNoDisplayData ? 0.5 : 1, display: 'block' }} />
+            <img src={ExpandIcon} alt="" width={19} height={19} style={{ opacity: (allInputsEmpty || survivalHasNoDisplayData) ? 0.5 : 1, display: 'block' }} />
           </button>
           <DownloadDropdown ref={dropdownRef}>
             <button
@@ -176,13 +193,13 @@ export function SurvivalAnalysisCardBody({
               aria-label="Survival chart download options"
               aria-expanded={showDownloadDropdown}
               aria-haspopup="menu"
-              disabled={survivalHasNoDisplayData}
-              onClick={() => !survivalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
-              style={{ padding: 0, background: 'none', border: 'none', cursor: survivalHasNoDisplayData ? 'not-allowed' : 'pointer' }}
+              disabled={allInputsEmpty || survivalHasNoDisplayData}
+              onClick={() => !allInputsEmpty && !survivalHasNoDisplayData && setShowDownloadDropdown(!showDownloadDropdown)}
+              style={{ padding: 0, background: 'none', border: 'none', cursor: (allInputsEmpty || survivalHasNoDisplayData) ? 'not-allowed' : 'pointer' }}
             >
-              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: survivalHasNoDisplayData ? 0.5 : 1, display: 'block' }} />
+              <img src={DownloadIcon} alt="" width={19} height={19} style={{ opacity: (allInputsEmpty || survivalHasNoDisplayData) ? 0.5 : 1, display: 'block' }} />
             </button>
-            {showDownloadDropdown && !survivalHasNoDisplayData && (
+            {showDownloadDropdown && !allInputsEmpty && !survivalHasNoDisplayData && (
               <DownloadDropdownMenu role="menu">
                 <DownloadDropdownItem
                   role="menuitem"
@@ -232,7 +249,31 @@ export function SurvivalAnalysisCardBody({
       </SurvivalAnalysisHeader>
 
       <SurvivalAnalysisContainer ref={survivalAnalysisContainerRef}>
-        {survivalHasNoDisplayData ? (
+        {chartPreviewMode ? (
+          <>
+            <KmWrap ref={kmChartRef}>
+              <KaplanMeierChart
+                data={[]}
+                title=""
+                width="100%"
+                height={kmHeight}
+                loading={false}
+                error={null}
+                colors={CHART_PREVIEW_KM_COLORS}
+                showLabels={false}
+                showLegend={false}
+              />
+            </KmWrap>
+            <RiskWrap ref={riskTableRef}>
+              <RiskTable
+                classes={{ cohortName: classes.cohortNameEllipsis }}
+                cohortNameCharLimit={7}
+                cohorts={previewRiskCohorts}
+                timeIntervals={CHART_PREVIEW_RISK_TIME_INTERVALS}
+              />
+            </RiskWrap>
+          </>
+        ) : survivalHasNoDisplayData ? (
           <div
             style={{
               width: '100%',

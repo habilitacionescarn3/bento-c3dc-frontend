@@ -48,8 +48,13 @@ import {
   SurvivalHistogramInlineLegacy,
 } from './survival/HistogramSurvivalLayoutFragments';
 import { SurvivalAnalysisCardBody } from './survival/SurvivalAnalysisCardBody';
+import {
+  areChartsInteractionDisabled,
+  getChartPreviewContentStyle,
+} from '../utils/cohortAnalyzerChartPreview';
 
 const Histogram = ({
+  chartPreviewMode = false,
   c1,
   c2,
   c3,
@@ -130,6 +135,7 @@ const Histogram = ({
     c1,
     c2,
     c3,
+    chartPreviewMode,
     expandedChart: chartModalExpandedChart,
     setExpandedChart: setChartModalExpandedChart,
     activeTab: chartModalActiveTab,
@@ -374,16 +380,18 @@ const Histogram = ({
   };
 
   const allInputsEmpty = [c1, c2, c3].every(arr => !Array.isArray(arr) || arr.length === 0);
+  const chartsInteractionDisabled = areChartsInteractionDisabled(allInputsEmpty, chartPreviewMode);
+  const chartPreviewStyle = getChartPreviewContentStyle(chartPreviewMode);
 
   const survivalBesideVennCardStyle = useSurvivalBesideVennCardStyle({
     survivalCardSize,
     besideCardDrag,
-    allInputsEmpty,
+    allInputsEmpty: chartsInteractionDisabled,
     besidePanelDragState,
   });
 
   const { handleHistogramCardResizeStart, handleSurvivalCardResizeStart } = useHistogramResizeHandlers({
-    allInputsEmpty,
+    allInputsEmpty: chartsInteractionDisabled,
     histogramCardSizes,
     setHistogramCardSizes,
     survivalCardSize,
@@ -395,7 +403,11 @@ const Histogram = ({
 
   const survivalAnalysisBodyProps = {
     classes,
-    allInputsEmpty,
+    chartPreviewMode,
+    c1Name,
+    c2Name,
+    c3Name,
+    allInputsEmpty: chartsInteractionDisabled,
     besideCardDrag,
     survivalCardSize,
     kmChartRef,
@@ -424,7 +436,8 @@ const Histogram = ({
         draggingDataset={draggingDataset}
         chartRef={chartRef}
         histogramCardSizes={histogramCardSizes}
-        allInputsEmpty={allInputsEmpty}
+        allInputsEmpty={chartsInteractionDisabled}
+        chartPreviewMode={chartPreviewMode}
         beginStripChartDrag={beginStripChartDrag}
         endStripChartDrag={endStripChartDrag}
         setDragOverDataset={setDragOverDataset}
@@ -462,7 +475,7 @@ const Histogram = ({
         besideCardDrag={besideCardDrag}
         survivalBesideVennCardStyle={survivalBesideVennCardStyle}
         survivalAnalysisBodyProps={survivalAnalysisBodyProps}
-        allInputsEmpty={allInputsEmpty}
+        allInputsEmpty={chartsInteractionDisabled}
         handleSurvivalCardResizeStart={handleSurvivalCardResizeStart}
       />
       <CenterContainer
@@ -480,7 +493,7 @@ const Histogram = ({
           survivalBesideVennTarget={survivalBesideVennTarget}
           survivalCardSize={survivalCardSize}
           survivalAnalysisBodyProps={survivalAnalysisBodyProps}
-          allInputsEmpty={allInputsEmpty}
+          allInputsEmpty={chartsInteractionDisabled}
           handleSurvivalCardResizeStart={handleSurvivalCardResizeStart}
           stripOrder={stripOrder}
           topRowOrder={topRowOrder}
@@ -497,6 +510,7 @@ const Histogram = ({
                 }}
                 style={{
                   ...stripVennChartWrapperStyle,
+                  ...chartPreviewStyle,
                   cursor: 'default',
                 }}
                 draggable={false}
@@ -505,6 +519,7 @@ const Histogram = ({
               >
                 <VennDiagramContainer
                   state={cohortParticipantState}
+                  chartPreviewMode={chartPreviewMode}
                   containerRef={containerRef}
                   canvasRef={canvasRef}
                   classes={classes}
@@ -529,9 +544,10 @@ const Histogram = ({
                 }}
                 style={{
                   ...stripSurvivalChartWrapperStyle,
-                  cursor: allInputsEmpty ? 'default' : 'grab',
+                  ...chartPreviewStyle,
+                  cursor: chartsInteractionDisabled ? 'default' : 'grab',
                 }}
-                draggable={!allInputsEmpty}
+                draggable={!chartsInteractionDisabled}
                 onDragStart={(event) => {
                   setDragOverDataset(null);
                   captureHistogramDragCardSize(event, ds);
@@ -556,7 +572,7 @@ const Histogram = ({
                   aria-label="Resize survival analysis card"
                   title="Drag to resize card"
                   onMouseDown={handleSurvivalCardResizeStart}
-                  style={{ opacity: allInputsEmpty ? 0.35 : 1, pointerEvents: allInputsEmpty ? 'none' : 'auto' }}
+                  style={{ opacity: chartsInteractionDisabled ? 0.35 : 1, pointerEvents: chartsInteractionDisabled ? 'none' : 'auto' }}
                 />
               </ChartWrapper>
             );
@@ -590,7 +606,8 @@ const Histogram = ({
             handleStripChartDrop={handleStripChartDrop}
             handleHistogramCardResizeStart={handleHistogramCardResizeStart}
             chartRef={chartRef}
-            allInputsEmpty={allInputsEmpty}
+            allInputsEmpty={chartsInteractionDisabled}
+            chartPreviewMode={chartPreviewMode}
             getChartTitle={getChartTitle}
             chartTypeMenuDataset={chartTypeMenuDataset}
             setChartTypeMenuDataset={setChartTypeMenuDataset}

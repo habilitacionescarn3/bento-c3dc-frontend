@@ -6,6 +6,7 @@ export const useHistogramData = ({
   c1 = [],
   c2 = [],
   c3 = [],
+  chartPreviewMode = false,
   expandedChart,
   setExpandedChart,
   activeTab,
@@ -195,8 +196,12 @@ const fetchChartData = async () => {
 
   
   useEffect(() => {
-    fetchChartData(); // Only runs once to fetch simulated data
-  }, [c1, c2, c3, viewType]);
+    if (chartPreviewMode) {
+      setFetchedData({});
+      return;
+    }
+    fetchChartData();
+  }, [c1, c2, c3, viewType, chartPreviewMode]);
 
   // Reset checkboxes to default when all cohorts are empty
   useEffect(() => {

@@ -23,6 +23,7 @@ import {
 } from '../../store/panelDnD';
 import { requiresCompactSpacing, HISTOGRAM_DRAG_SOURCE_COLLAPSED_STYLE } from '../utils/histogramLayoutUtils';
 import { HistogramChartEmptyState } from '../chart/HistogramChartEmptyState';
+import { getChartPreviewContentStyle } from '../../utils/cohortAnalyzerChartPreview';
 
 export function HistogramBesideVennHistogramPortal({
   survivalSelected,
@@ -31,6 +32,7 @@ export function HistogramBesideVennHistogramPortal({
   chartRef,
   histogramCardSizes,
   allInputsEmpty,
+  chartPreviewMode = false,
   beginStripChartDrag,
   endStripChartDrag,
   setDragOverDataset,
@@ -74,6 +76,9 @@ export function HistogramBesideVennHistogramPortal({
     besidePeerShellBox && besideColumnPlotHeightPx != null
       ? besideColumnPlotHeightPx
       : besideStripPlotHeight;
+  const hasDatasetData = Array.isArray(data[d]) && data[d].length > 0;
+  const showChartBody = chartPreviewMode || hasDatasetData;
+  const chartPreviewStyle = getChartPreviewContentStyle(chartPreviewMode);
 
   return createPortal(
     <ChartWrapper
@@ -102,6 +107,7 @@ export function HistogramBesideVennHistogramPortal({
                 maxWidth: 'none',
               }
               : {}),
+        ...chartPreviewStyle,
         cursor: allInputsEmpty ? 'default' : 'grab',
       }}
       draggable={!allInputsEmpty}
@@ -123,7 +129,7 @@ export function HistogramBesideVennHistogramPortal({
       }}
     >
       <HeaderSection>
-        <ChartTitle className={`${Array.isArray(data[d]) && data[d].length > 0 ? '' : 'empty'}`}>
+        <ChartTitle className={`${showChartBody ? '' : 'empty'}`}>
           <span
             role="button"
             tabIndex={0}
@@ -214,7 +220,7 @@ export function HistogramBesideVennHistogramPortal({
         className={classes.chartContentWrapper}
         style={{ paddingBottom: requiresCompactSpacing(d) ? '12px' : '0px' }}
       >
-        {Array.isArray(data[d]) && data[d].length > 0 ? (
+        {showChartBody ? (
           <div
             className={classes.chartPlotArea}
             style={{
@@ -223,8 +229,8 @@ export function HistogramBesideVennHistogramPortal({
             }}
           >
             <HistogramDatasetChart
-              rows={filteredData[d]}
-              viewType={viewType[d]}
+              rows={chartPreviewMode ? [] : filteredData[d]}
+              viewType={viewType[d] || 'percentage'}
               chartType={chartVisualByPanelId[d] || DEFAULT_CHART_TYPE}
               valueA={besideHistogramBarSums.valueA}
               valueB={besideHistogramBarSums.valueB}
@@ -246,6 +252,7 @@ export function HistogramBesideVennHistogramPortal({
               c1Name={c1Name || 'Cohort A'}
               c2Name={c2Name || 'Cohort B'}
               c3Name={c3Name || 'Cohort C'}
+              previewShell={chartPreviewMode}
             />
           </div>
         ) : (
