@@ -33,6 +33,15 @@ import { getJoinedCohortData } from "./CohortAnalyzerUtil/CohortDataTransform";
 import { exampleCohorts, getExampleCohortKeys } from "../../bento/exampleCohortData";
 import { useUserGuide } from '../inventory/sideBar/UserGuideContext';
 import { USER_GUIDE_SECTION_ANALYZING_COHORTS } from '../inventory/sideBar/userGuideConstants';
+import {
+    computeHasParticipantData,
+    getCohortAnalyzerTableMessage,
+    filterVennSectionsForSelectedCohorts,
+    shouldClearRowDataOnEmptySelection,
+    canAddExampleCohorts,
+    buildExploreUploadPayload,
+    shouldSkipNavigateAwayModal,
+} from './cohortAnalyzerPageLogic';
 
 export const CohortAnalyzer = () => {
     const { openUserGuide } = useUserGuide();
@@ -76,12 +85,10 @@ export const CohortAnalyzer = () => {
     const canvasRef = useRef(null);
     const classes = useStyle();
     const { state, dispatch: cohortDispatch } = useContext(CohortStateContext);
-    const hasParticipantData = useMemo(() => {
-        if (!state || !Array.isArray(selectedCohorts)) return false;
-        return selectedCohorts.some(
-            (id) => state[id] && Array.isArray(state[id].participants) && state[id].participants.length > 0,
-        );
-    }, [state, selectedCohorts]);
+    const hasParticipantData = useMemo(
+        () => computeHasParticipantData(state, selectedCohorts),
+        [state, selectedCohorts],
+    );
     const { setShowCohortModal, showCohortModal, setCurrentCohortChanges, setWarningMessage, warningMessage } = useContext(CohortModalContext);
     const { Notification } = useGlobal();
     const navigate = useNavigate();
@@ -91,13 +98,7 @@ export const CohortAnalyzer = () => {
         // store.dispatch(updateAutocompleteData(data));
         // navigate('/explore');
 
-        const upload = rowData.map(r => ({ participant_id: r.participant_id, study_id: r.dbgap_accession }));
-        const uploadMetadata = {
-            filename: "",
-            fileContent: upload.map(p => p.participant_id).join(","),
-            matched: upload,
-            unmatched: [],
-        };
+        const { upload, uploadMetadata } = buildExploreUploadPayload(rowData);
 
         store.dispatch(updateUploadData(upload));
         store.dispatch(updateUploadMetadata(uploadMetadata));
@@ -105,8 +106,7 @@ export const CohortAnalyzer = () => {
     }
 
     const handleBuildInExplore = () => {
-        const hideModal = localStorage.getItem('hideNavigateModal') === 'true';
-        if (hideModal) {
+        if (shouldSkipNavigateAwayModal()) {
             handleUserRedirect(); // skip modal
         } else {
             setShowNavigateAwayModal(true); // show modal
@@ -183,47 +183,19 @@ export const CohortAnalyzer = () => {
         }
 
 
-        if (nodeIndex === 0 || nodeIndex === 1 || nodeIndex === 2) {
-            let finalVennSelection = [];
-            selectedCohortSection.forEach((section) => {
-                if (section.split(" ∩ ").length > 1) {
-                    let validCohorts = [];
-                    section.split(" ∩ ").forEach((sec, index) => {
-                        const regex = /(.*?)(?= \(\d+\))/;
-                        const match = sec.match(regex);
-                        if (selectedCohorts.includes(match[1])) {
-                            validCohorts.push(sec);
-                        }
-                    })
-
-                    if (validCohorts.length > 0) {
-                        finalVennSelection.push(validCohorts.join(" ∩ "))
-                    }
-                } else {
-                    const regex = /(.*?)(?= \(\d+\))/;
-                    const match = section.match(regex);
-                    if (match) {
-                        if (selectedCohorts.includes(match[1])) {
-                            finalVennSelection.push(section)
-                        }
-                    }
-
-                }
-
-            })
-            setSelectedCohortSections(finalVennSelection);
-
-        }
-
+        setSelectedCohortSections(
+            filterVennSectionsForSelectedCohorts(
+                selectedCohortSection,
+                selectedCohorts,
+                nodeIndex,
+            ),
+        );
 
         if (selectedCohorts.length === 0) {
             setGeneralInfo({});
-            if (location && location.state && location.state.cohort && location.state.cohort.cohortId) {
-
-            } else {
+            if (shouldClearRowDataOnEmptySelection(selectedCohorts, location)) {
                 setRowData([]);
             }
-
         }
     }, [selectedCohorts, selectedChart]);
 
@@ -287,8 +259,7 @@ export const CohortAnalyzer = () => {
 
         // Check if adding 3 example cohorts would exceed the 20-cohort limit
         // Only count non-example cohorts since example cohorts will be cleared/replaced
-        const nonExampleCohorts = Object.keys(state).filter(key => !exampleCohortKeys.includes(key));
-        if (nonExampleCohorts.length > 17) {
+        if (!canAddExampleCohorts(state, exampleCohortKeys)) {
             Notification.show('Cannot add example cohorts. You have reached the maximum limit of 20 cohorts. Please delete some cohorts first.', 5000);
             return;
         }
@@ -322,16 +293,6 @@ export const CohortAnalyzer = () => {
         });
     };
 
-    const getTableMessage = (cohortList, selectedCohortSection, tableConfig) => {
-        if (cohortList.length === 0) {
-            return { noMatch: 'To proceed, please create your cohort by visiting the Explore Page.' };
-        }
-        if (selectedCohortSection.length === 0) {
-            return tableConfig.tableMsg;
-        }
-        return { noMatch: "No data available for the selected segment/segments. Please try a different segment/segments." };
-    };
-
     const initTblState = (initailState) => ({
         ...initailState,
         title: analyzer_tables[nodeIndex].name,
@@ -361,7 +322,7 @@ export const CohortAnalyzer = () => {
         downloadFileName: "download",
         SearchBox: () => SearchBox(classes, handleSearchValue, searchValue, searchRef),
         showSearchBox: true,
-        tableMsg: getTableMessage(cohortList, selectedCohortSection, tableConfig)
+        tableMsg: getCohortAnalyzerTableMessage(cohortList, selectedCohortSection, tableConfig)
     });
 
     const besideDnD = useBesidePanelDnD(survivalBesideColumnActive);

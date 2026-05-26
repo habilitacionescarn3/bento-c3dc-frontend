@@ -88,8 +88,10 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
-    "test": "node scripts/test.js",
-    "test:ci": "TZ=UTC node scripts/test.js --ci --passWithNoTests --coverage --maxWorkers=2 --logHeapUsage",
+    "test": "node scripts/test.js --watchAll=false --silent",
+    "test:watch": "node scripts/test.js",
+    "test:ci": "TZ=UTC node scripts/test.js --ci --passWithNoTests --coverage --maxWorkers=2 --logHeapUsage --silent",
+    "test:cohort-analyzer": "TZ=UTC node scripts/test.js --testPathPattern=src/pages/CohortAnalyzer/__tests__ --coverage --collectCoverageFrom=src/pages/CohortAnalyzer/**/*.{js,jsx} --collectCoverageFrom=!src/pages/CohortAnalyzer/**/*.styled.js --collectCoverageFrom=!src/pages/CohortAnalyzer/**/styles/** --watchAll=false --silent",
     "lint": "eslint src --max-warnings=0",
     "lint:ci": "eslint src --ignore-path .gitignore --max-warnings=0",
     "lint:fix": "eslint src --fix"
@@ -111,8 +113,11 @@
     "setupFiles": [
       "react-app-polyfill/jsdom"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/config/jest/setupTests.js"
+    ],
     "testMatch": [
-      "<rootDir>/src/**/__tests__/**/*.{js,jsx,ts,tsx}",
+      "<rootDir>/src/**/__tests__/**/*.test.{js,jsx,ts,tsx}",
       "<rootDir>/src/**/?(*.)(spec|test).{js,jsx,ts,tsx}"
     ],
     "testEnvironment": "jsdom",
