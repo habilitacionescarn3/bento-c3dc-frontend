@@ -21,14 +21,14 @@ export const cohortAnalyzerThemeConfig = {
                 borderBottom: '1px solid #000000',
             },
         },
-        // Left-align all column headers; first column keeps its larger 20px left gutter.
+        // Center all column headers; first column keeps link styling in body rows only.
         MuiTableCell: {
             ...(themeConfig.tblHeader && themeConfig.tblHeader.MuiTableCell),
             root: {
                 ...(themeConfig.tblHeader
                     && themeConfig.tblHeader.MuiTableCell
                     && themeConfig.tblHeader.MuiTableCell.root),
-                textAlign: 'left',
+                textAlign: 'center',
                 padding: '0px 8px',
                 // Column headers: Inter Bold, 17/17/0, Primary 4.
                 fontFamily: 'Inter, sans-serif',
@@ -37,12 +37,9 @@ export const cohortAnalyzerThemeConfig = {
                 lineHeight: '17px',
                 letterSpacing: '0',
                 color: PRIMARY_4,
-                '&:first-of-type': {
-                    paddingLeft: '20px',
-                },
             },
         },
-        // Sort label container — left-justify in every column.
+        // Sort label container — center in every column.
         // Inherit the cell's Inter Bold typography so the sortable header label matches the spec.
         MuiTableSortLabel: {
             ...(themeConfig.tblHeader && themeConfig.tblHeader.MuiTableSortLabel),
@@ -50,7 +47,7 @@ export const cohortAnalyzerThemeConfig = {
                 ...(themeConfig.tblHeader
                     && themeConfig.tblHeader.MuiTableSortLabel
                     && themeConfig.tblHeader.MuiTableSortLabel.root),
-                justifyContent: 'flex-start',
+                justifyContent: 'center',
                 width: '100%',
                 fontFamily: 'Inter, sans-serif',
                 fontWeight: 700,
@@ -67,7 +64,7 @@ export const cohortAnalyzerThemeConfig = {
             ...themeConfig.tblBody.MuiTableCell,
             body: {
                 ...themeConfig.tblBody.MuiTableCell.body,
-                textAlign: 'left',
+                textAlign: 'center',
                 paddingLeft: '8px',
                 paddingRight: '8px',
                 // Table text: Inter Regular, 16/17/0, Primary 4.
@@ -81,7 +78,6 @@ export const cohortAnalyzerThemeConfig = {
                     // Table text links: Inter Semibold, 16/17/0, Purple 1.
                     color: PURPLE_1,
                     textDecoration: 'underline',
-                    paddingLeft: '20px',
                     fontWeight: 600,
                 },
             },
