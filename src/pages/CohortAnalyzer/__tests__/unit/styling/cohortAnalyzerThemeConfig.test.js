@@ -6,9 +6,9 @@ describe('cohortAnalyzerThemeConfig', () => {
     expect(cohortAnalyzerThemeConfig.tblContainer).toBeDefined();
   });
 
-  it('left-aligns table header cells', () => {
+  it('center-aligns table header cells', () => {
     const cell = cohortAnalyzerThemeConfig.tblHeader.MuiTableCell.root;
-    expect(cell.textAlign).toBe('left');
+    expect(cell.textAlign).toBe('center');
     expect(cell.color).toBe('#0F253A');
   });
 
