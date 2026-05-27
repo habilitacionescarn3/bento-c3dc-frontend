@@ -63,6 +63,10 @@ describe('cohortAnalyzerDownloadAll', () => {
   });
 
   describe('downloadTextFile', () => {
+    afterEach(() => {
+      jest.restoreAllMocks();
+    });
+
     it('creates a download link and triggers click', () => {
       const click = jest.fn();
       const anchor = { click, href: '', download: '' };
