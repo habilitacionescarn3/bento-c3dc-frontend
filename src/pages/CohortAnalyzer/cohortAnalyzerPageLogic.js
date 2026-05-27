@@ -69,11 +69,11 @@ export function shouldClearRowDataOnEmptySelection(selectedCohorts, location) {
 }
 
 export function countNonExampleCohorts(state, exampleCohortKeys) {
-  return Object.keys(state || {}).filter((key) => !exampleCohortKeys.includes(key));
+  return Object.keys(state || {}).filter((key) => !exampleCohortKeys.includes(key)).length;
 }
 
 export function canAddExampleCohorts(state, exampleCohortKeys, maxNonExample = 17) {
-  return countNonExampleCohorts(state, exampleCohortKeys).length <= maxNonExample;
+  return countNonExampleCohorts(state, exampleCohortKeys) <= maxNonExample;
 }
 
 export function buildExploreUploadPayload(rowData) {

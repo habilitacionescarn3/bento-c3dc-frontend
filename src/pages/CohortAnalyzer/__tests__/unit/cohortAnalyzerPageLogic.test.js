@@ -110,7 +110,7 @@ describe('cohortAnalyzerPageLogic', () => {
   describe('countNonExampleCohorts / canAddExampleCohorts', () => {
     it('counts only non-example keys', () => {
       const state = { a: {}, 'example cohort 1': {} };
-      expect(countNonExampleCohorts(state, ['example cohort 1'])).toEqual(['a']);
+      expect(countNonExampleCohorts(state, ['example cohort 1'])).toBe(1);
     });
 
     it('allows add when at limit', () => {
