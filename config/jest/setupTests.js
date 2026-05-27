@@ -8,7 +8,6 @@ const { format } = require('util');
 const SUPPRESSED = [
   /createMuiTheme function was renamed to createTheme/i,
   /React Router Future Flag Warning/i,
-  /unique "key" prop/i,
   /Invalid DOM property.*stroke-dasharray/i,
   /CustomBreadcrumb/i,
 ];
