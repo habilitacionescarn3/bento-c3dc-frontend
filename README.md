@@ -24,8 +24,13 @@ You will also see any lint errors in the console.
 
 ### `npm test`
 
-Launches the test runner in the interactive watch mode.<br>
+Runs the test suite once (non-interactive, `--watchAll=false`) and exits.<br>
 See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+
+### `npm run test:watch`
+
+Launches the test runner in interactive watch mode (the prior behavior of `npm test`).<br>
+Use this during development to automatically re-run tests on file changes.
 
 ### `npm run build`
 
