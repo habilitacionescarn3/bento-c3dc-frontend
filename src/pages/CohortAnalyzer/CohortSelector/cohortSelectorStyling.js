@@ -7,8 +7,8 @@ export const useStyle = makeStyles((theme) => ({
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'stretch',
-        minWidth: 268,
-        maxWidth: 268,
+        minWidth: 274,
+        maxWidth: 274,
         flexShrink: 0,
     },
     sortCount: {
@@ -20,7 +20,7 @@ export const useStyle = makeStyles((theme) => ({
     },
     leftSideAnalyzer: {
         width: '100%',
-        height: 588,
+        height: 400,
         marginTop: 40,
         overflow: 'hidden',
         borderRadius: ' 0px 35px 35px 0px',
@@ -182,7 +182,7 @@ export const useStyle = makeStyles((theme) => ({
         textAlign: 'left',
         width: '100%',
         display: 'flex',
-        paddingTop: 16,
+        paddingTop: 32,
         flexDirection: 'column',
         alignSelf: 'center',
         margin: 'auto',
@@ -205,9 +205,11 @@ export const useStyle = makeStyles((theme) => ({
     sortSection: {
         height: 31,
         width: '100%',
+        boxSizing: 'border-box',
         display: 'flex',
         justifyContent: 'space-between',
-        marginLeft: 20,
+        paddingLeft: 20,
+        backgroundColor: '#F1F1F1',
         '& p': {
             fontSize: 9
         }

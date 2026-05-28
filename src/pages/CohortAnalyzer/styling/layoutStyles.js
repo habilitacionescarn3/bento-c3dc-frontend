@@ -1,8 +1,8 @@
 /** Cohort sidebar, table shell, main analyzer column, and grid wrappers. */
 export const cohortAnalyzerLayoutStyles = (theme) => ({
   leftSideAnalyzer: {
-    minWidth: 268,
-    maxWidth: 268,
+    minWidth: 274,
+    maxWidth: 274,
     height: 588,
     marginTop: 40,
     overflow: 'hidden',
@@ -133,9 +133,11 @@ export const cohortAnalyzerLayoutStyles = (theme) => ({
   sortSection: {
     height: 31,
     width: '100%',
+    boxSizing: 'border-box',
     display: 'flex',
     justifyContent: 'space-between',
-    marginLeft: 20,
+    paddingLeft: 20,
+    backgroundColor: '#F1F1F1',
     '& p': {
       fontSize: 9,
     },
