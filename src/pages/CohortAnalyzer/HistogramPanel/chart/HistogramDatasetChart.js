@@ -93,7 +93,7 @@ const buildXTickProps = (expandedView, compact) => (
   expandedView
     ? { ...HISTOGRAM_EXPANDED_AXIS_TICK_PROPS }
     : {
-      fontSize: compact ? 10 : 10,
+      fontSize: 10,
       lineHeight: compact ? 10 : 11,
       letterSpacing: 0,
     }
