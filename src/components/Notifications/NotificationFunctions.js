@@ -10,8 +10,7 @@ const NotificationFunctions = () => {
     vertical: 'bottom',
     horizontal: 'right',
   });
-
-  // Variables
+  const [styleOptions, setStyleOptions] = React.useState({});
 
   // Methods for Notifications.
   const close = (event, reason) => {
@@ -20,16 +19,19 @@ const NotificationFunctions = () => {
     }
 
     setOpen(false);
+    setStyleOptions({});
   };
 
-  const show = (msg, timeoutDuration) => {
+  /** @param {string} msg @param {number} [timeoutDuration] @param {{ width?: string, textAlign?: 'left'|'center'|'right' }} [options] */
+  const show = (msg, timeoutDuration, options = {}) => {
     setMessage(msg);
     setDuration(timeoutDuration);
+    setStyleOptions(options);
     setOpen(true);
   };
 
   const getProps = () => ({
-    open, duration, message, location,
+    open, duration, message, location, styleOptions,
   });
 
   return {

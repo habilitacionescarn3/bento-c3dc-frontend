@@ -67,13 +67,32 @@ export const useHistogramData = ({
     );
   };
 
+  const resolveHistogramChartRoot = (dataset, isExpanded) => {
+    if (isExpanded) {
+      return document.getElementById(`expanded-chart-${dataset}`);
+    }
+    return (
+      document.getElementById(`chart-${dataset}`)
+      || document.getElementById(`chart-beside-${dataset}`)
+    );
+  };
+
+  /** Recharts plot SVG only — excludes header chart-type icon SVGs. */
+  const findHistogramPlotSvg = (root) => {
+    if (!root) return null;
+    return (
+      root.querySelector('svg.recharts-surface')
+      || root.querySelector('.recharts-wrapper svg')
+      || null
+    );
+  };
+
   const downloadChart = (dataset, isExpanded) => {
     try {
-      const elementId = isExpanded ? `expanded-chart-${dataset}` : `chart-${dataset}`;
-      const chartElement = document.getElementById(elementId);
+      const chartElement = resolveHistogramChartRoot(dataset, isExpanded);
       if (!chartElement) return;
 
-      const svgElement = chartElement.querySelector("svg");
+      const svgElement = findHistogramPlotSvg(chartElement);
       if (!svgElement) return;
 
       const scaleFactor = 2;
@@ -104,7 +123,7 @@ export const useHistogramData = ({
           const downloadUrl = URL.createObjectURL(blob);
           const a = document.createElement("a");
           a.href = downloadUrl;
-          a.download = `data_chart.png`;
+          a.download = `${dataset}_chart.png`;
           document.body.appendChild(a);
           a.click();
           document.body.removeChild(a);

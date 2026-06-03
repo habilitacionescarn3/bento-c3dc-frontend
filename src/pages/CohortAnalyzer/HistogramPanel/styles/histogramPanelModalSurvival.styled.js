@@ -1,5 +1,34 @@
-import styled from 'styled-components';
-import { RadioGroup } from './histogramPanelCore.styled';
+import styled, { css } from 'styled-components';
+import {
+  HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+  HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY,
+  HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT,
+  HISTOGRAM_EXPANDED_AXIS_TICK_COLOR,
+} from '../histogramConstants';
+import {
+  SURVIVAL_RISK_TABLE_DOWNLOAD_ATTR,
+  SURVIVAL_RISK_TABLE_DOWNLOAD_TEXT_COLOR,
+} from '../utils/survivalRiskTableDownloadCapture';
+import { RadioGroup, RadioLabel, histogramChartGridAxisStrokeCss } from './histogramPanelCore.styled';
+
+/** Risk table body text only — month header row (thead) keeps @bento-core/risk-table colors. */
+const survivalRiskTableDownloadTextCss = css`
+  &[${SURVIVAL_RISK_TABLE_DOWNLOAD_ATTR}='true'] tbody td,
+  &[${SURVIVAL_RISK_TABLE_DOWNLOAD_ATTR}='true'] tbody td * {
+    color: ${SURVIVAL_RISK_TABLE_DOWNLOAD_TEXT_COLOR} !important;
+  }
+`;
+
+/** Expanded modal ({@link HistogramPopup}) Recharts axis tick labels — X and Y. */
+const histogramExpandedModalAxisTickCss = css`
+  & .recharts-cartesian-axis-tick text,
+  & .recharts-cartesian-axis-tick-value {
+    font-size: ${HISTOGRAM_EXPANDED_AXIS_FONT_SIZE}px !important;
+    font-family: ${HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY}, sans-serif !important;
+    font-weight: ${HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT} !important;
+    fill: ${HISTOGRAM_EXPANDED_AXIS_TICK_COLOR} !important;
+  }
+`;
 
 export const ModalOverlay = styled.div`
   position: fixed;
@@ -31,6 +60,10 @@ export const ModalContent = styled.div`
 /** Shared hit target for chart-type, download, and close so flex gap reads evenly between items. */
 const MODAL_HEADER_ICON_CONTROL_PX = 38;
 
+/** Horizontal inset where header tab labels begin; popup content aligns to the same left edge. */
+export const MODAL_HEADER_TAB_INSET_PX = 44;
+export const MODAL_HEADER_TAB_INSET_RIGHT_PX = 44;
+
 export const CloseButton = styled.button`
   background: none;
   border: none;
@@ -54,24 +87,32 @@ export const CloseButton = styled.button`
 
 export const ModalChartWrapper = styled.div`
   width: 100%;
-  height: calc(100% - 56px);
+  height: calc(100% - 72.5px);
   margin-top: 0px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   min-height: 0;
+  position: relative;
+  z-index: 1;
+  ${histogramChartGridAxisStrokeCss}
+  ${histogramExpandedModalAxisTickCss}
 `;
 
 export const TabContainer = styled.div`
   display: flex;
   flex: 1;
   min-width: 0;
+  width: 100%;
   flex-wrap: nowrap;
   overflow-x: auto;
   overflow-y: hidden;
   align-items: stretch;
   gap: 30px;
+  padding-right: 4px;
+  position: relative;
+  z-index: 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 `;
@@ -82,12 +123,12 @@ export const Tab = styled.button`
   padding: 10px 0px;
   cursor: pointer;
   font-family: Poppins;
-  font-size: 22px;
+  font-size: 16px;
   line-height: 1.25;
   white-space: nowrap;
   flex: 0 0 auto;
   font-weight: ${(props) => (props.active ? '600' : '400')};
-  color: ${(props) => (props.active ? '#3A7587' : '#666')};
+  color: ${(props) => (props.active ? '#3A7587' : '#4A5C5E')};
   border-bottom: ${(props) => (props.active ? '5px solid #3A7587' : 'none')};
 `;
 
@@ -102,6 +143,7 @@ export const ChartTypeDropdownRoot = styled.div`
   position: relative;
   display: inline-flex;
   align-items: center;
+  z-index: 2;
   margin-right: ${(p) => (p.$compactTrailingGap !== false ? '-8px' : '0')};
 `;
 
@@ -109,7 +151,7 @@ export const ChartTypeDropdownPanel = styled.div`
   position: absolute;
   top: calc(100% + 6px);
   right: 0;
-  z-index: 1100;
+  z-index: 30;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -266,6 +308,7 @@ export const KmChartWrapper = styled.div`
   margin-top: -20px;
   overflow: hidden;
   box-sizing: border-box;
+  ${histogramChartGridAxisStrokeCss}
 `;
 
 export const RiskTableWrapper = styled.div`
@@ -279,6 +322,7 @@ export const RiskTableWrapper = styled.div`
   min-height: 0;
   overflow: auto;
   box-sizing: border-box;
+  ${survivalRiskTableDownloadTextCss}
 `;
 
 export const KmChartWrapperBesideVenn = styled(KmChartWrapper)`
@@ -289,7 +333,8 @@ export const KmChartWrapperBesideVenn = styled(KmChartWrapper)`
 export const RiskTableWrapperBesideVenn = styled(RiskTableWrapper)`
   padding-left: 8px;
   padding-right: 8px;
-  margin-top: 8px;
+  margin-top: -2px;
+  overflow: hidden;
 `;
 
 export const SurvivalAnalysisModalContainer = styled.div`
@@ -328,6 +373,16 @@ export const KmChartModalWrapper = styled.div`
   align-items: center;
   justify-content: center;
   overflow: visible;
+
+  /* KaplanMeierChart axis ticks/labels are 11px in @bento-core/kmplot; match expanded modal spec. */
+  & svg text {
+    font-size: ${HISTOGRAM_EXPANDED_AXIS_FONT_SIZE}px !important;
+    font-family: ${HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY}, sans-serif !important;
+    font-weight: ${HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT} !important;
+    fill: ${HISTOGRAM_EXPANDED_AXIS_TICK_COLOR} !important;
+  }
+
+  ${histogramChartGridAxisStrokeCss}
 `;
 
 export const RiskTableModalWrapper = styled.div`
@@ -340,19 +395,21 @@ export const RiskTableModalWrapper = styled.div`
   align-items: center;
   height: 280px;
   padding-bottom: 15px;
+  ${survivalRiskTableDownloadTextCss}
 `;
 
 export const ModalHeaderContainer = styled.div`
-  display: flex;
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  column-gap: 12px;
   position: relative;
+  z-index: 2;
   width: 100%;
-  padding: 0 10px 0 4px;
+  padding: 16.5px ${MODAL_HEADER_TAB_INSET_RIGHT_PX}px 0 ${MODAL_HEADER_TAB_INSET_PX}px;
   box-sizing: border-box;
   min-height: 50px;
+  overflow: visible;
   border-bottom: 1px solid #969696;
   border-top-left-radius: 8px;
 `;
@@ -364,6 +421,10 @@ export const ModalActionButtons = styled.div`
   align-items: center;
   justify-content: flex-end;
   gap: 2px;
+  position: relative;
+  z-index: 3;
+  isolation: isolate;
+  pointer-events: auto;
 `;
 
 /** Stacks download control + dropdown anchor in one fixed-size cell so flex gap to close isn’t widened. */
@@ -433,33 +494,61 @@ export const ModalRadioFieldset = styled.fieldset`
   border: none;
   flex-shrink: 0;
   width: 100%;
-  padding: 0;
+  padding: 0 ${MODAL_HEADER_TAB_INSET_RIGHT_PX}px 0 ${MODAL_HEADER_TAB_INSET_PX}px;
   margin: 0;
+  box-sizing: border-box;
 `;
 
 export const ModalRadioGroup = styled(RadioGroup)`
   width: 100%;
-  margin: 20px 0 20px 60px;
+  margin: 20px 0;
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   align-items: center;
 `;
 
-/** Venn expanded tab: matches histogram chart / survival horizontal inset + max-width centering. */
+/** Expanded modal: # of Cases / % of Cases label typography. */
+export const ModalRadioLabel = styled(RadioLabel)`
+  font-family: Poppins, sans-serif;
+  font-weight: 400;
+  font-style: normal;
+  font-size: 16px;
+`;
+
+/** Wraps popup controls (e.g. Venn category radios) so they align with the first header tab. */
+export const ModalPopupContentInset = styled.div`
+  flex-shrink: 0;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 ${MODAL_HEADER_TAB_INSET_RIGHT_PX}px 0 ${MODAL_HEADER_TAB_INSET_PX}px;
+`;
+
+/** Venn expanded tab shell (full width); chart area uses {@link ModalVennChartInset}. */
 export const ModalVennTabRoot = styled.div`
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: auto;
+  box-sizing: border-box;
+`;
+
+/** Venn diagram plot area — centered with chart inset; radios sit in {@link ModalPopupContentInset}. */
+export const ModalVennChartInset = styled.div`
   width: 100%;
   max-width: min(1100px, 100%);
   flex: 1;
   min-height: 0;
-  height: 100%;
   margin: 0 auto;
   padding: 0 clamp(20px, 4vw, 48px);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  overflow: auto;
   box-sizing: border-box;
 `;
 

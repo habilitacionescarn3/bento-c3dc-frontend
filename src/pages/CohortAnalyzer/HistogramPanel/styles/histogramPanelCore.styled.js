@@ -1,8 +1,9 @@
-import styled from 'styled-components';
+import styled, { css } from 'styled-components';
 import { CA_SURVIVAL_CARD_MIN_HEIGHT } from '../../store/cohortAnalyzerLayoutConstants';
 import {
   HISTOGRAM_CARD_MIN_WIDTH,
   HISTOGRAM_CARD_SHELL_MIN_VH,
+  HISTOGRAM_CHART_STROKE_COLOR,
 } from '../histogramConstants';
 
 export const barColors = {
@@ -17,6 +18,16 @@ export const kmplotColors = {
   colorC: '#008FF7',
 };
 
+/** Grid and axis strokes for Recharts-based charts (histogram + Kaplan–Meier). */
+export const histogramChartGridAxisStrokeCss = css`
+  & .recharts-cartesian-grid-horizontal line,
+  & .recharts-cartesian-grid-vertical line,
+  & .recharts-cartesian-axis .recharts-cartesian-axis-line,
+  & .recharts-cartesian-axis-tick line {
+    stroke: ${HISTOGRAM_CHART_STROKE_COLOR};
+  }
+`;
+
 export const HistogramContainer = styled.div`
   background: transparent;
   border: none;
@@ -30,6 +41,7 @@ export const HistogramContainer = styled.div`
   min-height: 0;
   height: auto;
   margin-top: 16px;
+  overflow-x: hidden;
   @media (max-width: 1900px) {
     max-width: 100%;
     margin: 16px 0 0;
@@ -117,6 +129,7 @@ export const ChartWrapper = styled.div`
   border-radius: 10px;
   box-shadow: none;
   transition: none;
+  ${histogramChartGridAxisStrokeCss}
   &:hover {
     transform: none;
     box-shadow: none;

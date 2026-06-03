@@ -433,6 +433,7 @@ describe('CohortAnalyzer page entry point', () => {
     expect(mockNotificationShow).toHaveBeenCalledWith(
       expect.stringContaining('Successfully created'),
       7000,
+      { width: '400px', textAlign: 'left' },
     );
   });
 

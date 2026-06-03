@@ -18,16 +18,19 @@ const useStyles = makeStyles(() => ({
   },
   alertStyles: {
     // Widths & Size
-    width: '235px',
+    width: (props) => props.width || '235px',
+    maxWidth: (props) => props.width || '235px',
     minHeight: '50px',
     boxSizing: 'border-box',
-    
+    display: 'flex',
+    padding: (props) => (props.textAlign === 'left' ? '12px 16px' : '6px 16px'),
 
     // Fonts
     color: '#ffffff',
     fontFamily: 'Nunito',
     textAlign: (props) => props.textAlign || 'center',
-    justifyContent: 'center',
+    justifyContent: (props) => (props.textAlign === 'left' ? 'flex-start' : 'center'),
+    alignItems: (props) => (props.textAlign === 'left' ? 'flex-start' : 'center'),
     fontSize: '16px',
     fontWeight: '300',
     letterSpacing: '0',
@@ -41,15 +44,36 @@ const useStyles = makeStyles(() => ({
 
     // Positioning
     zIndex: '1100',
+
+    '& .MuiAlert-message': {
+      display: 'flex',
+      flexDirection: 'row',
+      alignItems: (props) => (props.textAlign === 'left' ? 'flex-start' : 'center'),
+      justifyContent: (props) => (props.textAlign === 'left' ? 'flex-start' : 'center'),
+      textAlign: (props) => props.textAlign || 'center',
+      width: '100%',
+      margin: 0,
+      padding: 0,
+    },
+  },
+  notificationIcon: {
+    flexShrink: 0,
+    display: 'block',
+    marginRight: (props) => (props.textAlign === 'left' ? 10 : 8),
+  },
+  notificationMessage: {
+    flex: 1,
+    whiteSpace: 'pre-line',
+    textAlign: (props) => props.textAlign || 'center',
   },
 }));
 
 const NotificationView = () => {
   const { Notification } = useGlobal();
   const {
-    open, message, duration, location,
+    open, message, duration, location, styleOptions,
   } = Notification.getProps();
-  const classes = useStyles();
+  const classes = useStyles(styleOptions || {});
 
   const { vertical, horizontal } = location;
 
@@ -67,8 +91,8 @@ const NotificationView = () => {
         onClose={handleClose}
       >
         <Alert severity="success" icon={false} className={classes.alertStyles}>
-          <img src={SuccessOutlined} alt="" />
-          {message}
+          <img src={SuccessOutlined} alt="" className={classes.notificationIcon} />
+          <span className={classes.notificationMessage}>{message}</span>
         </Alert>
       </Snackbar>
     </div>

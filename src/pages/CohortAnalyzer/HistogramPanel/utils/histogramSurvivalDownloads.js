@@ -1,4 +1,5 @@
 import * as htmlToImage from 'html-to-image';
+import { beginSurvivalRiskTableDownloadCapture } from './survivalRiskTableDownloadCapture';
 
 /**
  * Capture Kaplan–Meier SVG as PNG download.
@@ -83,6 +84,8 @@ export function downloadRiskTable(riskTableRef) {
     tableElement.style.marginLeft = '0';
     tableElement.style.backgroundColor = 'transparent';
 
+    const endDownloadCapture = beginSurvivalRiskTableDownloadCapture(tableElement);
+
     htmlToImage.toPng(tableElement, {
       backgroundColor: 'transparent',
       pixelRatio: 4,
@@ -100,6 +103,7 @@ export function downloadRiskTable(riskTableRef) {
       console.error('Error using html-to-image:', error);
       alert('Error downloading Risk table. Please check the console for details.');
     }).finally(() => {
+      endDownloadCapture();
       tableElement.style.marginLeft = originalMargin;
       tableElement.style.backgroundColor = originalBackgroundColor;
     });
@@ -112,7 +116,7 @@ export function downloadRiskTable(riskTableRef) {
 /**
  * Combined survival section (KM + risk table) as one PNG.
  */
-export function downloadSurvivalCombined(survivalAnalysisContainerRef, onCloseDropdown) {
+export function downloadSurvivalCombined(survivalAnalysisContainerRef, onCloseDropdown, riskTableRef) {
   try {
     if (typeof onCloseDropdown === 'function') onCloseDropdown();
 
@@ -123,6 +127,8 @@ export function downloadSurvivalCombined(survivalAnalysisContainerRef, onCloseDr
     }
 
     const containerElement = survivalAnalysisContainerRef.current;
+    const riskTableElement = riskTableRef && riskTableRef.current ? riskTableRef.current : null;
+    const endDownloadCapture = beginSurvivalRiskTableDownloadCapture(riskTableElement);
 
     htmlToImage.toPng(containerElement, {
       backgroundColor: 'transparent',
@@ -142,6 +148,8 @@ export function downloadSurvivalCombined(survivalAnalysisContainerRef, onCloseDr
     }).catch((error) => {
       console.error('Error downloading combined chart:', error);
       alert('Error downloading combined chart. Please check the console for details.');
+    }).finally(() => {
+      endDownloadCapture();
     });
   } catch (error) {
     console.error('Error downloading combined chart:', error);

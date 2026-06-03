@@ -4,13 +4,16 @@ import {
   CA_TOP_ROW_GAP_PX,
   CA_VENN_OUTER_MIN_W,
 } from '../store/cohortAnalyzerLayoutConstants';
+import { cohortAnalyzerHiddenScrollbarStyles } from './cohortAnalyzerScrollbarStyles';
 
 /** Chart summary view: Venn row, tabs, controls, category cards, table area. */
 export const cohortAnalyzerSummaryStyles = (theme) => ({
   chartSummaryMain: {
     width: '100%',
+    minWidth: 0,
     marginBottom: 1,
     marginTop: '16px',
+    overflow: 'hidden',
   },
   chartSummaryHistogramFooter: {
     display: 'flex',
@@ -31,8 +34,8 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     gap: CA_TOP_ROW_GAP_PX,
     width: '100%',
     minWidth: 0,
-    overflowX: 'visible',
-    overflowY: 'visible',
+    overflowX: 'hidden',
+    overflowY: 'hidden',
     position: 'relative',
     zIndex: 2,
     [theme.breakpoints.down('md')]: {
@@ -67,7 +70,7 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     flexDirection: 'column',
     alignItems: 'stretch',
     alignSelf: 'stretch',
-    overflow: 'visible',
+    overflow: 'hidden',
     position: 'relative',
     [theme.breakpoints.down('md')]: {
       flex: '1 1 auto',
@@ -130,6 +133,9 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     minWidth: 0,
     paddingTop: 14,
     boxSizing: 'border-box',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    ...cohortAnalyzerHiddenScrollbarStyles,
   },
   /** Row: chart/table tabs on the left, optional actions (e.g. README) on the far right. */
   summaryTabsBar: {
@@ -200,6 +206,9 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
     marginTop: 0,
     display: 'flex',
     flexDirection: 'column',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    ...cohortAnalyzerHiddenScrollbarStyles,
   },
   chartTopControlRow: {
     alignSelf: 'stretch',
@@ -446,17 +455,8 @@ export const cohortAnalyzerSummaryStyles = (theme) => ({
   rightSideTableContainer: {
     width: '100%',
     maxHeight: 540,
-    overflowY: 'scroll',
-    '&::-webkit-scrollbar': {
-      width: '6px',
-    },
-    '&::-webkit-scrollbar-thumb': {
-      width: '6px',
-      backgroundColor: '#003F74',
-    },
-    '&::-webkit-scrollbar-track': {
-      background: '#CECECE',
-    },
+    overflowY: 'auto',
+    ...cohortAnalyzerHiddenScrollbarStyles,
     [theme.breakpoints.down('lg')]: {
       width: '100%',
     },

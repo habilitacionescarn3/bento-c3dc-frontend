@@ -12,9 +12,9 @@ describe('cohortAnalyzerThemeConfig', () => {
     expect(cell.color).toBe('#0F253A');
   });
 
-  it('styles first-column body cells with purple links', () => {
+  it('styles first-column body cells with table link color', () => {
     const firstCol = cohortAnalyzerThemeConfig.tblBody.MuiTableCell.body['&:first-of-type'];
-    expect(firstCol.color).toBe('#763E96');
+    expect(firstCol.color).toBe('#004C73');
     expect(firstCol.fontWeight).toBe(600);
   });
 });

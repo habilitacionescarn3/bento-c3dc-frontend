@@ -512,6 +512,7 @@ const Histogram = ({
                   ...stripVennChartWrapperStyle,
                   ...chartPreviewStyle,
                   cursor: 'default',
+                  overflow: 'hidden',
                 }}
                 draggable={false}
                 onDragOver={(e) => handleStripChartDragOver(e, 'venn')}

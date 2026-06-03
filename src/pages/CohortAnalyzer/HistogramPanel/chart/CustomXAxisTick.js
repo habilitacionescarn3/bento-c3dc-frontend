@@ -2,7 +2,18 @@ import React, { useState } from 'react';
 import ReactDOM from 'react-dom';
 import CustomChartTooltip from './CustomChartTooltip';
 
-const CustomXAxisTick = ({ x, y, payload, width, fontSize = 8, lineHeight = fontSize, letterSpacing = 0 }) => {
+const CustomXAxisTick = ({
+  x,
+  y,
+  payload,
+  width,
+  fontSize = 8,
+  lineHeight = fontSize,
+  letterSpacing = 0,
+  fill = '#333',
+  fontFamily = 'Nunito',
+  fontWeight = 500,
+}) => {
   const [showTooltip, setShowTooltip] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
@@ -17,7 +28,7 @@ const CustomXAxisTick = ({ x, y, payload, width, fontSize = 8, lineHeight = font
 
   // Calculate max characters based on available width
   // Approximate that each character takes about 6-7 pixels at fontSize 8, 7-8 at fontSize 10
-  const charWidth = fontSize === 8 ? 4 : 5;
+  const charWidth = fontSize <= 8 ? 4 : fontSize <= 11 ? 5 : Math.ceil(fontSize * 0.54);
   const maxLength = width ? Math.floor(width / charWidth) : 10;
 
   // Function to truncate text
@@ -73,7 +84,7 @@ const CustomXAxisTick = ({ x, y, payload, width, fontSize = 8, lineHeight = font
             x={-width / 2}  // Center the rectangle
             y={0}
             width={width}
-            height={lines.length * 12 + 20}  // Cover all lines plus some padding
+            height={lines.length * (lineHeight + 2) + 20}
             fill="transparent"
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
@@ -84,15 +95,17 @@ const CustomXAxisTick = ({ x, y, payload, width, fontSize = 8, lineHeight = font
           <text
             key={index}
             x={0}
-            y={index * 12}
+            y={index * (lineHeight + 2)}
             dy={16}
             textAnchor="middle"
-            fill="#333"
+            fill={fill}
             fontSize={fontSize}
+            fontFamily={fontFamily}
+            fontWeight={fontWeight}
             style={{
-              pointerEvents: isTruncated ? 'none' : 'auto',  // Disable pointer events on text when using rect
+              pointerEvents: isTruncated ? 'none' : 'auto',
               letterSpacing: `${letterSpacing}px`,
-              lineHeight: `${lineHeight}px`
+              lineHeight: `${lineHeight}px`,
             }}
           >
             {/* Add title to each text element as well for better browser support */}

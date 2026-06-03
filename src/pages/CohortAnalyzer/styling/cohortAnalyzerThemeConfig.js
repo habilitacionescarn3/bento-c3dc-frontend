@@ -1,11 +1,12 @@
 import { themeConfig } from '../../studies/tableConfig/Theme';
 
 /**
- * Cohort Analyzer table typography tokens. Header + body share Primary 4; first-column links
- * use Purple 1. Sizes are spec'd as font-size / line-height / letter-spacing.
+ * Cohort Analyzer table typography tokens. Header + body share Primary 4; first-column
+ * (Participant ID) link styling uses TABLE_LINK_COLOR. Sizes are spec'd as font-size /
+ * line-height / letter-spacing.
  */
 const PRIMARY_4 = '#0F253A';
-const PURPLE_1 = '#763E96';
+const TABLE_LINK_COLOR = '#004C73';
 
 /**
  * Table + MUI overrides for Cohort Analyzer data grids (table view).
@@ -75,8 +76,8 @@ export const cohortAnalyzerThemeConfig = {
                 letterSpacing: '0',
                 color: PRIMARY_4,
                 '&:first-of-type': {
-                    // Table text links: Inter Semibold, 16/17/0, Purple 1.
-                    color: PURPLE_1,
+                    // Participant ID column: Inter Semibold, 16/17/0, TABLE_LINK_COLOR.
+                    color: TABLE_LINK_COLOR,
                     textDecoration: 'underline',
                     fontWeight: 600,
                 },

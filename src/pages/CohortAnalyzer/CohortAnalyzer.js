@@ -273,7 +273,11 @@ export const CohortAnalyzer = () => {
             if (successCount === totalCohorts) {
                 // Auto-select the newly created example cohorts
                 setSelectedCohorts(getExampleCohortKeys());
-                Notification.show(`Successfully created and selected ${totalCohorts} example cohorts! View the results in the Venn diagram and histogram below.`, 7000);
+                Notification.show(
+                    `Successfully created and selected ${totalCohorts} example cohorts!\nView the results in the Venn diagram and histogram below.`,
+                    7000,
+                    { width: '400px', textAlign: 'left' },
+                );
             }
         };
 

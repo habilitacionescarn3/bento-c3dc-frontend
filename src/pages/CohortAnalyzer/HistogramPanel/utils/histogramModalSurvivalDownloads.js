@@ -1,4 +1,5 @@
 import * as htmlToImage from 'html-to-image';
+import { beginSurvivalRiskTableDownloadCapture } from './survivalRiskTableDownloadCapture';
 
 /**
  * Survival tab downloads for ExpandedChartModal (KM SVG → PNG, risk table, combined).
@@ -6,6 +7,7 @@ import * as htmlToImage from 'html-to-image';
 export function createHistogramModalSurvivalDownloads({
   setShowDownloadDropdown,
   survivalAnalysisContainerRef,
+  riskTableRef,
 }) {
   const downloadKaplanMeierChart = (kmChartRef) => {
     try {
@@ -88,6 +90,7 @@ export function createHistogramModalSurvivalDownloads({
       const tableElement = riskTableRef.current;
       const originalHeight = tableElement.style.height;
       tableElement.style.height = 'auto';
+      const endDownloadCapture = beginSurvivalRiskTableDownloadCapture(tableElement);
       htmlToImage.toPng(tableElement, {
         backgroundColor: 'transparent',
         pixelRatio: 6,
@@ -106,6 +109,7 @@ export function createHistogramModalSurvivalDownloads({
         console.error('Error using html-to-image:', error);
         alert('Error downloading Risk table. Please check the console for details.');
       }).finally(() => {
+        endDownloadCapture();
         tableElement.style.height = originalHeight;
       });
       setShowDownloadDropdown(false);
@@ -126,6 +130,8 @@ export function createHistogramModalSurvivalDownloads({
       }
 
       const containerElement = survivalAnalysisContainerRef.current;
+      const riskTableElement = riskTableRef && riskTableRef.current ? riskTableRef.current : null;
+      const endDownloadCapture = beginSurvivalRiskTableDownloadCapture(riskTableElement);
 
       htmlToImage.toPng(containerElement, {
         backgroundColor: 'transparent',
@@ -145,6 +151,8 @@ export function createHistogramModalSurvivalDownloads({
       }).catch((error) => {
         console.error('Error downloading combined chart:', error);
         alert('Error downloading combined chart. Please check the console for details.');
+      }).finally(() => {
+        endDownloadCapture();
       });
     } catch (error) {
       console.error('Error downloading combined chart:', error);

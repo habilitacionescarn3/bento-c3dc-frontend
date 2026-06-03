@@ -1,4 +1,6 @@
 /** Cohort sidebar, table shell, main analyzer column, and grid wrappers. */
+import { cohortAnalyzerHiddenScrollbarStyles } from './cohortAnalyzerScrollbarStyles';
+
 export const cohortAnalyzerLayoutStyles = (theme) => ({
   leftSideAnalyzer: {
     minWidth: 274,
@@ -184,14 +186,17 @@ export const cohortAnalyzerLayoutStyles = (theme) => ({
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'stretch',
-    overflowY: 'visible',
-    overflowX: 'visible',
+    overflowX: 'hidden',
+    overflowY: 'auto',
+    ...cohortAnalyzerHiddenScrollbarStyles,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     backdropFilter: 'blur(10px)',
     boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
     [theme.breakpoints.down('lg')]: {
       alignItems: 'flex-start',
-      overflowY: 'scroll',
+      overflowX: 'hidden',
+      overflowY: 'auto',
+      ...cohortAnalyzerHiddenScrollbarStyles,
       padding: '0 0 0 0',
       height: '100%',
       minWidth: '0',
@@ -207,6 +212,7 @@ export const cohortAnalyzerLayoutStyles = (theme) => ({
   gridItemWrapper: {
     overflow: 'auto',
     minHeight: 0,
+    ...cohortAnalyzerHiddenScrollbarStyles,
     background: 'rgba(255, 255, 255, 0.95)',
     border: '1px solid #679AAA',
     borderRadius: 10,

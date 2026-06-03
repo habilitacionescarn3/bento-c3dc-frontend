@@ -187,7 +187,6 @@ export function HistogramStripChartRow({
         />
       )}
       <ChartWrapper
-        id={`chart-${dataset}`}
         data-ca-histogram-strip-dataset={dataset}
         ref={(el) => { chartRef.current[dataset] = el; }}
         style={{
@@ -393,6 +392,7 @@ export function HistogramStripChartRow({
                 </RadioGroup>
               </fieldset>
               <div
+                id={`chart-${dataset}`}
                 className={classes.chartPlotArea}
                 style={{ minHeight: plotH, height: plotH }}
               >

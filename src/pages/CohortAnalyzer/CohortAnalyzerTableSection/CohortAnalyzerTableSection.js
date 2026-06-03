@@ -7,7 +7,7 @@ import { useCohortAnalyzer } from '../context/CohortAnalyzerContext';
 import { ButtonWithTooltip } from './ButtonWithTooltip';
 
 const row = { display: 'flex', alignItems: 'center' };
-const bar = { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: 12, flexWrap: 'wrap' };
+const bar = { display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '26px', flexWrap: 'wrap' };
 
 
 const CohortAnalyzerTableSection = ({ classes, questionIcon, handleClick, handleBuildInExplore, themeConfig, initTblState }) => {

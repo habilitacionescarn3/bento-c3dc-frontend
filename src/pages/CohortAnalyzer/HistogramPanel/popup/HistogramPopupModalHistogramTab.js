@@ -1,11 +1,11 @@
 import React from 'react';
 import {
   RadioInput,
-  RadioLabel,
   ModalChartContainer,
   ModalHistogramChartInset,
   ModalRadioFieldset,
   ModalRadioGroup,
+  ModalRadioLabel,
   ModalNoDataContainer,
 } from '../HistogramPanel.styled';
 import { HistogramDatasetChart, DEFAULT_CHART_TYPE } from '../chart/HistogramDatasetChart';
@@ -35,7 +35,7 @@ export function HistogramPopupModalHistogramTab({
     <ModalChartContainer>
       <ModalRadioFieldset>
         <ModalRadioGroup>
-          <RadioLabel>
+          <ModalRadioLabel>
             <RadioInput
               type="radio"
               name={`modalViewType-${activeTab}`}
@@ -43,11 +43,9 @@ export function HistogramPopupModalHistogramTab({
               checked={viewType[activeTab] === 'count'}
               onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
             />
-            <span>
-              # of Cases
-            </span>
-          </RadioLabel>
-          <RadioLabel>
+            # of Cases
+          </ModalRadioLabel>
+          <ModalRadioLabel>
             <RadioInput
               type="radio"
               name={`modalViewType-${activeTab}`}
@@ -55,10 +53,8 @@ export function HistogramPopupModalHistogramTab({
               checked={viewType[activeTab] === 'percentage'}
               onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
             />
-            <span>
-              % of Cases
-            </span>
-          </RadioLabel>
+            % of Cases
+          </ModalRadioLabel>
         </ModalRadioGroup>
       </ModalRadioFieldset>
       <ModalHistogramChartInset>
@@ -79,6 +75,7 @@ export function HistogramPopupModalHistogramTab({
               valueB={valueB}
               valueC={valueC}
               compact={requiresCompactSpacingModal(activeTab)}
+              expandedView
               height={modalHistogramDatasetChartHeight}
               width="100%"
               estimatedChartWidth={800}
