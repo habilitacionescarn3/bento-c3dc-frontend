@@ -225,8 +225,9 @@ const ExpandedChartModal = ({
     () => createHistogramModalSurvivalDownloads({
       setShowDownloadDropdown,
       survivalAnalysisContainerRef,
+      riskTableRef,
     }),
-    [survivalAnalysisContainerRef],
+    [survivalAnalysisContainerRef, riskTableRef],
   );
 
   let valueA = 0;

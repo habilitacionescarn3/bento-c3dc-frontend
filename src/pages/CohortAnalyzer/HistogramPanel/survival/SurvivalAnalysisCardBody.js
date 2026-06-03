@@ -226,6 +226,7 @@ export function SurvivalAnalysisCardBody({
                   onClick={() => downloadSurvivalCombined(
                     survivalAnalysisContainerRef,
                     () => setShowDownloadDropdown(false),
+                    riskTableRef,
                   )}
                 >
                   <img src={DownloadIconBorderless} alt="" style={{ width: '10px', height: '12px' }} />

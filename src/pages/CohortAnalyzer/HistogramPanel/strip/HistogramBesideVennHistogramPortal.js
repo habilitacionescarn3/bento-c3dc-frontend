@@ -82,7 +82,6 @@ export function HistogramBesideVennHistogramPortal({
 
   return createPortal(
     <ChartWrapper
-      id={`chart-beside-${d}`}
       data-ca-histogram-strip-dataset={d}
       ref={(el) => { chartRef.current[d] = el; }}
       style={{
@@ -222,6 +221,7 @@ export function HistogramBesideVennHistogramPortal({
       >
         {showChartBody ? (
           <div
+            id={`chart-beside-${d}`}
             className={classes.chartPlotArea}
             style={{
               minHeight: plotHeightPx,

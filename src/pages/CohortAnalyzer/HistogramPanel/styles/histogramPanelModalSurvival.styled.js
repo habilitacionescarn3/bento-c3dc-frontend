@@ -5,7 +5,19 @@ import {
   HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT,
   HISTOGRAM_EXPANDED_AXIS_TICK_COLOR,
 } from '../histogramConstants';
+import {
+  SURVIVAL_RISK_TABLE_DOWNLOAD_ATTR,
+  SURVIVAL_RISK_TABLE_DOWNLOAD_TEXT_COLOR,
+} from '../utils/survivalRiskTableDownloadCapture';
 import { RadioGroup, RadioLabel, histogramChartGridAxisStrokeCss } from './histogramPanelCore.styled';
+
+/** Risk table body text only — month header row (thead) keeps @bento-core/risk-table colors. */
+const survivalRiskTableDownloadTextCss = css`
+  &[${SURVIVAL_RISK_TABLE_DOWNLOAD_ATTR}='true'] tbody td,
+  &[${SURVIVAL_RISK_TABLE_DOWNLOAD_ATTR}='true'] tbody td * {
+    color: ${SURVIVAL_RISK_TABLE_DOWNLOAD_TEXT_COLOR} !important;
+  }
+`;
 
 /** Expanded modal ({@link HistogramPopup}) Recharts axis tick labels — X and Y. */
 const histogramExpandedModalAxisTickCss = css`
@@ -310,6 +322,7 @@ export const RiskTableWrapper = styled.div`
   min-height: 0;
   overflow: auto;
   box-sizing: border-box;
+  ${survivalRiskTableDownloadTextCss}
 `;
 
 export const KmChartWrapperBesideVenn = styled(KmChartWrapper)`
@@ -382,6 +395,7 @@ export const RiskTableModalWrapper = styled.div`
   align-items: center;
   height: 280px;
   padding-bottom: 15px;
+  ${survivalRiskTableDownloadTextCss}
 `;
 
 export const ModalHeaderContainer = styled.div`
