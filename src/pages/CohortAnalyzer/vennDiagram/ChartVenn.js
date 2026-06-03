@@ -349,10 +349,10 @@ useEffect(() => {
           width: '100%',
           display: 'flex',
           alignItems: 'center',
-          minHeight: '100%',
+          minHeight: 0,
           justifyContent: 'center',
           padding: 0,
-          overflow: 'visible',
+          overflow: 'hidden',
         }}
       >
         <canvas ref={canvasRef} id="canvas" />

@@ -1,6 +1,22 @@
-import styled from 'styled-components';
-import { HISTOGRAM_EXPANDED_AXIS_FONT_SIZE } from '../histogramConstants';
-import { RadioGroup, RadioLabel } from './histogramPanelCore.styled';
+import styled, { css } from 'styled-components';
+import {
+  HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+  HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY,
+  HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT,
+  HISTOGRAM_EXPANDED_AXIS_TICK_COLOR,
+} from '../histogramConstants';
+import { RadioGroup, RadioLabel, histogramChartGridAxisStrokeCss } from './histogramPanelCore.styled';
+
+/** Expanded modal ({@link HistogramPopup}) Recharts axis tick labels — X and Y. */
+const histogramExpandedModalAxisTickCss = css`
+  & .recharts-cartesian-axis-tick text,
+  & .recharts-cartesian-axis-tick-value {
+    font-size: ${HISTOGRAM_EXPANDED_AXIS_FONT_SIZE}px !important;
+    font-family: ${HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY}, sans-serif !important;
+    font-weight: ${HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT} !important;
+    fill: ${HISTOGRAM_EXPANDED_AXIS_TICK_COLOR} !important;
+  }
+`;
 
 export const ModalOverlay = styled.div`
   position: fixed;
@@ -68,6 +84,8 @@ export const ModalChartWrapper = styled.div`
   min-height: 0;
   position: relative;
   z-index: 1;
+  ${histogramChartGridAxisStrokeCss}
+  ${histogramExpandedModalAxisTickCss}
 `;
 
 export const TabContainer = styled.div`
@@ -93,7 +111,7 @@ export const Tab = styled.button`
   padding: 10px 0px;
   cursor: pointer;
   font-family: Poppins;
-  font-size: 22px;
+  font-size: 16px;
   line-height: 1.25;
   white-space: nowrap;
   flex: 0 0 auto;
@@ -278,6 +296,7 @@ export const KmChartWrapper = styled.div`
   margin-top: -20px;
   overflow: hidden;
   box-sizing: border-box;
+  ${histogramChartGridAxisStrokeCss}
 `;
 
 export const RiskTableWrapper = styled.div`
@@ -301,7 +320,8 @@ export const KmChartWrapperBesideVenn = styled(KmChartWrapper)`
 export const RiskTableWrapperBesideVenn = styled(RiskTableWrapper)`
   padding-left: 8px;
   padding-right: 8px;
-  margin-top: 8px;
+  margin-top: -2px;
+  overflow: hidden;
 `;
 
 export const SurvivalAnalysisModalContainer = styled.div`
@@ -344,7 +364,12 @@ export const KmChartModalWrapper = styled.div`
   /* KaplanMeierChart axis ticks/labels are 11px in @bento-core/kmplot; match expanded modal spec. */
   & svg text {
     font-size: ${HISTOGRAM_EXPANDED_AXIS_FONT_SIZE}px !important;
+    font-family: ${HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY}, sans-serif !important;
+    font-weight: ${HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT} !important;
+    fill: ${HISTOGRAM_EXPANDED_AXIS_TICK_COLOR} !important;
   }
+
+  ${histogramChartGridAxisStrokeCss}
 `;
 
 export const RiskTableModalWrapper = styled.div`

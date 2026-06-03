@@ -27,3 +27,19 @@ export const CA_EXPANDED_CHART_MODAL_TAB_VENN = 'venn';
 
 /** X/Y axis tick label size (px) for histogram + survival charts in the expanded modal. */
 export const HISTOGRAM_EXPANDED_AXIS_FONT_SIZE = 13;
+export const HISTOGRAM_EXPANDED_AXIS_TICK_COLOR = '#666666';
+export const HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY = 'Nunito';
+export const HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT = 500;
+
+/** Shared Recharts tick props for histogram/survival charts in {@link HistogramPopup}. */
+export const HISTOGRAM_EXPANDED_AXIS_TICK_PROPS = {
+  fontSize: HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+  lineHeight: HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+  letterSpacing: 0,
+  fill: HISTOGRAM_EXPANDED_AXIS_TICK_COLOR,
+  fontFamily: HISTOGRAM_EXPANDED_AXIS_FONT_FAMILY,
+  fontWeight: HISTOGRAM_EXPANDED_AXIS_FONT_WEIGHT,
+};
+
+/** Grid, axis, and shape outline color for histogram and survival charts in this panel. */
+export const HISTOGRAM_CHART_STROKE_COLOR = '#CCCCCC';

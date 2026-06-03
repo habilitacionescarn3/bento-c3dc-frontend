@@ -14,6 +14,7 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     display: 'flex',
     flexDirection: 'row',
     flex: 1,
+    overflow: 'hidden',
   },
   chartContainer: {
     backgroundColor: 'white',
@@ -76,8 +77,7 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
     minWidth: CA_VENN_OUTER_MIN_W,
     maxHeight: CA_VENN_OUTER_MAX_H,
     minHeight: CA_SURVIVAL_CARD_MIN_HEIGHT,
-    /* chartContainer also sets overflow hidden; allow long cohort labels that extend in layout padding. */
-    overflow: 'visible',
+    overflow: 'hidden',
     /** Fill card when resizing height; generic chartContainer uses 80% / 95% and hides growth. */
     '& .App': {
       width: '100%',
@@ -102,6 +102,7 @@ export const cohortAnalyzerCoreStyles = (theme) => ({
       alignItems: 'center',
       justifyContent: 'center',
       marginLeft: 0,
+      overflow: 'hidden',
     },
   },
   vennToolbarRow: {
