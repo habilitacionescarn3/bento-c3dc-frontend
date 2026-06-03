@@ -24,3 +24,6 @@ export const MAX_BARS_DISPLAYED_EXPANDED = 21;
 
 /** `activeTab` / `expandedChart` value for Venn in the shared ExpandedChartModal. */
 export const CA_EXPANDED_CHART_MODAL_TAB_VENN = 'venn';
+
+/** X/Y axis tick label size (px) for histogram + survival charts in the expanded modal. */
+export const HISTOGRAM_EXPANDED_AXIS_FONT_SIZE = 13;

@@ -23,9 +23,9 @@ export const CreateNewCohortButton = ({ selectedCohortSection, questionIcon, row
 
             <ToolTip title={"Click to create a new cohort based on these analysis results."} arrow placement="top">
                 <div
-                    style={{ textAlign: 'right', marginLeft: 5}}
+                    style={{ textAlign: 'right', marginLeft: '4px'}}
                 >
-                    <img alt={"Question Icon"} src={questionIcon} width={10} style={{ fontSize: 10, position: 'relative', top: -5, left: -3 }} />
+                    <img alt={"Question Icon"} src={questionIcon} width={10} style={{ fontSize: 10, position: 'relative', top: -5, left: 0 }} />
                 </div>
             </ToolTip>
         </div>
@@ -47,7 +47,7 @@ const useStyles = makeStyles((theme) => ({
         color: 'white',
         fontFamily: "Poppins",
         fontSize: "12px",
-        fontWeight: 600,
+        fontWeight: 500,
         cursor: 'pointer',
     },
     createCohortOpacity: {
@@ -59,7 +59,7 @@ const useStyles = makeStyles((theme) => ({
         backgroundColor: "#55646766",
         fontFamily: "Poppins",
         fontSize: "12px",
-        fontWeight: 900,
+        fontWeight: 500,
         border: '1.25px solid #0000001A',
     },
 }));

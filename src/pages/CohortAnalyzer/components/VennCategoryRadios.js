@@ -87,12 +87,16 @@ const VennCategoryRadios = ({
   nodeIndex,
   setNodeIndex,
   setRowData,
+  alignWithModalHeader = false,
 }) => {
   const cohortsReady = Array.isArray(selectedCohorts) && selectedCohorts.length > 0;
   const rowOpacity = cohortsReady ? 1 : 0.55;
+  const resolvedContainerStyle = alignWithModalHeader
+    ? { ...containerStyle, padding: '12px 0 16px' }
+    : containerStyle;
 
   return (
-    <div style={containerStyle}>
+    <div style={resolvedContainerStyle}>
       <div style={promptRowStyle}>
         <p style={promptStyle}>Select a data category for cohort matching:</p>
         <ToolTip

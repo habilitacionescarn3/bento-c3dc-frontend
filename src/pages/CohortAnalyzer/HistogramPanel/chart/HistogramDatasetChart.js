@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import CustomChartTooltip from './CustomChartTooltip';
 import CustomXAxisTick from './CustomXAxisTick';
+import { HISTOGRAM_EXPANDED_AXIS_FONT_SIZE } from '../histogramConstants';
 import { barColors } from '../HistogramPanel.styled';
 
 export const CHART_TYPE_KEYS = {
@@ -70,7 +71,7 @@ const PieChartTooltip = ({ active, payload, viewType }) => {
   );
 };
 
-const yAxisTickStyle = {
+const DEFAULT_Y_AXIS_TICK_STYLE = {
   fontSize: 11,
   fill: '#666666',
   fontFamily: 'Nunito',
@@ -78,6 +79,30 @@ const yAxisTickStyle = {
   lineHeight: 11,
   letterSpacing: 0,
 };
+
+const buildYAxisTickStyle = (expandedView) => (
+  expandedView
+    ? {
+      ...DEFAULT_Y_AXIS_TICK_STYLE,
+      fontSize: HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+      lineHeight: HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+    }
+    : DEFAULT_Y_AXIS_TICK_STYLE
+);
+
+const buildXTickProps = (expandedView, compact) => (
+  expandedView
+    ? {
+      fontSize: HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+      lineHeight: HISTOGRAM_EXPANDED_AXIS_FONT_SIZE,
+      letterSpacing: 0,
+    }
+    : {
+      fontSize: compact ? 10 : 10,
+      lineHeight: compact ? 10 : 11,
+      letterSpacing: 0,
+    }
+);
 
 function buildPieData(rows) {
   return rows
@@ -115,7 +140,18 @@ export function HistogramDatasetChart({
   c2Name = 'Cohort B',
   c3Name = 'Cohort C',
   previewShell = false,
+  expandedView = false,
 }) {
+  const yAxisTickStyle = buildYAxisTickStyle(expandedView);
+  const xTickProps = buildXTickProps(expandedView, compact);
+  const categoryAxisTickStyle = {
+    fontSize: expandedView ? HISTOGRAM_EXPANDED_AXIS_FONT_SIZE : 10,
+    fill: '#666666',
+    fontFamily: 'Nunito',
+    fontWeight: 500,
+    lineHeight: expandedView ? HISTOGRAM_EXPANDED_AXIS_FONT_SIZE : 10,
+    letterSpacing: 0,
+  };
   const bottomMargin = compact ? 12 : 0;
   const yAxisTickFormatter = (value) => {
     const num = Number(value);
@@ -143,12 +179,6 @@ export function HistogramDatasetChart({
   };
 
   const pieMargin = { top: 8, right: 8, left: 8, bottom: 8 };
-
-  const xTickProps = {
-    fontSize: compact ? 10 : 10,
-    lineHeight: compact ? 10 : 11,
-    letterSpacing: 0,
-  };
 
   if (previewShell) {
     const shellMargin = {
@@ -290,7 +320,7 @@ export function HistogramDatasetChart({
             dataKey="name"
             type="category"
             width={compact ? 90 : 110}
-            tick={{ fontSize: 10, fill: '#666666', fontFamily: 'Nunito' }}
+            tick={categoryAxisTickStyle}
             tickFormatter={(v) => formatCategoryLabel(v)}
           />
           <Tooltip content={<MultiseriesTooltip viewType={viewType} />} />
