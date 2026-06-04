@@ -367,6 +367,8 @@ export function HistogramDatasetChart({
             dataKey="name"
             type="category"
             width={categoryAxisWidth}
+            interval={0}
+            minTickGap={0}
             axisLine={chartAxisLine}
             tickLine={chartTickLine}
             tick={(props) => (
