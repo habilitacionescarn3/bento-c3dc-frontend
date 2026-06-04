@@ -1,12 +1,10 @@
 import { themeConfig } from '../../studies/tableConfig/Theme';
 
 /**
- * Cohort Analyzer table typography tokens. Header + body share Primary 4; first-column
- * (Participant ID) link styling uses TABLE_LINK_COLOR. Sizes are spec'd as font-size /
- * line-height / letter-spacing.
+ * Cohort Analyzer table typography tokens. Header + body share Primary 4.
+ * Sizes are spec'd as font-size / line-height / letter-spacing.
  */
 const PRIMARY_4 = '#0F253A';
-const TABLE_LINK_COLOR = '#004C73';
 
 /**
  * Table + MUI overrides for Cohort Analyzer data grids (table view).
@@ -22,7 +20,7 @@ export const cohortAnalyzerThemeConfig = {
                 borderBottom: '1px solid #000000',
             },
         },
-        // Center all column headers; first column keeps link styling in body rows only.
+        // Center all column headers.
         MuiTableCell: {
             ...(themeConfig.tblHeader && themeConfig.tblHeader.MuiTableCell),
             root: {
@@ -75,11 +73,11 @@ export const cohortAnalyzerThemeConfig = {
                 lineHeight: '17px',
                 letterSpacing: '0',
                 color: PRIMARY_4,
+                // Override studies table first-column link color; all columns use body text styling.
                 '&:first-of-type': {
-                    // Participant ID column: Inter Semibold, 16/17/0, TABLE_LINK_COLOR.
-                    color: TABLE_LINK_COLOR,
-                    textDecoration: 'underline',
-                    fontWeight: 600,
+                    color: PRIMARY_4,
+                    textDecoration: 'none',
+                    fontWeight: 400,
                 },
             },
         },

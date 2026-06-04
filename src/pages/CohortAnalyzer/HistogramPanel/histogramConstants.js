@@ -43,3 +43,10 @@ export const HISTOGRAM_EXPANDED_AXIS_TICK_PROPS = {
 
 /** Grid, axis, and shape outline color for histogram and survival charts in this panel. */
 export const HISTOGRAM_CHART_STROKE_COLOR = '#CCCCCC';
+
+/** Max wrapped lines for horizontal-bar category labels (Y axis). */
+export const HORIZONTAL_BAR_MAX_CATEGORY_LABEL_LINES = 2;
+
+/** Horizontal bar spacing in the narrow beside-Venn column to keep category labels from overlapping. */
+export const BESIDE_HORIZONTAL_BAR_CATEGORY_GAP = '42%';
+export const BESIDE_HORIZONTAL_BAR_BAR_GAP = 6;

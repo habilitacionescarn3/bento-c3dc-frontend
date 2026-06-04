@@ -12,9 +12,10 @@ describe('cohortAnalyzerThemeConfig', () => {
     expect(cell.color).toBe('#0F253A');
   });
 
-  it('styles first-column body cells with table link color', () => {
+  it('styles first-column body cells the same as other columns', () => {
     const firstCol = cohortAnalyzerThemeConfig.tblBody.MuiTableCell.body['&:first-of-type'];
-    expect(firstCol.color).toBe('#004C73');
-    expect(firstCol.fontWeight).toBe(600);
+    expect(firstCol.color).toBe('#0F253A');
+    expect(firstCol.fontWeight).toBe(400);
+    expect(firstCol.textDecoration).toBe('none');
   });
 });
