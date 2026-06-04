@@ -1,10 +1,11 @@
 import React from 'react';
 import {
-  RadioInput,
+  CohortAnalyzerRadioInput,
+} from '../../styling/cohortAnalyzerRadio.styled';
+import {
   ModalChartContainer,
   ModalHistogramChartInset,
   ModalRadioFieldset,
-  ModalRadioGroup,
   ModalRadioLabel,
   ModalNoDataContainer,
 } from '../HistogramPanel.styled';
@@ -34,28 +35,24 @@ export function HistogramPopupModalHistogramTab({
   return (
     <ModalChartContainer>
       <ModalRadioFieldset>
-        <ModalRadioGroup>
-          <ModalRadioLabel>
-            <RadioInput
-              type="radio"
-              name={`modalViewType-${activeTab}`}
-              value="count"
-              checked={viewType[activeTab] === 'count'}
-              onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-            />
-            # of Cases
-          </ModalRadioLabel>
-          <ModalRadioLabel>
-            <RadioInput
-              type="radio"
-              name={`modalViewType-${activeTab}`}
-              value="percentage"
-              checked={viewType[activeTab] === 'percentage'}
-              onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
-            />
-            % of Cases
-          </ModalRadioLabel>
-        </ModalRadioGroup>
+        <ModalRadioLabel>
+          <CohortAnalyzerRadioInput
+            name={`modalViewType-${activeTab}`}
+            value="count"
+            checked={viewType[activeTab] === 'count'}
+            onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
+          />
+          # of Cases
+        </ModalRadioLabel>
+        <ModalRadioLabel>
+          <CohortAnalyzerRadioInput
+            name={`modalViewType-${activeTab}`}
+            value="percentage"
+            checked={viewType[activeTab] === 'percentage'}
+            onChange={(e) => setViewType((prev) => ({ ...prev, [activeTab]: e.target.value }))}
+          />
+          % of Cases
+        </ModalRadioLabel>
       </ModalRadioFieldset>
       <ModalHistogramChartInset>
         {Array.isArray(data[activeTab]) && data[activeTab].length > 0 ? (
