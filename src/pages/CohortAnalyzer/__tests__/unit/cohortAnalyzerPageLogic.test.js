@@ -8,6 +8,7 @@ import {
   canAddExampleCohorts,
   buildExploreUploadPayload,
   shouldSkipNavigateAwayModal,
+  guardSetterForRequest,
 } from '../../cohortAnalyzerPageLogic';
 
 describe('cohortAnalyzerPageLogic', () => {
@@ -150,6 +151,21 @@ describe('cohortAnalyzerPageLogic', () => {
 
     it('returns false otherwise', () => {
       expect(shouldSkipNavigateAwayModal()).toBe(false);
+    });
+  });
+
+  describe('guardSetterForRequest', () => {
+    it('calls setter only for the latest request id', () => {
+      const latestRequestIdRef = { current: 2 };
+      const setter = jest.fn();
+      const staleSetter = guardSetterForRequest(setter, 1, latestRequestIdRef);
+      const latestSetter = guardSetterForRequest(setter, 2, latestRequestIdRef);
+
+      staleSetter([]);
+      latestSetter([{ participant_id: 'P1' }]);
+
+      expect(setter).toHaveBeenCalledTimes(1);
+      expect(setter).toHaveBeenCalledWith([{ participant_id: 'P1' }]);
     });
   });
 });
