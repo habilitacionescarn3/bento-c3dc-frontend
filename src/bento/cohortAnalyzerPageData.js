@@ -34,7 +34,7 @@ export const tableConfig = {
     },
     {
       dataField: 'dbgap_accession',
-      header: 'dbGaP Accession',
+      header: 'Study ID',
       display: true,
       tooltipText: 'sort',
       role: cellTypes.DISPLAY,

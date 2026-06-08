@@ -10,6 +10,10 @@ import {
   SURVIVAL_RISK_TABLE_DOWNLOAD_TEXT_COLOR,
 } from '../utils/survivalRiskTableDownloadCapture';
 import { RadioGroup, RadioLabel, histogramChartGridAxisStrokeCss } from './histogramPanelCore.styled';
+import {
+  CohortAnalyzerRadioFieldset,
+  CohortAnalyzerRadioLabel,
+} from '../../styling/cohortAnalyzerRadio.styled';
 
 /** Risk table body text only — month header row (thead) keeps @bento-core/risk-table colors. */
 const survivalRiskTableDownloadTextCss = css`
@@ -490,31 +494,26 @@ export const ModalHistogramChartInset = styled.div`
   box-sizing: border-box;
 `;
 
-export const ModalRadioFieldset = styled.fieldset`
+export const ModalRadioFieldset = styled(CohortAnalyzerRadioFieldset)`
   border: none;
   flex-shrink: 0;
   width: 100%;
   padding: 0 ${MODAL_HEADER_TAB_INSET_RIGHT_PX}px 0 ${MODAL_HEADER_TAB_INSET_PX}px;
-  margin: 0;
-  box-sizing: border-box;
-`;
-
-export const ModalRadioGroup = styled(RadioGroup)`
-  width: 100%;
   margin: 20px 0;
-  display: flex;
-  flex-direction: row;
+  box-sizing: border-box;
   flex-wrap: wrap;
   align-items: center;
 `;
 
-/** Expanded modal: # of Cases / % of Cases label typography. */
-export const ModalRadioLabel = styled(RadioLabel)`
-  font-family: Poppins, sans-serif;
-  font-weight: 400;
-  font-style: normal;
-  font-size: 16px;
+export const ModalRadioGroup = styled(RadioGroup)`
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  display: contents;
 `;
+
+/** Expanded modal: # of Cases / % of Cases — matches Venn category radio typography. */
+export const ModalRadioLabel = styled(CohortAnalyzerRadioLabel)``;
 
 /** Wraps popup controls (e.g. Venn category radios) so they align with the first header tab. */
 export const ModalPopupContentInset = styled.div`

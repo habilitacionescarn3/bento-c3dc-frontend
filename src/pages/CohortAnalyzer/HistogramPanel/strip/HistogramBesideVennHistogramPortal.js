@@ -253,6 +253,7 @@ export function HistogramBesideVennHistogramPortal({
               c2Name={c2Name || 'Cohort B'}
               c3Name={c3Name || 'Cohort C'}
               previewShell={chartPreviewMode}
+              relaxedHorizontalBarSpacing
             />
           </div>
         ) : (

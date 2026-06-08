@@ -15,7 +15,14 @@ import {
 } from 'recharts';
 import CustomChartTooltip from './CustomChartTooltip';
 import CustomXAxisTick from './CustomXAxisTick';
-import { HISTOGRAM_CHART_STROKE_COLOR, HISTOGRAM_EXPANDED_AXIS_TICK_PROPS } from '../histogramConstants';
+import CustomCategoryAxisTick from './CustomCategoryAxisTick';
+import {
+  BESIDE_HORIZONTAL_BAR_BAR_GAP,
+  BESIDE_HORIZONTAL_BAR_CATEGORY_GAP,
+  HISTOGRAM_CHART_STROKE_COLOR,
+  HISTOGRAM_EXPANDED_AXIS_TICK_PROPS,
+  HORIZONTAL_BAR_MAX_CATEGORY_LABEL_LINES,
+} from '../histogramConstants';
 import { barColors } from '../HistogramPanel.styled';
 
 export const CHART_TYPE_KEYS = {
@@ -136,6 +143,8 @@ export function HistogramDatasetChart({
   c3Name = 'Cohort C',
   previewShell = false,
   expandedView = false,
+  /** Wider gaps between horizontal-bar categories (beside-Venn column). */
+  relaxedHorizontalBarSpacing = false,
 }) {
   const yAxisTickStyle = buildYAxisTickStyle(expandedView);
   const xTickProps = buildXTickProps(expandedView, compact);
@@ -168,12 +177,33 @@ export function HistogramDatasetChart({
 
   const lineMargin = { ...verticalBarMargin };
 
-  const horizontalBarMargin = {
-    top: 12,
-    right: 24,
-    left: compact ? 18 : 18,
-    bottom: 12,
-  };
+  const categoryAxisWidth = relaxedHorizontalBarSpacing
+    ? (compact ? 96 : 116)
+    : expandedView
+      ? 140
+      : (compact ? 92 : 112);
+
+  const horizontalBarCategoryGap = relaxedHorizontalBarSpacing
+    ? BESIDE_HORIZONTAL_BAR_CATEGORY_GAP
+    : dataLength >= 6
+      ? '32%'
+      : dataLength >= 4
+        ? '26%'
+        : '20%';
+
+  const horizontalBarMargin = relaxedHorizontalBarSpacing
+    ? {
+      top: 16,
+      right: 24,
+      left: 8,
+      bottom: 16,
+    }
+    : {
+      top: 12,
+      right: 24,
+      left: expandedView ? 12 : 8,
+      bottom: 12,
+    };
 
   const pieMargin = { top: 8, right: 8, left: 8, bottom: 8 };
 
@@ -317,7 +347,13 @@ export function HistogramDatasetChart({
   if (chartType === CHART_TYPE_KEYS.HORIZONTAL_BAR) {
     return (
       <ResponsiveContainer width={width} height={height}>
-        <BarChart layout="vertical" data={rows} margin={horizontalBarMargin}>
+        <BarChart
+          layout="vertical"
+          data={rows}
+          margin={horizontalBarMargin}
+          barCategoryGap={horizontalBarCategoryGap}
+          barGap={relaxedHorizontalBarSpacing ? BESIDE_HORIZONTAL_BAR_BAR_GAP : 4}
+        >
           <CartesianGrid strokeDasharray="3 3" stroke={HISTOGRAM_CHART_STROKE_COLOR} horizontal vertical={false} />
           <XAxis
             type="number"
@@ -330,15 +366,29 @@ export function HistogramDatasetChart({
           <YAxis
             dataKey="name"
             type="category"
-            width={compact ? 90 : 110}
-            tick={categoryAxisTickStyle}
-            tickFormatter={(v) => formatCategoryLabel(v)}
+            width={categoryAxisWidth}
+            interval={0}
+            minTickGap={0}
             axisLine={chartAxisLine}
             tickLine={chartTickLine}
+            tick={(props) => (
+              <CustomCategoryAxisTick
+                {...props}
+                width={categoryAxisWidth - 8}
+                maxLines={HORIZONTAL_BAR_MAX_CATEGORY_LABEL_LINES}
+                {...categoryAxisTickStyle}
+              />
+            )}
           />
           <Tooltip content={<MultiseriesTooltip viewType={viewType} />} />
           {valueA > 0 && (
-            <Bar dataKey="valueA" name="Cohort A" maxBarSize={28} stroke={HISTOGRAM_CHART_STROKE_COLOR} strokeWidth={0.6}>
+            <Bar
+              dataKey="valueA"
+              name="Cohort A"
+              maxBarSize={relaxedHorizontalBarSpacing ? 22 : 28}
+              stroke={HISTOGRAM_CHART_STROKE_COLOR}
+              strokeWidth={0.6}
+            >
               {rows.map((entry, entryIndex) => (
                 <Cell
                   key={`hbar-a-${entryIndex}`}
@@ -350,7 +400,13 @@ export function HistogramDatasetChart({
             </Bar>
           )}
           {valueB > 0 && (
-            <Bar dataKey="valueB" name="Cohort B" maxBarSize={28} stroke={HISTOGRAM_CHART_STROKE_COLOR} strokeWidth={0.6}>
+            <Bar
+              dataKey="valueB"
+              name="Cohort B"
+              maxBarSize={relaxedHorizontalBarSpacing ? 22 : 28}
+              stroke={HISTOGRAM_CHART_STROKE_COLOR}
+              strokeWidth={0.6}
+            >
               {rows.map((entry, entryIndex) => (
                 <Cell
                   key={`hbar-b-${entryIndex}`}
@@ -362,7 +418,13 @@ export function HistogramDatasetChart({
             </Bar>
           )}
           {valueC > 0 && (
-            <Bar dataKey="valueC" name="Cohort C" maxBarSize={28} stroke={HISTOGRAM_CHART_STROKE_COLOR} strokeWidth={0.6}>
+            <Bar
+              dataKey="valueC"
+              name="Cohort C"
+              maxBarSize={relaxedHorizontalBarSpacing ? 22 : 28}
+              stroke={HISTOGRAM_CHART_STROKE_COLOR}
+              strokeWidth={0.6}
+            >
               {rows.map((entry, entryIndex) => (
                 <Cell
                   key={`hbar-c-${entryIndex}`}
