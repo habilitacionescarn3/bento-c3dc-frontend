@@ -41,6 +41,7 @@ import {
     canAddExampleCohorts,
     buildExploreUploadPayload,
     shouldSkipNavigateAwayModal,
+    guardSetterForRequest,
 } from './cohortAnalyzerPageLogic';
 
 export const CohortAnalyzer = () => {
@@ -83,6 +84,8 @@ export const CohortAnalyzer = () => {
 
     const containerRef = useRef(null);
     const canvasRef = useRef(null);
+    const tableFetchRequestIdRef = useRef(0);
+    const isReplacingExampleCohortsRef = useRef(false);
     const classes = useStyle();
     const { state, dispatch: cohortDispatch } = useContext(CohortStateContext);
     const hasParticipantData = useMemo(
@@ -133,6 +136,7 @@ export const CohortAnalyzer = () => {
     }
 
     async function getJoinedCohort(isReset = false) {
+        const requestId = ++tableFetchRequestIdRef.current;
         await getJoinedCohortData({
             nodeIndex,
             selectedCohorts,
@@ -141,9 +145,9 @@ export const CohortAnalyzer = () => {
             searchValue,
             isReset,
             setQueryVariable,
-            setRowData,
+            setRowData: guardSetterForRequest(setRowData, requestId, tableFetchRequestIdRef),
             location,
-            setCohortData
+            setCohortData: guardSetterForRequest(setCohortData, requestId, tableFetchRequestIdRef),
         });
     }
 
@@ -178,10 +182,9 @@ export const CohortAnalyzer = () => {
     }, [selectedChart])
 
     useEffect(() => {
-        if (selectedChart.length >= 0) {
+        if (selectedCohorts.length > 0) {
             getJoinedCohort();
         }
-
 
         setSelectedCohortSections(
             filterVennSectionsForSelectedCohorts(
@@ -193,7 +196,10 @@ export const CohortAnalyzer = () => {
 
         if (selectedCohorts.length === 0) {
             setGeneralInfo({});
-            if (shouldClearRowDataOnEmptySelection(selectedCohorts, location)) {
+            if (
+                shouldClearRowDataOnEmptySelection(selectedCohorts, location)
+                && !isReplacingExampleCohortsRef.current
+            ) {
                 setRowData([]);
             }
         }
@@ -246,6 +252,7 @@ export const CohortAnalyzer = () => {
     const handleDemoClick = () => {
         // First, clear any existing example cohorts from the state
         const exampleCohortKeys = getExampleCohortKeys();
+        isReplacingExampleCohortsRef.current = true;
 
         // Remove existing example cohorts from selected cohorts
         setSelectedCohorts(prev => prev.filter(cohortId => !exampleCohortKeys.includes(cohortId)));
@@ -260,6 +267,7 @@ export const CohortAnalyzer = () => {
         // Check if adding 3 example cohorts would exceed the 20-cohort limit
         // Only count non-example cohorts since example cohorts will be cleared/replaced
         if (!canAddExampleCohorts(state, exampleCohortKeys)) {
+            isReplacingExampleCohortsRef.current = false;
             Notification.show('Cannot add example cohorts. You have reached the maximum limit of 20 cohorts. Please delete some cohorts first.', 5000);
             return;
         }
@@ -268,11 +276,16 @@ export const CohortAnalyzer = () => {
         const totalCohorts = exampleCohorts.length;
 
 
+        const finishExampleCohortReplacement = () => {
+            isReplacingExampleCohortsRef.current = false;
+        };
+
         const handleExampleSuccess = (count) => {
             successCount++;
             if (successCount === totalCohorts) {
                 // Auto-select the newly created example cohorts
                 setSelectedCohorts(getExampleCohortKeys());
+                finishExampleCohortReplacement();
                 Notification.show(
                     `Successfully created and selected ${totalCohorts} example cohorts!\nView the results in the Venn diagram and histogram below.`,
                     7000,
@@ -282,6 +295,7 @@ export const CohortAnalyzer = () => {
         };
 
         const handleExampleError = (error) => {
+            finishExampleCohortReplacement();
             Notification.show(`Failed to create example cohorts: ${error.message}`, 5000);
         };
 

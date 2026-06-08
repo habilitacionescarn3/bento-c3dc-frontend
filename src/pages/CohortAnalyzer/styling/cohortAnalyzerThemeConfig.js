@@ -81,6 +81,22 @@ export const cohortAnalyzerThemeConfig = {
                 },
             },
         },
+        // @bento-core/table renders cell values in MUI Typography (default body1).
+        // Base studies theme sets body1 to 600 — override so row text matches Inter Regular.
+        MuiTypography: {
+            ...(themeConfig.tblBody && themeConfig.tblBody.MuiTypography),
+            body1: {
+                ...(themeConfig.tblBody
+                    && themeConfig.tblBody.MuiTypography
+                    && themeConfig.tblBody.MuiTypography.body1),
+                fontFamily: 'Inter, sans-serif',
+                fontWeight: 400,
+                fontSize: '16px',
+                lineHeight: '17px',
+                letterSpacing: '0',
+                color: PRIMARY_4,
+            },
+        },
     },
     // Background of the "no match" row shown by @bento-core/table's
     // DisplayErrMsg when the table has zero rows (e.g. before a cohort is selected).

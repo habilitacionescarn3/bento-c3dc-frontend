@@ -18,4 +18,11 @@ describe('cohortAnalyzerThemeConfig', () => {
     expect(firstCol.fontWeight).toBe(400);
     expect(firstCol.textDecoration).toBe('none');
   });
+
+  it('uses Inter Regular for table body Typography (cell content)', () => {
+    const body1 = cohortAnalyzerThemeConfig.tblBody.MuiTypography.body1;
+    expect(body1.fontWeight).toBe(400);
+    expect(body1.fontFamily).toBe('Inter, sans-serif');
+    expect(body1.fontSize).toBe('16px');
+  });
 });

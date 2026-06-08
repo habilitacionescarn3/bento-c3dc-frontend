@@ -95,3 +95,12 @@ export function buildExploreUploadPayload(rowData) {
 export function shouldSkipNavigateAwayModal() {
   return localStorage.getItem('hideNavigateModal') === 'true';
 }
+
+/** Wraps a setter so only the latest in-flight table fetch may commit results. */
+export function guardSetterForRequest(setter, requestId, latestRequestIdRef) {
+  return (value) => {
+    if (requestId === latestRequestIdRef.current) {
+      setter(value);
+    }
+  };
+}
